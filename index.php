@@ -1,11 +1,6 @@
 <?php
 session_start();
 
-// Verificar si es necesario restaurar los datos del usuario demo
-if (file_exists(__DIR__ . "/demo/auto_restore.php")) {
-    include_once __DIR__ . "/demo/auto_restore.php";
-}
-
 // Revisar si hay cookie rememberMe y no hay sesión activa
 if (!isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
     require_once __DIR__ . "/conection.php";

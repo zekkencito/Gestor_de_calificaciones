@@ -1,0 +1,19 @@
+# Permitir solo descarga de archivos ZIP y RAR
+<Files "*.zip">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files "*.rar">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Denegar acceso a todos los demás archivos
+<FilesMatch "^(?!.*\.(zip|rar)$).*$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Denegar listado de directorio
+Options -Indexes

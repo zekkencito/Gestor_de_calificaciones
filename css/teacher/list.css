@@ -1,16 +1,20 @@
-html, body{
+html {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body{
     width: 100%;
-    height: 130%;
+    min-height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: hidden; 
+    overflow-x: hidden;
+    overflow-y: auto;
     box-sizing: border-box;
     font-family: "League Spartan", sans-serif !important;
     font-weight: 300 !important;
 }
-#contenedor{
-    margin-left: 25px;
-}
+
 .input-group .form-control {
     height: 40px; /* Ajusta la altura según lo necesario */
     padding: 5px 10px; /* Ajusta el padding si es necesario */
@@ -38,7 +42,7 @@ html, body{
 h1{
     font-size: 30px;
     font-weight: bold;
-    margin-top: 40px;
+    margin-top: 10px;
     margin-bottom: 25px;
     margin-left: 30px;
 }
@@ -62,37 +66,9 @@ h1{
     color: white;
     font-size: 1.5rem;
 }
-#botonVer{
-    border: none;
-    background: none;
-    border-width: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-}
 
 #iVer{
     margin-right:-17px;
-}
-th{
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-td{
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
 }
 option{
     font-size: 15px;
@@ -104,77 +80,4 @@ option{
     font-family: "League Spartan", sans-serif;
     font-weight: bold;
 }
-#tabla{
-    font-size: 15px;
-}
-.contenedorTabla{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 
-/*MODALS*/
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-#tituloModal{
-    font-family: "League Spartan", sans-serif;
-    font-weight: black;
-    font-size: 30px;
-    margin:0;
-}
-.labelAgregar{
-    font-size: 17px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 600;
-    margin-top: 7px;
-}
-.botonCancelar{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 6.5vh;
-}
-.botonEnter{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 6.5vh;
-}
-input, select{
-    margin-bottom: 12px;
-}
-.botonCancelar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.botonEnter:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}

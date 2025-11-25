@@ -2,13 +2,8 @@
 $preventCache = true;
 $sessionStarted = true;
 require_once "../admin/php/prevent_cache.php";
-
-// Verificar si es necesario restaurar los datos del usuario demo
-if (file_exists(__DIR__ . "/../demo/auto_restore.php")) {
-    include_once __DIR__ . "/../demo/auto_restore.php";
-}
-
 require_once "check_session.php";
+require_once "../force_password_check.php";
 require_once "../conection.php";
 
 $fechaLimite = null;
@@ -188,72 +183,231 @@ if (!$stmt) {
         <?php
             include "../layouts/headerTeacher.php"; 
         ?>
-        <section class="container mt-4" style="padding-top:10vh">
-            <h2 class="pt-3">BIENVENIDO</h2>
-            <!-- Mostrar fecha límite en dashboard -->
- 
-            <!-- STATS -->
-             <div class="row text-center">
-                <div class="col-4" >
-                    <div class="card" id="card"  style="height: 100px;">
-                        <div class="card-body">
-                            <label>
-                                Materias Asignadas
-                            </label>
-                            <h5 class="h2" id="totalMaterias"> <?php echo $totalMaterias; ?> </h5>
-                            
+        
+        <!-- Header del Dashboard -->
+        <div class="container-fluid px-4" style="padding-top: 8rem; height: auto;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-header mb-3">
+                        <h1 class="page-title">
+                            <i class="bi bi-speedometer2 me-3"></i>
+                            Panel de Control
+                        </h1>
+                        <p class="page-subtitle text-muted">
+                            Bienvenido. Aquí tiene un resumen de su actividad docente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Alerta de fecha límite -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-info border-0 shadow-sm" style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); border-radius: 15px;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-event fs-4 me-3 text-info"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Fecha límite de calificaciones</h6>
+                                <strong id="fechaLimiteDashboard" class="text-dark">Cargando...</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="card" id="card"  style="height: 100px;">
-                        <div class="card-body">
-                            <label class="">
-                                Total de Alumnos
-                            </label>
-                            <h5 class="h2" id="totalAlumnos"> <?php echo $totalAlumnos; ?> </h5>
+            </div>
+
+            <!-- Tarjetas de estadísticas -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="stats-card">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <div class="stats-icon mb-3">
+                                    <i class="bi bi-journal-bookmark text-primary"></i>
+                                </div>
+                                <h3 class="stats-number text-primary"><?php echo $totalMaterias; ?></h3>
+                                <p class="stats-label text-muted mb-0">Materias Asignadas</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="card" id="card" style="height: 100px;">
-                        <div class="card-body">
-                            <label class="">
-                                Fecha límite para subir calificaciones
-                            </label>
-                            <h5 class="h2" id="fechaLimiteDashboard"><?php echo $fechaLimite ? htmlspecialchars($fechaLimite) : 'No configurada'; ?></h5>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="stats-card">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <div class="stats-icon mb-3">
+                                    <i class="bi bi-people text-success"></i>
+                                </div>
+                                <h3 class="stats-number text-success"><?php echo $totalAlumnos; ?></h3>
+                                <p class="stats-label text-muted mb-0">Alumnos a mi cargo</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-             </div>
-            <!-- STATS -->
-            <!-- CHARTS -->
-             <div class="row mt-4">
-                <div class="col-5">
-                    <div class="card" style="height: 600px;">
-                        <div class="card-header text-center">
-                            Calendario de Eventos
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="stats-card">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <div class="stats-icon mb-3">
+                                    <i class="bi bi-check-circle text-info"></i>
+                                </div>
+                                <h3 class="stats-number text-info"><?php echo mysqli_num_rows($materiasInfo); ?></h3>
+                                <p class="stats-label text-muted mb-0">Materias Únicas</p>
+                            </div>
                         </div>
-                        <div class="card-body mt-1 mx-1 p-0 mb-0">
-                            <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficas y contenido -->
+        <div class="container-fluid px-4">
+            <div class="row g-4">
+                <!-- Calendario -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                    Calendario de Eventos
+                                </h5>
+                            </div>
+                            <div class="card-body p-2">
+                                <div id="calendar"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-7">
-                    <div  class="card" style="height: 600px;">
-                        <div class="card-header text-center">
-                            Porcentaje de Alumnos Aprobados
-                        </div>
-                        <div id="chart" class="card-body ms-4 position-absolute top-50 start-50 translate-middle " style="height: 500px; width: 500px;">
-                            <canvas id="chartCategorias" style="height: 300px; width: 300px;" class="ms-4"></canvas>
+                <!-- Gráfica de Porcentajes -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-pie-chart me-2 text-success"></i>
+                                    Porcentaje de Alumnos Aprobados
+                                </h5>
+                            </div>
+                            <div class="card-body d-flex justify-content-center align-items-center">
+                                <div class="chart-container">
+                                    <canvas id="chartCategorias" width="400" height="400"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-             </div> 
-             
-            <!-- CHARTS -->
-        </section>
+            </div>
+        </div>
+
+        <!-- Estilos CSS personalizados -->
+        <style>
+            /* Estilos para el header */
+            .page-header {
+                text-align: center;
+                padding: 1.5rem 0 1rem 0;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 15px;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .page-title {
+                color: #192E4E;
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 0.3rem;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .page-subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 0;
+                opacity: 0.8;
+            }
+
+            /* Tarjetas de estadísticas */
+            .stats-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            
+            .stats-card:hover {
+                transform: translateY(-5px);
+            }
+            
+            .stats-card .card {
+                border-radius: 15px;
+                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            }
+            
+            .stats-icon i {
+                font-size: 2.5rem;
+            }
+            
+            .stats-number {
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin: 0.5rem 0;
+            }
+            
+            .stats-label {
+                font-size: 0.9rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            /* Tarjetas de gráficas */
+            .chart-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            
+            .chart-card:hover {
+                transform: translateY(-2px);
+            }
+            
+            .chart-card .card {
+                border-radius: 15px;
+                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+                min-height: 500px;
+            }
+            
+            .chart-card .card-header {
+                border-radius: 15px 15px 0 0;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .chart-container {
+                max-width: 400px;
+                max-height: 400px;
+            }
+
+            /* Responsividad */
+            @media (max-width: 768px) {
+                .page-title {
+                    font-size: 2rem;
+                }
+                
+                .page-header {
+                    padding: 1rem 0 0.75rem 0;
+                    margin-bottom: 1rem;
+                }
+                
+                .stats-number {
+                    font-size: 2rem;
+                }
+                
+                .chart-card .card {
+                    min-height: 400px;
+                }
+            }
+        </style>
+    </main>
 
      </main>
     <!-- END MAIN CONTENT --> 
@@ -263,20 +417,42 @@ if (!$stmt) {
     <script src="../js/chartScript.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
     <script>
-        // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos)
-        function mostrarFechaLimiteDashboard() {
-            fetch('get_fecha_limite.php')
+        // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos, en español)
+        function mostrarFechaLimiteDashboard(fechaLimite = null) {
+            const el = document.getElementById('fechaLimiteDashboard');
+            if (!el) return;
+
+            if (fechaLimite) {
+                // Si recibe fecha como parámetro (desde el modal)
+                const partes = fechaLimite.split('-');
+                const fecha = new Date(
+                    parseInt(partes[0], 10),
+                    parseInt(partes[1], 10) - 1,
+                    parseInt(partes[2], 10)
+                );
+                const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+                el.textContent = fecha.toLocaleDateString('es-ES', opciones);
+            } else {
+                // Cargar desde la base de datos
+                fetch('get_fecha_limite.php')
                 .then(response => response.json())
                 .then(data => {
-                    const el = document.getElementById('fechaLimiteDashboard');
                     if (data.success && data.fechaLimite) {
-                        el.textContent = data.fechaLimite;
+                        const partes = data.fechaLimite.split('-');
+                        const fecha = new Date(
+                            parseInt(partes[0], 10),
+                            parseInt(partes[1], 10) - 1,
+                            parseInt(partes[2], 10)
+                        );
+                        const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+                        el.textContent = fecha.toLocaleDateString('es-ES', opciones);
                     } else {
                         el.textContent = 'No definida';
                     }
                 });
+            }
         }
-        document.addEventListener('DOMContentLoaded', mostrarFechaLimiteDashboard);
+        document.addEventListener('DOMContentLoaded', () => mostrarFechaLimiteDashboard());
     </script>
     <script>
         // Hide preloader when page is fully loaded

@@ -32,7 +32,6 @@ body {
     color: var(--gray-800);
     background-color: #f5f7fb;
     line-height: 1.6;
-    overflow-x: hidden;
 }
 
 /* Typography */

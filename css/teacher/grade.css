@@ -1,13 +1,277 @@
-html, body {
+html {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body {
     width: 100%;
-    height: 130%;
+    min-height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: hidden; 
+    overflow-x: hidden;
+    overflow-y: auto;
     box-sizing: border-box;
     font-family: "League Spartan", sans-serif;
     font-weight: 300;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
+
+/* Header de página moderno */
+.page-header {
+    background: linear-gradient(135deg, #192E4E, #2C5695);
+    color: white;
+    padding: 2rem;
+    padding-top: 8rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(25, 46, 78, 0.2);
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Tarjeta de filtros moderna */
+.filter-card .card {
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 2px solid #e3f2fd;
+}
+
+.filter-card .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15) !important;
+    border-color: #b3e5fc;
+}
+
+.filter-card .card-header {
+    background: linear-gradient(135deg, #192E4E, #2C5695) !important;
+    border-bottom: none;
+    padding: 1.5rem;
+    color: white;
+}
+
+.filter-card .card-header .card-title {
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.filter-card .card-header i {
+    color: #81d4fa;
+}
+
+.filter-card .card-body {
+    padding: 2rem;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    position: relative;
+}
+
+/* Efecto de contenedor para cada select */
+.filter-card .col-md-3 {
+    position: relative;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.filter-card .col-md-3:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.1);
+}
+
+.filter-card .form-select {
+    border-radius: 12px;
+    border: 3px solid #d1ecf1;
+    padding: 1rem 1.25rem;
+    transition: all 0.4s ease;
+    font-weight: 600;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    box-shadow: 0 4px 12px rgba(25, 46, 78, 0.1);
+    position: relative;
+    z-index: 10;
+    color: #192E4E;
+}
+
+.filter-card .form-select:hover {
+    border-color: #192E4E;
+    box-shadow: 0 8px 25px rgba(25, 46, 78, 0.2);
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffffff, #e3f2fd);
+}
+
+.filter-card .form-select:focus {
+    border-color: #192E4E;
+    box-shadow: 0 0 0 0.3rem rgba(25, 46, 78, 0.3), 0 8px 25px rgba(25, 46, 78, 0.2);
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffffff, #e3f2fd);
+    outline: none;
+}
+
+.filter-card .form-select option {
+    padding: 0.75rem;
+    font-weight: 500;
+    color: #192E4E;
+    background: white;
+}
+
+.filter-card .form-label {
+    color: #192E4E;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.filter-card .form-label i {
+    color: #2C5695;
+    font-size: 1.3rem;
+    margin-right: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Animación para cuando aparecen los selects */
+#contenedorQuarter, #contenedorMateria {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Indicador visual cuando un select está activo */
+.filter-card .form-select:not([value=""]):not(:placeholder-shown) {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.filter-card .form-select:not([value=""]):not(:placeholder-shown) + .select-indicator {
+    opacity: 1;
+}
+
+/* Indicador de completado */
+.form-select-container {
+    position: relative;
+    --show-indicator: 0;
+}
+
+.form-select-container::after {
+    content: '✓';
+    position: absolute;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #28a745;
+    font-weight: bold;
+    font-size: 1.2rem;
+    opacity: var(--show-indicator);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 15;
+    text-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+/* Efecto cuando el select tiene valor */
+.filter-card .form-select:valid:not([value=""]) {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.filter-card .form-select:valid:not([value=""]):focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.3rem rgba(40, 167, 69, 0.3), 0 8px 25px rgba(40, 167, 69, 0.2);
+}
+
+/* Tarjeta de tabla moderna */
+.table-card .card {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.table-card .card:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+}
+
+.table-card .table {
+    margin-bottom: 0;
+}
+
+.table-card .table thead th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table-card .table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-card .table tbody tr:hover {
+    background-color: rgba(25, 46, 78, 0.05);
+    transform: scale(1.01);
+}
+
+.table-card .table tbody td {
+    padding: 1rem;
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+    font-weight: 500;
+}
+
+/* Estado vacío */
+#emptyState {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 15px;
+    margin: 2rem;
+}
+
+#emptyState i {
+    color: #6c757d;
+}
+
+/* Botones existentes actualizados */
 #removeColumnBtn{
     background-color: #192E4E;
     color: white;

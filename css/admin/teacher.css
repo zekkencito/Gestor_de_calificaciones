@@ -1,13 +1,231 @@
 html, body{
     width: 100%;
-    height: 130%;
+    height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: hidden; 
+    overflow: hidden;
     box-sizing: border-box;
     font-family: "League Spartan", sans-serif !important;
     font-weight: 300 !important;
 }
+
+/* Resetear estilos de h1 para evitar conflictos */
+h1 {
+    font-size: 2.5rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Header de página moderno */
+.page-header {
+    background: linear-gradient(135deg, #ffffff, #f0f4f8);
+    color: #192E4E;
+    padding: 1rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 1px solid #e3e8ed;
+    margin-top: 4.5rem;
+}
+
+.page-header .page-title,
+.page-title {
+    font-size: 2.5rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    align-items: center;
+    font-family: "League Spartan", sans-serif !important;
+    line-height: 1.2 !important;
+}
+
+h1.page-title {
+    font-size: 2.5rem !important;
+    font-weight: 600 !important;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Tarjeta de filtros moderna */
+.filter-card .card {
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 2px solid #e3f2fd;
+}
+
+.filter-card .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15) !important;
+    border-color: #b3e5fc;
+}
+
+.filter-card .card-header {
+    background: linear-gradient(135deg, #192E4E, #2C5695) !important;
+    border-bottom: none;
+    padding: 1.5rem;
+    color: white;
+}
+
+.filter-card .card-header .card-title {
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.filter-card .card-header i {
+    color: #81d4fa;
+}
+
+.filter-card .card-body {
+    padding: 2rem;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+}
+
+.filter-card .form-label {
+    color: #192E4E;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.filter-card .form-label i {
+    color: #2C5695;
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+.filter-card .input-group .form-control {
+    border-radius: 10px 0 0 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.filter-card .input-group .form-control:focus {
+    border-color: #192E4E;
+    box-shadow: 0 0 0 0.2rem rgba(25, 46, 78, 0.25);
+}
+
+.filter-card .input-group-text {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    padding: 0.75rem;
+}
+
+/* Botones modernos */
+.btn {
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #192E4E, #2C5695);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
+}
+
+/* Tarjeta de tabla moderna */
+.table-card .card {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.table-card .card:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+}
+
+.table-card .table {
+    margin-bottom: 0;
+}
+
+.table-card .table thead th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table-card .table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-card .table tbody tr:hover {
+    background-color: rgba(25, 46, 78, 0.05);
+    transform: scale(1.01);
+}
+
+.table-card .table tbody td {
+    padding: 1rem;
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+    font-weight: 500;
+}
+
+.table-card .table tbody td ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.table-card .table tbody td ul li {
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 5px;
+    font-size: 0.875rem;
+    border-left: 3px solid #192E4E;
+}
+
+/* Botones de acción en tabla */
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+}
+
+.btn-outline-info:hover {
+    transform: scale(1.1);
+}
+
+/* Estado vacío */
+#emptyState {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 15px;
+    margin: 2rem;
+}
+
+/* Estilos legacy para compatibilidad */
 .input-group .form-control {
     height: 40px; /* Ajusta la altura según lo necesario */
     padding: 5px 10px; /* Ajusta el padding si es necesario */
@@ -66,13 +284,6 @@ html, body{
     display: flex;
     justify-content: center;
     align-items: center;
-}
-h1{
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    margin-left: 16px;
 }
 #button{
     background-color: #192E4E;
@@ -152,7 +363,7 @@ option{
 }
 #tituloModal{
     font-family: "League Spartan", sans-serif;
-    font-weight: black;
+    font-weight: 800;
     font-size: 30px;
     margin:0;
 }

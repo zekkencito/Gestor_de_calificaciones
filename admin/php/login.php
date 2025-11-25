@@ -1,4 +1,8 @@
+
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // Debe ser lo PRIMERO en el archivo, sin espacios/blancos antes
 session_start();
 
@@ -9,14 +13,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Verificar si la conexión se estableció
     if (!$conexion) {
         $_SESSION['error'] = 'Error de conexión a la base de datos';
-        header('Location: /Gestor_de_calificaciones/index.php');
+        header('Location: ../../index.php');
         exit();
     }
     
     // Validar datos
     if (empty($_POST['username']) || empty($_POST['password'])) {
         $_SESSION['error'] = 'Por favor, complete todos los campos';
-        header('Location: /Gestor_de_calificaciones/index.php');
+        header('Location: ../../index.php');
         exit();
     }
 
@@ -32,14 +36,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt = $conexion->prepare($sql);
     if (!$stmt) {
         $_SESSION['error'] = 'Error en la consulta';
-        header('Location: /Gestor_de_calificaciones/index.php');
+        header('Location: ../../index.php');
         exit();
     }
     
     $stmt->bind_param("s", $username);
     if (!$stmt->execute()) {
         $_SESSION['error'] = 'Error al ejecutar la consulta';
-        header('Location: /Gestor_de_calificaciones/index.php');
+        header('Location: ../../index.php');
         exit();
     }
     
@@ -48,13 +52,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows == 1) {
         $row = $result->fetch_assoc();
         
-        // Verificar la contraseña
-        if ($password === $row['raw_password']) {
+        // Verificar la contraseña (priorizando el método seguro)
+        $password_valid = false;
+        
+        // Verificar si el campo password_changed existe (compatibilidad)
+        $password_changed_exists = isset($row['password_changed']);
+        
+        // Si el usuario aún no ha cambiado su contraseña (tiene raw_password)
+        if (!empty($row['raw_password']) && (!$password_changed_exists || $row['password_changed'] == 0 || is_null($row['password_changed']))) {
+            // Usar la contraseña temporal para autenticar
+            $password_valid = ($password === $row['raw_password']);
+            $needs_password_change = true;
+        } else {
+            // Usar el hash seguro para autenticar
+            $password_valid = password_verify($password, $row['password']);
+            $needs_password_change = false;
+        }
+        
+        if ($password_valid) {
             $_SESSION['user_id'] = $row['idUser'];  
             $_SESSION['username'] = $row['username'];
             $_SESSION['role'] = $row['role'];
             $_SESSION['role_description'] = $row['role_description'];
             $_SESSION['idRole'] = $row['idRole'];
+            
+            // Si necesita cambiar contraseña, redirigir a la página de cambio
+            if ($needs_password_change) {
+                $_SESSION['force_password_change'] = true;
+                header("Location: ../../change_password.php");
+                exit();
+            }
             
             // Recordar sesión si el usuario marcó "Recordarme"
             if (isset($_POST['rememberMe'])) {
@@ -69,24 +96,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             // Redirigir según el rol
             if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] === 3) {
-                header("Location: /Gestor_de_calificaciones/admin/dashboard.php");
+                header("Location: ../dashboard.php");
             } else {
-                header("Location: /Gestor_de_calificaciones/teachers/dashboard.php");
+                header("Location: ../../teachers/dashboard.php");
             }
             exit();
         } else {
             $_SESSION['error'] = 'Usuario o contraseña incorrectos';
-            header('Location: /Gestor_de_calificaciones/index.php');
+            header('Location: ../../index.php');
             exit();
         }
     } else {
         $_SESSION['error'] = 'Usuario o contraseña incorrectos';
-        header('Location: /Gestor_de_calificaciones/index.php');
+        header('Location: ../../index.php');
         exit();
     }
 } else {
     // Si alguien intenta acceder directamente a login.php
-    header('Location: /Gestor_de_calificaciones/index.php');
+    header('Location: ../../index.php');
     exit();
 }
 ?>

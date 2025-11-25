@@ -52,11 +52,14 @@
                 </li>
                 <div class="modal fade" id="modalFechaLimite" tabindex="-1" aria-labelledby="modalFechaLimiteLabel"
                     aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 id="tituloModal" class="modal-title fs-5">Configurar Plazo de Calificaciones</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white border-0">
+                                <h5 id="tituloModal" class="modal-title">
+                                    <i class="bi bi-calendar-date-fill me-2"></i>
+                                    Configurar Plazo de Calificaciones
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                     aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
@@ -69,23 +72,44 @@
                                 }
                                 ?>
                                 <div class="mb-3">
-                                    <label for="inputFechaLimite" class="form-label small text-muted">Fecha límite de
-                                        calificaciones:</label>
-                                    <div class="input-group">
-                                        <input type="date" class="form-control form-control-sm" id="inputFechaLimite"
-                                            value="<?php echo $fechaLimite; ?>">
-                                        <button class="btn buttonCheck btn-sm" type="button" id="btnGuardarFecha"
-                                            title="Guardar fecha límite"><i class="bi bi-check-circle-fill"></i></button>
-                                        <button class="btn buttonDelete1 btn-sm" type="button" id="btnQuitarFecha"
-                                            title="Quitar fecha límite"><i class="bi bi-x-circle-fill"></i></button>
+                                    <label for="inputFechaLimite" class="form-label fw-semibold">
+                                        <i class="bi bi-calendar-check me-1"></i>
+                                        Fecha límite de calificaciones:
+                                    </label>
+                                    <input type="date" class="form-control border-secondary" id="inputFechaLimite"
+                                        value="<?php echo $fechaLimite; ?>">
+                                    <div id="fechaFormateada" class="mt-2 p-2 bg-light rounded border">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            <strong>Fecha seleccionada:</strong> 
+                                            <span id="fechaEspanol" class="text-primary">
+                                                <?php 
+                                                if ($fechaLimite) {
+                                                    $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                                                    list($anio, $mes, $dia) = explode('-', $fechaLimite);
+                                                    echo intval($dia) . ' de ' . $meses[intval($mes) - 1] . ' de ' . $anio;
+                                                } else {
+                                                    echo 'No definida';
+                                                }
+                                                ?>
+                                            </span>
+                                        </small>
                                     </div>
-                                    <div id="fechaLimiteInfo" class="form-text text-success mt-1 small"></div>
+                                    <div id="fechaLimiteInfo" class="form-text text-success mt-2"></div>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button class="botonEnter" type="button"
-                                    data-bs-dismiss="modal">Cancelar
-                                    <i class="bi bi-x-circle-fill ms-1"></i>
+                            <div class="modal-footer border-0 bg-light">
+                                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Cancelar
+                                </button>
+                                <button class="btn btn-danger" type="button" id="btnQuitarFecha">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Quitar Fecha
+                                </button>
+                                <button class="btn btn-primary" type="button" id="btnGuardarFecha">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Guardar
                                 </button>
                             </div>
                         </div>
@@ -94,41 +118,59 @@
 
                 <div class="modal fade" id="modalAñoEscolar" tabindex="-1" aria-labelledby="modalAñoEscolarLabel"
                     aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content" style="width: 120%;">
-                            <div class="modal-header">
-                                <h1 id="tituloModal" class="modal-title fs-5">Administrar Años Escolares</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white border-0">
+                                <h5 id="tituloModal" class="modal-title">
+                                    <i class="bi bi-calendar-event-fill me-2"></i>
+                                    Administrar Años Escolares
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                     aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
-                                <table class="table table-bordered align-middle text-center small">
-                                    <thead>
-                                        <tr>
-                                            <th>Inicio</th>
-                                            <th>Fin</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tablaAniosEscolares"></tbody>
-                                </table>
-                                <hr>
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <input type="date" class="form-control form-control-sm" id="nuevoInicio"
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle text-center mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><i class="bi bi-calendar-check me-1"></i>Inicio</th>
+                                                <th><i class="bi bi-calendar-x me-1"></i>Fin</th>
+                                                <th><i class="bi bi-gear me-1"></i>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaAniosEscolares"></tbody>
+                                    </table>
+                                </div>
+                                <hr class="my-4">
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Agregar Nuevo Año Escolar
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label for="nuevoInicio" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-check me-1"></i>
+                                            Fecha de Inicio:
+                                        </label>
+                                        <input type="date" class="form-control border-secondary" id="nuevoInicio"
                                             placeholder="Inicio">
                                     </div>
-                                    <div class="col">
-                                        <input type="date" class="form-control form-control-sm" id="nuevoFin"
+                                    <div class="col-md-5">
+                                        <label for="nuevoFin" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-x me-1"></i>
+                                            Fecha de Fin:
+                                        </label>
+                                        <input type="date" class="form-control border-secondary" id="nuevoFin"
                                             placeholder="Fin">
                                     </div>
-                                    <div class="col-auto">
-                                        <button class="buttonAdd" id="btnAgregarAnio">Añadir<i
-                                                class="bi bi-plus-lg ms-1"></i>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button class="btn btn-primary w-100" id="btnAgregarAnio">
+                                            <i class="bi bi-plus-circle me-1"></i>
+                                            Añadir
                                         </button>
                                     </div>
                                 </div>
-                                <div id="anioEscolarInfo" class="form-text text-success mt-1 small"></div>
+                                <div id="anioEscolarInfo" class="form-text text-success mt-2"></div>
                             </div>
                         </div>
                     </div>
@@ -136,40 +178,59 @@
 
                 <div class="modal fade" id="modalGrupos" tabindex="-1" aria-labelledby="modalGruposLabel"
                     aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 id="tituloModal" class="modal-title fs-5">Administrar Grupos</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white border-0">
+                                <h5 id="tituloModal" class="modal-title">
+                                    <i class="bi bi-diagram-3-fill me-2"></i>
+                                    Administrar Grupos
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                     aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
-                                <table class="table table-bordered align-middle text-center small">
-                                    <thead>
-                                        <tr>
-                                            <th>Grupo</th>
-                                            <th>Grado</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tablaGrupos"></tbody>
-                                </table>
-                                <div class="row g-2 mt-3">
-                                    <div class="col">
-                                        <input type="text" class="form-control form-control-sm" id="nuevoGrupo"
-                                            maxlength="2" placeholder="Grupo (EJ: A)">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle text-center mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><i class="bi bi-collection me-1"></i>Grupo</th>
+                                                <th><i class="bi bi-mortarboard me-1"></i>Grado</th>
+                                                <th><i class="bi bi-gear me-1"></i>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaGrupos"></tbody>
+                                    </table>
+                                </div>
+                                <hr class="my-4">
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Agregar Nuevo Grupo
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label for="nuevoGrupo" class="form-label fw-semibold">
+                                            <i class="bi bi-collection me-1"></i>
+                                            Grupo:
+                                        </label>
+                                        <input type="text" class="form-control border-secondary" id="nuevoGrupo"
+                                            maxlength="2" placeholder="Ej: A">
                                     </div>
-                                    <div class="col">
-                                        <input type="text" class="form-control form-control-sm" id="nuevoGrado"
-                                            maxlength="2" placeholder="Grado (EJ: 1)">
+                                    <div class="col-md-5">
+                                        <label for="nuevoGrado" class="form-label fw-semibold">
+                                            <i class="bi bi-mortarboard me-1"></i>
+                                            Grado:
+                                        </label>
+                                        <input type="text" class="form-control border-secondary" id="nuevoGrado"
+                                            maxlength="2" placeholder="Ej: 1">
                                     </div>
-                                    <div class="col-auto">
-                                        <button class="buttonAdd" id="btnAgregarGrupo">Agregar<i
-                                                class="bi bi-plus-lg ms-1"></i>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button class="btn btn-primary w-100" id="btnAgregarGrupo">
+                                            <i class="bi bi-plus-circle me-1"></i>
+                                            Agregar
                                         </button>
                                     </div>
                                 </div>
-                                <div id="grupoInfo" class="form-text text-success mt-1 small"></div>
+                                <div id="grupoInfo" class="form-text text-success mt-2"></div>
                             </div>
                         </div>
                     </div>
@@ -187,6 +248,23 @@
         const btnGuardar = document.getElementById('btnGuardarFecha');
         const btnQuitar = document.getElementById('btnQuitarFecha');
         const info = document.getElementById('fechaLimiteInfo');
+        const fechaEspanol = document.getElementById('fechaEspanol');
+        
+        // Función para formatear fecha en español
+        function formatearFechaEspanol(fechaISO) {
+            if (!fechaISO) return 'No definida';
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const [anio, mes, dia] = fechaISO.split('-');
+            return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${anio}`;
+        }
+        
+        // Actualizar fecha en español cuando cambia el input
+        if (inputFecha && fechaEspanol) {
+            inputFecha.addEventListener('change', function() {
+                fechaEspanol.textContent = formatearFechaEspanol(this.value);
+            });
+        }
+        
         if (btnGuardar) {
             btnGuardar.addEventListener('click', function () {
                 const fecha = inputFecha.value;
@@ -232,6 +310,7 @@
                                 const fechaLimiteDashboard = document.getElementById('fechaLimiteDashboard');
                                 if (fechaLimiteDashboard) fechaLimiteDashboard.textContent = 'No definida';
                                 inputFecha.value = '';
+                                if (fechaEspanol) fechaEspanol.textContent = 'No definida';
                             }, 400);
                         } else {
                             Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'No se pudo eliminar la fecha.' });

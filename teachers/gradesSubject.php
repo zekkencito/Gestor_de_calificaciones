@@ -1,5 +1,6 @@
 <?php
 require_once "check_session.php";
+require_once "../force_password_check.php";
 require_once "../conection.php";
 
 
@@ -47,19 +48,22 @@ if (isset($_GET['idSchoolYear']) && is_numeric($_GET['idSchoolYear'])) {
     $selectedYear = $schoolYears[0]['idSchoolYear'];
 }
 
-// Obtener TODOS los grupos vinculados a la materia
+// Obtener solo los grupos vinculados a la materia y al profesor actual
 $groupIds = [];
 if ($idSubject > 0) {
-    $stmt = $conexion->prepare("SELECT idGroup FROM teacherGroupsSubjects WHERE idSubject = ?");
-    $stmt->bind_param("i", $idSubject);
+    $stmt = $conexion->prepare("SELECT DISTINCT tgs.idGroup, g.grade, g.group_
+                               FROM teacherGroupsSubjects tgs
+                               JOIN groups g ON tgs.idGroup = g.idGroup
+                               WHERE tgs.idSubject = ? 
+                               AND tgs.idTeacher = ?
+                               ORDER BY g.grade, g.group_");
+    $stmt->bind_param("ii", $idSubject, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         $groupIds[] = $row['idGroup'];
     }
     $stmt->close();
-    // Elimina duplicados
-    $groupIds = array_values(array_unique($groupIds));
 }
 
 // DEBUG: imprime los grupos y el año escolar para verificar qué se consulta
@@ -69,14 +73,25 @@ file_put_contents(__DIR__.'/debug_grupos.txt', "Grupos: ".json_encode($groupIds)
 $students = [];
 if (!empty($groupIds) && $selectedYear !== null) {
     $in = str_repeat('?,', count($groupIds) - 1) . '?';
-    $sql = "SELECT s.idStudent, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_ 
+    $sql = "SELECT DISTINCT s.idStudent, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_ 
             FROM students s
             JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
             JOIN groups g ON s.idGroup = g.idGroup
-            WHERE s.idGroup IN ($in) AND s.idSchoolYear = ?";
+            JOIN teacherGroupsSubjects tgs ON g.idGroup = tgs.idGroup
+            WHERE s.idGroup IN ($in) 
+            AND s.idSchoolYear = ?
+            AND tgs.idTeacher = ?
+            AND tgs.idSubject = ?
+            AND g.idGroup IN (
+                SELECT idGroup 
+                FROM teacherGroupsSubjects 
+                WHERE idTeacher = ? 
+                AND idSubject = ?
+            )
+            ORDER BY g.grade, g.group_, ui.lastnamePa, ui.lastnameMa, ui.names";
     $stmt = $conexion->prepare($sql);
-    $params = array_merge($groupIds, [$selectedYear]);
-    $stmt->bind_param(str_repeat('i', count($groupIds)) . 'i', ...$params);
+    $params = array_merge($groupIds, [$selectedYear, $user_id, $idSubject, $user_id, $idSubject]);
+    $stmt->bind_param(str_repeat('i', count($groupIds)) . 'iiiii', ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
@@ -162,87 +177,141 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
      <main class="flex-grow-1 col-9 p-0 ">
-        <?php
-            include "../layouts/headerTeacher.php"; 
-        ?>
-        <div class="mb-3"style="padding-top:10vh; width:30%;">
-           <label id="titulo" for="grupo" class="form-label fw-bold">
-               <?php echo $subjectName ? htmlspecialchars($subjectName) : "Materia no encontrada"; ?>
-           </label>
-        </div>             
-        <div class="container" >
-            <!-- Dropdown para seleccionar el año escolar -->
-        <div class="mb-3" style="width:30%;">
-            <label id="label"class="form-label">Seleccionar Año Escolar:</label>
-            <select id="schoolYearSelect" class="form-select">
-                <option value="" disabled selected>Seleccione un año escolar</option>
-                <?php foreach ($schoolYears as $year): ?>
-                    <option value="<?php echo $year['idSchoolYear']; ?>">
-                        <?php echo htmlspecialchars(substr($year['startDate'], 0, 4)); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+        <?php include "../layouts/headerTeacher.php"; ?>
+        
+        <!-- Header de la página -->
+        <div class="container-fluid px-4 pt-5" style="padding-top: 4rem; height: auto;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-header mb-3">
+                        <h1 class="page-title">
+                            <i class="bi bi-book me-3"></i>
+                            <?php echo $subjectName ? htmlspecialchars($subjectName) : "Materia no encontrada"; ?>
+                        </h1>
+                        <p class="page-subtitle text-muted">
+                            Gestión de calificaciones por criterios de evaluación
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-         <!-- Dropdown para seleccionar el trimestre escolar -->
-         <div class="mb-3" id="quarterSelectContainer" style="display: none; width:30%;">
-            <label id="label" class="form-label">Seleccionar Trimestre Escolar:</label>
-            <select id="schoolQuarterSelect" class="form-select">
-                <option value="" disabled selected>Seleccione un trimestre</option>
-                <?php 
-                foreach ($schoolQuarters as $quarter): 
-                ?>
-                    <option value="<?php echo $quarter['idSchoolQuarter']; ?>">
-                        <?php echo htmlspecialchars($quarter['name']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="d-flex justify-content-end mb-3">
-            <button class="btn me-2" id="addColumnBtn">
-                Añadir 
-                <i id="icon" class="bi bi-plus-lg"></i>
-            </button>
-            <button class="btn" id="removeColumnBtn">
-                Eliminar
-                 <i id="icon" class="bi bi-trash3-fill"></i>
-            </button>
-            
-        </div>
-            <table class="table table-bordered border-dark" id="dataTable">
-                <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>Apellido Paterno</th>
-                        <th>Apellido Materno</th>
-                        <th>Nombres</th>
-                        <th>Grado</th>
-                        <th>Grupo</th>
-                        <?php
-                            // Determinar cuántos criterios hay por las columnas C en el header
-                            $num_criterios = 0;
-                            foreach ([183,184,185,/*...*/] as $col) {
-                                // Solo cuenta las columnas que empiezan con C
-                                // (en producción, deberías obtener esto dinámicamente del backend)
-                                $num_criterios++;
-                            }
-                            // Por ahora, usa 3 como mínimo (C1, C2, C3)
-                            $num_criterios = max(3, $num_criterios);
-                            for ($c = 1; $c <= $num_criterios; $c++):
-                        ?>
-                        <th>C<?php echo $c; ?></th>
-                        <?php endfor; ?>
-                        <th>Promedio</th>
-                    </tr>
-                    <tr id="percentageRow">
-                        <th colspan="4">Porcentajes (%)</th> 
-                        <th></th>
-                        <th></th>
-                        <?php
-                            for ($c = 1; $c <= $num_criterios; $c++):
-                        ?>
-                        <th><select class="form-select percentage-select" id="C<?php echo $c; ?>-percentage"></select></th>
-                        <?php endfor; ?>
-                        <th>-</th>
+<!-- update test -->
+
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Panel de configuración -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="filter-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-gear me-2 text-primary"></i>
+                                    Configuración de Período
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="schoolYearSelect" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-date me-1"></i>
+                                            Año Escolar:
+                                        </label>
+                                        <select id="schoolYearSelect" class="form-select border-secondary">
+                                            <option value="" disabled selected>Seleccione un año escolar</option>
+                                            <?php foreach ($schoolYears as $year): ?>
+                                                <option value="<?php echo $year['idSchoolYear']; ?>">
+                                                    <?php echo htmlspecialchars(substr($year['startDate'], 0, 4)); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-4" id="quarterSelectContainer" style="display: none;">
+                                        <label for="schoolQuarterSelect" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            Trimestre Escolar:
+                                        </label>
+                                        <select id="schoolQuarterSelect" class="form-select border-secondary">
+                                            <option value="" disabled selected>Seleccione un trimestre</option>
+                                            <?php foreach ($schoolQuarters as $quarter): ?>
+                                                <option value="<?php echo $quarter['idSchoolQuarter']; ?>">
+                                                    <?php echo htmlspecialchars($quarter['name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="d-flex gap-2 w-100">
+                                            <button class="btn flex-fill" id="addColumnBtn">
+                                                <i class="bi bi-plus-lg me-2"></i>
+                                                Añadir Criterio
+                                            </button>
+                                            <button class="btn  flex-fill" id="removeColumnBtn">
+                                                <i class="bi bi-trash3-fill me-2"></i>
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de calificaciones -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-table me-2 text-success"></i>
+                                    Calificaciones por Criterios
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="dataTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="fw-semibold">No.</th>
+                                                <th class="fw-semibold">Apellido Paterno</th>
+                                                <th class="fw-semibold">Apellido Materno</th>
+                                                <th class="fw-semibold">Nombres</th>
+                                                <th class="fw-semibold">Grado</th>
+                                                <th class="fw-semibold">Grupo</th>
+                                                <?php
+                                                    // Determinar cuántos criterios hay por las columnas C en el header
+                                                    $num_criterios = 0;
+                                                    foreach ([183,184,185,/*...*/] as $col) {
+                                                        // Solo cuenta las columnas que empiezan con C
+                                                        // (en producción, deberías obtener esto dinámicamente del backend)
+                                                        $num_criterios++;
+                                                    }
+                                                    // Por ahora, usa 3 como mínimo (C1, C2, C3)
+                                                    $num_criterios = max(3, $num_criterios);
+                                                    for ($c = 1; $c <= $num_criterios; $c++):
+                                                ?>
+                                                <th class="fw-semibold text-center">C<?php echo $c; ?></th>
+                                                <?php endfor; ?>
+                                                <th class="fw-semibold text-center">Promedio</th>
+                                            </tr>
+                                            <tr id="percentageRow" class="bg-light">
+                                                <th colspan="4" class="fw-semibold text-primary">
+                                                    <i class="bi bi-percent me-1"></i>
+                                                    Porcentajes (%)
+                                                </th> 
+                                                <th></th>
+                                                <th></th>
+                                                <?php for ($c = 1; $c <= $num_criterios; $c++): ?>
+                                                <th class="text-center">
+                                                    <select class="form-select form-select-sm percentage-select" id="C<?php echo $c; ?>-percentage"></select>
+                                                </th>
+                                                <?php endfor; ?>
+                                                <th class="text-center text-muted">-</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -259,24 +328,45 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                         ?>
                         <td style="width:10%"><input type="text" class="form-control grade-input" data-col-index="<?php echo $c; ?>" data-criteria-id=""></td>
                         <?php endfor; ?>
-                        <td class="promedio-cell"><?php
-                            $avg = isset($studentAverages[$student['idStudent']]) ? $studentAverages[$student['idStudent']] : null;
-                            echo ($avg !== null && $avg !== '') ? number_format($avg, 2) : '-';
-                        ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            
-            </table>
-            <div  class="d-flex justify-content-end mb-3">
-                <button id="guardar" class="btn">
-                    Guardar
-                    <i id="icon" class="bi bi-floppy2-fill"></i>
-                </button>
-            </div>    
+                                            <td class="promedio-cell text-center fw-bold">
+                                                <?php
+                                                    $avg = isset($studentAverages[$student['idStudent']]) ? $studentAverages[$student['idStudent']] : null;
+                                                    if ($avg !== null && $avg !== '') {
+                                                        $avgValue = number_format($avg, 1);
+                                                        $colorClass = $avg >= 7 ? 'text-success' : ($avg >= 6 ? 'text-warning' : 'text-danger');
+                                                        echo "<span class='$colorClass'>$avgValue</span>";
+                                                    } else {
+                                                        echo '<span class="text-muted">-</span>';
+                                                    }
+                                                ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Estado vacío -->
+                            <div id="emptyState" class="text-center py-5" style="display: none;">
+                                <div class="mb-3">
+                                    <i class="bi bi-inbox display-4 text-muted"></i>
+                                </div>
+                                <h5 class="text-muted">No hay estudiantes registrados</h5>
+                                <p class="text-muted">Selecciona un año y trimestre para ver los estudiantes</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel de acciones -->
+                        <div class="card-footer bg-light border-0 d-flex justify-content-end">
+                            <button id="guardar" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-floppy2-fill me-2"></i>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-       
     </main>
     <!-- END MAIN CONTENT --> 
 
@@ -467,18 +557,31 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                         data.students.forEach((student, index) => {
                             const row = document.createElement('tr');
                             row.setAttribute('data-student-id', student.idStudent);
-                            row.innerHTML = `
+                            
+                            // Crear las celdas básicas
+                            let rowHTML = `
                                 <td>${index + 1}</td>
                                 <td>${student.lastnamePa}</td>
                                 <td>${student.lastnameMa}</td>
                                 <td>${student.names}</td>
                                 <td>${student.grade}°</td>
                                 <td>${student.group_}</td>
-                                <td style="width:10%"><input type="text" class="form-control grade-input" data-col-index="1" data-criteria-id=""></td>
-                                <td style="width:10%"><input type="text" class="form-control grade-input" data-col-index="2" data-criteria-id=""></td>
-                                <td style="width:10%"><input type="text" class="form-control grade-input" data-col-index="3" data-criteria-id=""></td>
-                                <td class="promedio-cell">-</td>
                             `;
+
+                            // Obtener el número actual de columnas de calificaciones
+                            const headerRow = document.querySelector('#dataTable thead tr');
+                            const numCriterias = Array.from(headerRow.children)
+                                .filter(th => th.textContent.startsWith('C')).length;
+
+                            // Añadir celdas para cada criterio
+                            for (let i = 1; i <= Math.max(numCriterias, 3); i++) {
+                                rowHTML += `<td style="width:10%"><input type="text" class="form-control grade-input" data-col-index="${i}" data-criteria-id=""></td>`;
+                            }
+
+                            // Añadir celda de promedio
+                            rowHTML += `<td class="promedio-cell">-</td>`;
+                            
+                            row.innerHTML = rowHTML;
                             tbody.appendChild(row);
                         });
                     }
@@ -590,11 +693,15 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                                 }
                             });
                         }
+                        // Recalcular el promedio después de cargar las calificaciones
+                        calcularPromedioFila(row);
                     });
                 }
             });
 
-        // 2. Cargar promedios guardados y actualizar la tabla
+        // 2. Cargar promedios guardados y actualizar la tabla solo si es necesario
+        // Comentado temporalmente para que prevalezcan los promedios calculados en el frontend
+        /*
         fetch(`getAverages.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
             .then(response => response.json())
             .then(data => {
@@ -613,6 +720,7 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                     });
                 }
             });
+        */
     }
 
     // Modificar el event listener del select de trimestre
@@ -934,21 +1042,49 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
         let sum = 0;
         let sumPercent = 0;
         const inputs = row.querySelectorAll('.grade-input');
+        
+        // Para debugging
+        console.log("Calculando promedio para fila:", row);
+        
         inputs.forEach(input => {
-            const grade = parseFloat(input.value);
+            const grade = input.value.trim() !== '' ? parseFloat(input.value) : null;
             const colIndex = input.getAttribute('data-col-index');
             const select = document.getElementById(`C${colIndex}-percentage`);
-            const percent = select ? parseFloat(select.value) : 0;
-            if (!isNaN(grade) && !isNaN(percent)) {
-                sum += grade * (percent / 100);
+            const percent = select && select.value ? parseFloat(select.value) : 0;
+            
+            // Para debugging
+            console.log("Columna:", colIndex, "Calificación:", grade, "Porcentaje:", percent);
+            
+            // Si el porcentaje existe, sumar al total de porcentaje
+            if (!isNaN(percent)) {
                 sumPercent += percent;
+                // Solo sumar al promedio si la calificación existe
+                if (grade !== null && !isNaN(grade)) {
+                    sum += grade * (percent / 100);
+                }
+                // Si la calificación no existe pero el porcentaje sí, se considera el porcentaje
+                // pero no suma nada al promedio (equivalente a calificación 0)
             }
         });
-        const promedioCell = row.querySelector('td:last-child');
+        
+        // Para debugging
+        console.log("Suma total:", sum, "Porcentaje total:", sumPercent);
+        
+        const promedioCell = row.querySelector('.promedio-cell');
         if (sumPercent > 0) {
-            promedioCell.textContent = (sum).toFixed(2);
+            // Normalizar el promedio para que sea sobre 10, considerando el porcentaje total
+            const promedio = (sumPercent === 100) ? sum : (sum / (sumPercent / 100));
+            console.log("Promedio calculado:", promedio);
+            
+            // Redondear hacia arriba igual que el backend (PHP ceil)
+            const promedioRedondeado = Math.ceil(promedio * 10) / 10;
+            promedioCell.textContent = promedioRedondeado.toFixed(1);
+            
+            // Almacenar el promedio como un atributo de datos para referencia
+            promedioCell.setAttribute('data-calculated-average', promedioRedondeado.toString());
         } else {
             promedioCell.textContent = '-';
+            promedioCell.removeAttribute('data-calculated-average');
         }
     }
 

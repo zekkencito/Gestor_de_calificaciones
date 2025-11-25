@@ -1,3 +1,0 @@
-[08-May-2025 23:12:41 UTC] PHP Notice:  Undefined index: txtPassword in /home/skyzeroz/games-now.skyzerozx.com/Gestor de calificaciones/admin/updateTeacher.php on line 18
-[13-May-2025 21:52:40 UTC] PHP Notice:  Undefined index: idTeacher in /home/skyzeroz/games-now.skyzerozx.com/Gestor de calificaciones/admin/searchAssignments.php on line 40
-[21-May-2025 05:36:53 UTC] Error en addStudent: Error al registrar estudiante: Data too long for column 'curp' at row 1

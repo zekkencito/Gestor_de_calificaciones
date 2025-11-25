@@ -66,9 +66,12 @@ try {
                 $percentage = isset($gradeData['percentage']) ? $gradeData['percentage'] : 0;
                 $status = 1;
                 // Calculo para promedio ponderado
-                if (is_numeric($grade) && is_numeric($percentage)) {
-                    $sum += floatval($grade) * (floatval($percentage) / 100);
+                // Si el grado no está establecido (vacío), pero el porcentaje sí, considerar el grado como 0
+                if (is_numeric($percentage)) {
                     $sumPercent += floatval($percentage);
+                    if (is_numeric($grade)) {
+                        $sum += floatval($grade) * (floatval($percentage) / 100);
+                    } // Si el grado no es numérico, no suma al promedio pero sí cuenta el porcentaje
                 }
                 $stmt->bind_param(
                     "diiiiisdsis",
@@ -92,7 +95,18 @@ try {
             }
             // Guardar promedio solo si hay porcentajes válidos
             file_put_contents(__DIR__.'/debug_grades.txt', 'ANTES DE PROMEDIO idStudent='.$idStudent.PHP_EOL, FILE_APPEND);
-            $average = ($sumPercent > 0) ? round($sum, 2) : 0.0;
+            
+            // Cálculo de promedio - redondeando hacia arriba
+            if ($sumPercent > 0) {
+                if ($sumPercent === 100) {
+                    $average = ceil($sum * 10) / 10; // Si los porcentajes suman 100, redondear hacia arriba a 1 decimal
+                } else {
+                    $average = ceil(($sum / ($sumPercent / 100)) * 10) / 10; // Si no, normalizar y redondear hacia arriba
+                }
+                file_put_contents(__DIR__.'/debug_grades.txt', 'CÁLCULO DE PROMEDIO: suma='.$sum.', sumaPorcentaje='.$sumPercent.', promedio='.$average.PHP_EOL, FILE_APPEND);
+            } else {
+                $average = 0.0;
+            }
             $stmtAvg->bind_param(
                 "diiiidiiii",
                 $average,              // insert

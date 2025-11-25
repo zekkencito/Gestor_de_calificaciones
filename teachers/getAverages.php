@@ -7,10 +7,10 @@ $idSubject = isset($_GET['idSubject']) ? intval($_GET['idSubject']) : 0;
 $idSchoolYear = isset($_GET['idSchoolYear']) ? intval($_GET['idSchoolYear']) : 0;
 $idSchoolQuarter = isset($_GET['idSchoolQuarter']) ? intval($_GET['idSchoolQuarter']) : 0;
 
-if ($idSchoolYear && $idSchoolQuarter) {
-    $query = "SELECT idStudent, average FROM average WHERE idSchoolYear = ? AND idSchoolQuarter = ?";
+if ($idSchoolYear && $idSchoolQuarter && $idSubject) {
+    $query = "SELECT idStudent, average FROM average WHERE idSchoolYear = ? AND idSchoolQuarter = ? AND idSubject = ?";
     $stmt = $conexion->prepare($query);
-    $stmt->bind_param("ii", $idSchoolYear, $idSchoolQuarter);
+    $stmt->bind_param("iii", $idSchoolYear, $idSchoolQuarter, $idSubject);
     $stmt->execute();
     $result = $stmt->get_result();
     $averages = [];

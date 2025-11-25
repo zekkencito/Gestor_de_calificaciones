@@ -38,9 +38,133 @@ html, body {
 body {
     font-family: var(--font-sans);
     color: var(--gray-800);
-    background-color: #f5f7fb;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     line-height: 1.6;
     font-weight: 300;
+}
+
+/* Header de página moderno */
+.page-header {
+    text-align: center;
+    padding: 1.5rem 0 1rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Tarjetas de estadísticas modernas */
+.stats-card .card {
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 1px solid #e3f2fd;
+}
+
+.stats-card .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    border-color: #b3e5fc;
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    background: linear-gradient(135deg, #192E4E, #2C5695);
+    box-shadow: 0 4px 15px rgba(25, 46, 78, 0.3);
+}
+
+.stats-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-number {
+    color: #192E4E;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+/* Tarjetas de gráficos modernas */
+.chart-card .card {
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid #e9ecef;
+}
+
+.chart-card .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.chart-card .card-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.chart-card .card-title i {
+    font-size: 1.1rem;
+}
+
+/* Alerta moderna */
+.alert {
+    border-radius: 15px !important;
+    border: none !important;
+    padding: 1.25rem !important;
+}
+
+.alert h6 {
+    color: #0c5460;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+    }
+    
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
 }
 
 /* Typography */

@@ -1,4 +1,7 @@
 <?php
+    // Configurar zona horaria para México (GMT-6)
+    date_default_timezone_set('America/Mexico_City');
+    
     $servidor='skyzerozx.com';
     $port="3306";
     $user="skyzeroz_ManagementSystem";
@@ -10,4 +13,7 @@
         die("Error al conectar con el servidor. Por favor, intente más tarde.");
     }
     $conexion->set_charset("utf8mb4");
+    
+    // Configurar zona horaria de MySQL para México (GMT-6)
+    $conexion->query("SET time_zone = '-06:00'");
 ?>

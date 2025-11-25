@@ -18,16 +18,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $conexion->begin_transaction();
     try {
-        // Actualizar teacherGroupsSubjects
+        // 1. Actualizar la asignación específica (teacherGroupsSubjects)
+        // Esto cambia qué materia enseña el maestro a este grupo específico
         $sql1 = "UPDATE teacherGroupsSubjects SET idTeacher=?, idGroup=?, idSubject=? WHERE idTeacher=? AND idGroup=? AND idSubject=?";
         $stmt1 = $conexion->prepare($sql1);
         $stmt1->bind_param('iiiiii', $idTeacher, $idGroup, $idSubject, $oldTeacher, $oldGroup, $oldSubject);
         $stmt1->execute();
-        // Actualizar teacherSubject (ciclo escolar)
-        $sql2 = "UPDATE teacherSubject SET idTeacher=?, idSubject=?, idSchoolYear=? WHERE idTeacher=? AND idSubject=?";
-        $stmt2 = $conexion->prepare($sql2);
-        $stmt2->bind_param('iiiii', $idTeacher, $idSubject, $idSchoolYear, $oldTeacher, $oldSubject);
-        $stmt2->execute();
+
+        // 2. Asegurar que exista la relación teacherSubject para el nuevo par Maestro-Materia-Ciclo
+        // No usamos UPDATE porque eso cambiaría el ciclo para TODOS los grupos que toman esta materia con este maestro
+        $sqlCheck = "SELECT idTeacherSubject FROM teacherSubject WHERE idTeacher=? AND idSubject=? AND idSchoolYear=?";
+        $stmtCheck = $conexion->prepare($sqlCheck);
+        $stmtCheck->bind_param('iii', $idTeacher, $idSubject, $idSchoolYear);
+        $stmtCheck->execute();
+        $resultCheck = $stmtCheck->get_result();
+
+        if ($resultCheck->num_rows === 0) {
+            // Si no existe, la creamos
+            $sqlInsert = "INSERT INTO teacherSubject (idTeacher, idSubject, idSchoolYear) VALUES (?, ?, ?)";
+            $stmtInsert = $conexion->prepare($sqlInsert);
+            $stmtInsert->bind_param('iii', $idTeacher, $idSubject, $idSchoolYear);
+            $stmtInsert->execute();
+        }
+
+        // 3. (Opcional) Limpieza: Verificar si la antigua relación teacherSubject ya no se usa
+        // Si cambiamos de materia o maestro, la antigua combinación podría quedar huérfana
+        if ($oldTeacher != $idTeacher || $oldSubject != $idSubject) {
+            $sqlCount = "SELECT COUNT(*) as total FROM teacherGroupsSubjects WHERE idTeacher=? AND idSubject=?";
+            $stmtCount = $conexion->prepare($sqlCount);
+            $stmtCount->bind_param('ii', $oldTeacher, $oldSubject);
+            $stmtCount->execute();
+            $resCount = $stmtCount->get_result()->fetch_assoc();
+
+            if ($resCount['total'] == 0) {
+                // Ya nadie usa esta combinación, podemos borrarla de teacherSubject para mantener limpia la BD
+                // Nota: Esto asume que teacherSubject solo sirve para asignaciones activas. 
+                // Si se usa para historial, mejor no borrar. Por seguridad, comentamos el borrado automático o lo dejamos solo si estamos seguros.
+                // $sqlDelete = "DELETE FROM teacherSubject WHERE idTeacher=? AND idSubject=?";
+                // ...
+            }
+        }
+
         $conexion->commit();
         echo json_encode(['success' => true]);
     } catch(Exception $e) {

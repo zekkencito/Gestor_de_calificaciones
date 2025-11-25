@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['txtEmail'];
     $address = $_POST['txtAddress'];
     $status = $_POST['txtStatus'];
-    $password = $_POST['txtPassword'];
+    $password = isset($_POST['txtPassword']) ? $_POST['txtPassword'] : '';
 
     try {
         // Iniciar transacción

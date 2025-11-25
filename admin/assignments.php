@@ -1,5 +1,6 @@
 <?php
 require_once "check_session.php";
+require_once "../force_password_check.php";
 include '../conection.php';
 // GRUPOS
 $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
@@ -46,7 +47,7 @@ $resultYears2 = $conexion->query($sqlYears1);
     
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="row d-flex" style="height: 100vh; width: 100%; margin: 0; padding: 0; overflow: hidden;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -57,168 +58,86 @@ $resultYears2 = $conexion->query($sqlYears1);
     ?>
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
-     <main class="flex-grow-1 col-9 p-0 ">
-        <?php
-            include "../layouts/header.php"; 
-        ?>
-        <div class="container mt-4" style="padding-top:10vh">
-    <div class="row">
-        <!-- Sección izquierda (formulario principal) -->
-        <form id="form"action="./addAssignment.php" style="width: 65%;" method="POST" class="needs-validation" novalidate>
-        <div class="col-md-12 pe-2"> <!-- Añadido padding-right -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label id="labelAlumno" for="grupo" class="form-label fw-bold">Grupo:</label>
-                    <?php
-                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                    $resultGroups = $conexion->query($sqlGroups);
-                    ?>
-                    <select class="form-select border-dark" id="grupo" name="grupo">
-                        <option value="" selected>Seleccionar grupo</option>
-                        <?php while($group = $resultGroups->fetch_assoc()) { ?>
-                            <option value="<?php echo $group['idGroup']; ?>"><?php echo htmlspecialchars($group['grupo']); ?></option>
-                        <?php } ?>
-                    </select>
+     <main class="flex-grow-1 col-9 p-0" style="height: 100vh; overflow-y: auto;">
+        <?php include "../layouts/header.php"; ?>
+        
+        <!-- Header de la página -->
+        <div class="container-fluid px-4 pt-5">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-header mb-3">
+                        <h1 class="page-title">
+                            <i class="bi bi-clipboard-check me-3"></i>
+                            Gestión de Asignaciones
+                        </h1>
+                        <p class="page-subtitle ">
+                            Administra las asignaciones de docentes a grupos y materias
+                        </p>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label id="labelAlumno" for="materia" class="form-label fw-bold">Materia:</label>
-                    <?php
-                    $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
-                    $resultSubjects = $conexion->query($sqlSubjects);
-                    ?>
-                    <select class="form-select border-dark" id="materia" name="materia">
-                        <option value="" selected>Seleccionar materia</option>
-                        <?php while($subject = $resultSubjects->fetch_assoc()) { ?>
-                            <option value="<?php echo $subject['idSubject']; ?>"><?php echo htmlspecialchars($subject['name']); ?></option>
-                        <?php } ?>
-                    </select>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label id="labelAlumno" for="docente" class="form-label fw-bold">Docente:</label>
-                    <?php
-                    $sqlTeachers = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
-                    $resultTeachers = $conexion->query($sqlTeachers);
-                    ?>
-                    <select class="form-select border-dark" id="docente" name="docente">
-                        <option value="" selected>Seleccionar docente</option>
-                        <?php while($teacher = $resultTeachers->fetch_assoc()) { ?>
-                            <option value="<?php echo $teacher['idTeacher']; ?>"><?php echo htmlspecialchars($teacher['nombre']); ?></option>
-                        <?php } ?>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label id="labelAlumno" for="ciclo" class="form-label fw-bold">Ciclo Escolar:</label>
-                    <?php
-                    $sqlYears = "SELECT idSchoolYear, LEFT(startDate, 4) as year FROM schoolYear ORDER BY startDate DESC";
-                    $resultYears = $conexion->query($sqlYears);
-                    ?>
-                    <select class="form-select border-dark" id="ciclo" name="ciclo">
-                        <option value="" selected>Seleccionar ciclo escolar</option>
-                        <?php while($year = $resultYears->fetch_assoc()) { ?>
-                            <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
-                        <?php } ?>
-                    </select>
-                </div>
-            </div>
-            <div class="mb-3">
-                <button id="button" type="submit">
-                    Asignar <i id="iconoAdd" class="bi bi-plus"></i>
-                </button>
             </div>
         </div>
-        </form>
-        
-        <!-- Sección derecha (búsqueda) -->
-        <div class="col-md-4">
-            <div class="mb-3">
-                <label id="labelAlumno" for="busqueda" class="form-label fw-bold">Búsqueda por:</label>
-                <select class="form-select border-dark" id="busqueda">
-                    <option value="" selected>Buscar</option>
-                    <option value="1">Grupo</option>
-                    <option value="2">Maestro</option>
-                    <option value="3">Materia</option>
-                </select>
-            </div>
 
-            <!-- SELECT GRUPO -->
-            <div class="mb-3 d-none" id="divGrupo">
-                <label id="labelAlumno" for="selectGrupo" class="form-label">Seleccionar Grupo:</label>
-                <?php
-                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                $resultGroups = $conexion->query($sqlGroups);
-                ?>
-                <select class="form-select border-dark" id="selectGrupo">
-                    <option value="" selected disabled>Seleccionar grupo</option>
-                    <?php while($group = $resultGroups->fetch_assoc()) { ?>
-                        <option value="<?php echo $group['idGroup']; ?>"><?php echo htmlspecialchars($group['grupo']); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-
-            <!-- SELECT MAESTRO -->
-            <div class="mb-3 d-none" id="divMaestro">
-                <label id="labelAlumno" for="selectMaestro" class="form-label">Seleccionar Maestro:</label>
-                <?php
-                $sqlTeachers = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
-                $resultTeachers = $conexion->query($sqlTeachers);
-                ?>
-                <select class="form-select border-dark" id="selectMaestro">
-                    <option value="" selected disabled>Seleccionar maestro</option>
-                    <?php while($teacher = $resultTeachers->fetch_assoc()) { ?>
-                        <option value="<?php echo $teacher['idTeacher']; ?>"><?php echo htmlspecialchars($teacher['nombre']); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-
-            <!-- SELECT MATERIA -->
-            <div class="mb-3 d-none" id="divMateria">
-                <label id="labelAlumno" for="selectMateria" class="form-label">Seleccionar Materia:</label>
-                <?php
-                $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
-                $resultSubjects = $conexion->query($sqlSubjects);
-                ?>
-                <select class="form-select border-dark" id="selectMateria">
-                    <option value="" selected disabled>Seleccionar materia</option>
-                    <?php while($subject = $resultSubjects->fetch_assoc()) { ?>
-                        <option value="<?php echo $subject['idSubject']; ?>"><?php echo htmlspecialchars($subject['name']); ?></option>
-                    <?php } ?>
-                </select>
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Controles superiores -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-end align-items-center gap-3 flex-wrap">
+                        <!-- Filtro por grupo -->
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 fw-semibold text-nowrap">
+                                <i class="bi bi-collection me-1"></i>
+                                Filtrar por grupo:
+                            </label>
+                            <select class="form-select form-select-sm border-secondary" id="filterGrupo" style="min-width: 200px;">
+                                <option value="">Todos los grupos</option>
+                                <?php
+                                $sqlGroupsFilter = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                $resultGroupsFilter = $conexion->query($sqlGroupsFilter);
+                                while($groupFilter = $resultGroupsFilter->fetch_assoc()) { ?>
+                                    <option value="<?php echo $groupFilter['idGroup']; ?>"><?php echo htmlspecialchars($groupFilter['grupo']); ?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Botón crear asignación -->
+                        <button type="button" class="btn btn-primary btn-lg shadow" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Crear Nueva Asignación
+                        </button>
+                    </div>
+                </div>
             </div>
             
-            <div class="d-flex justify-content-end mb-3">
-                <button id="buttonBuscar">
-                    Buscar <i id="iBuscar" class="bi bi-search"></i>
-                </button>
-                <button id="buttonReset" type="button" class="ms-2 btn btn-secondary">
-                    Mostrar todo
-                </button>
-            </div>
-            
-        </div>
-        
-    </div>
-    
-    <h1>Asignaciones</h1>
-
-</div>
-
-        <div id="tabla" class="container mt-4">
-            <table class="table table-bordered border-dark">
-                <thead>
-                    <tr>
-                        <th>Ciclo Escolar</th>
-                        <th>Grupo</th>
-                        <th>Materia</th>
-                        <th>Paterno</th>
-                        <th>Materno</th>
-                        <th>Nombre</th>
-                        <th>Editar</th>
-                        <th>Eliminar</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody">
+            <!-- Tabla de asignaciones -->
+            <div class="table-card mt-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-list-check me-2 text-primary"></i>
+                                    Asignaciones Registradas
+                                </h5>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tabla">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-center"><i class="bi bi-calendar me-1"></i>Ciclo Escolar</th>
+                                        <th class="text-center"><i class="bi bi-collection me-1"></i>Grupo</th>
+                                        <th class="text-center"><i class="bi bi-book me-1"></i>Materias</th>
+                                        <th class="text-center"><i class="bi bi-person me-1"></i>Apellido Paterno</th>
+                                        <th class="text-center"><i class="bi bi-person me-1"></i>Apellido Materno</th>
+                                        <th class="text-center"><i class="bi bi-person-check me-1"></i>Nombre</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody">
                     <?php
                     // Filtro PHP para mostrar solo los resultados buscados (solo para carga inicial)
                     $where = '';
@@ -233,12 +152,15 @@ $resultYears2 = $conexion->query($sqlYears1);
                             $where = " AND sub.idSubject = '" . $conexion->real_escape_string($valor) . "'";
                         }
                     }
-                    $sql = "SELECT DISTINCT
+                    $sql = "SELECT 
                         syear.idSchoolYear, 
                         LEFT(syear.startDate, 4) AS ciclo,
-                        g.idGroup, CONCAT(g.grade, g.group_) as grupo, 
-                        sub.idSubject, sub.name as materia,
-                        ui.lastnamePa, ui.lastnameMa, ui.names,
+                        g.idGroup, 
+                        CONCAT(g.grade, g.group_) as grupo, 
+                        GROUP_CONCAT(DISTINCT CONCAT(sub.idSubject, '___', sub.name) ORDER BY sub.name SEPARATOR '|||') as subjects_data,
+                        ui.lastnamePa, 
+                        ui.lastnameMa, 
+                        ui.names,
                         t.idTeacher
                     FROM teacherGroupsSubjects tgs
                     INNER JOIN groups g ON tgs.idGroup = g.idGroup
@@ -249,149 +171,256 @@ $resultYears2 = $conexion->query($sqlYears1);
                     INNER JOIN teacherSubject ts ON ts.idTeacher = tgs.idTeacher AND ts.idSubject = tgs.idSubject
                     INNER JOIN schoolYear syear ON ts.idSchoolYear = syear.idSchoolYear
                     WHERE 1 $where
-                    GROUP BY syear.idSchoolYear, g.idGroup, sub.idSubject, t.idTeacher
-                    ORDER BY syear.startDate DESC, grupo, materia, ui.lastnamePa, ui.lastnameMa, ui.names";
+                    GROUP BY syear.idSchoolYear, g.idGroup, t.idTeacher, g.grade, g.group_, ui.lastnamePa, ui.lastnameMa, ui.names
+                    ORDER BY syear.startDate DESC, g.grade, g.group_, ui.lastnamePa";
                     $result = $conexion->query($sql);
-                    if ($result && $result->num_rows > 0) {
+                    
+                    // Manejo de errores SQL
+                    if (!$result) {
+                        echo '<tr><td colspan="7" class="text-center text-danger py-4">';
+                        echo '<i class="bi bi-exclamation-triangle me-2"></i>';
+                        echo 'Error en la consulta: ' . htmlspecialchars($conexion->error);
+                        echo '</td></tr>';
+                    } else if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
-                            $uid = $row['idGroup'] . '-' . $row['idSubject'] . '-' . $row['idTeacher'] . '-' . $row['idSchoolYear'];
-                            echo '<tr '
-                                . 'data-idgrupo="' . htmlspecialchars($row['idGroup']) . '" '
-                                . 'data-idsubject="' . htmlspecialchars($row['idSubject']) . '" '
-                                . 'data-idteacher="' . htmlspecialchars($row['idTeacher']) . '" '
-                                . 'data-idyear="' . htmlspecialchars($row['idSchoolYear']) . '"'
-                                . '>';
-                            echo '<td>' . htmlspecialchars($row['ciclo']) . '</td>';
-                            echo '<td>' . htmlspecialchars($row['grupo']) . '</td>';
-                            echo '<td>' . htmlspecialchars($row['materia']) . '</td>';
-                            echo '<td>' . htmlspecialchars($row['lastnamePa']) . '</td>';
-                            echo '<td>' . htmlspecialchars($row['lastnameMa']) . '</td>';
-                            echo '<td>' . htmlspecialchars($row['names']) . '</td>';
-                            echo '<td><button class="botonVerEdit" id="botonVer" data-bs-toggle="modal" data-bs-target="#editModal" data-uid="' . $uid . '" style="margin-left: 10vh;"><i class="bi bi-pencil-fill"></i></button></td>';
-                            echo '<td><button class="botonVerDelete" id="botonVer" data-bs-toggle="modal" data-bs-target="#deleteModal" data-uid="' . $uid . '" style="margin-left: 10vh;"><i class="bi bi-trash-fill"></i></button></td>';
+                            // Datos generales de la fila (Grupo, Docente, Ciclo)
+                            $rowIdGroup = htmlspecialchars($row['idGroup']);
+                            $rowIdTeacher = htmlspecialchars($row['idTeacher']);
+                            $rowIdYear = htmlspecialchars($row['idSchoolYear']);
+                            
+                            // Nombres para data attributes
+                            $rowTxtGrupo = htmlspecialchars($row['grupo']);
+                            $rowTxtCiclo = htmlspecialchars($row['ciclo']);
+                            $rowTxtDocente = htmlspecialchars($row['names'] . ' ' . $row['lastnamePa'] . ' ' . $row['lastnameMa']);
+                            
+                            echo '<tr class="align-middle">';
+                            echo '<td class="text-center">' . $rowTxtCiclo . '</td>';
+                            echo '<td class="text-center"><span class="badge bg-primary">' . $rowTxtGrupo . '</span></td>';
+                            
+                            // Columna de Materias con Badges Interactivos
+                            echo '<td class="text-center">';
+                            echo '<div class="d-flex flex-wrap justify-content-center gap-2">';
+                            
+                            $subjectsData = explode('|||', $row['subjects_data']);
+                            foreach ($subjectsData as $subjectStr) {
+                                if(empty($subjectStr)) continue;
+                                list($subId, $subName) = explode('___', $subjectStr);
+                                $subId = htmlspecialchars($subId);
+                                $subName = htmlspecialchars($subName);
+                                
+                                // Badge interactivo
+                                echo '<div class="btn-group btn-group-sm" role="group">';
+                                echo '<span class="btn btn-info btn-sm disabled" style="opacity: 1; color: #000; font-weight: 500;">' . $subName . '</span>';
+                                
+                                // Botón Editar
+                                echo '<button type="button" class="btn btn-warning btn-sm btn-edit-subject" '
+                                    . 'data-bs-toggle="modal" data-bs-target="#editModal" '
+                                    . 'data-idgrupo="' . $rowIdGroup . '" '
+                                    . 'data-idteacher="' . $rowIdTeacher . '" '
+                                    . 'data-idyear="' . $rowIdYear . '" '
+                                    . 'data-idsubject="' . $subId . '" '
+                                    . 'data-txtgrupo="' . $rowTxtGrupo . '" '
+                                    . 'data-txtdocente="' . $rowTxtDocente . '" '
+                                    . 'data-txtciclo="' . $rowTxtCiclo . '" '
+                                    . 'data-txtmateria="' . $subName . '" '
+                                    . 'title="Editar ' . $subName . '">'
+                                    . '<i class="bi bi-pencil-fill"></i>'
+                                    . '</button>';
+                                    
+                                // Botón Eliminar
+                                echo '<button type="button" class="btn btn-danger btn-sm btn-delete-subject" '
+                                    . 'data-bs-toggle="modal" data-bs-target="#deleteModal" '
+                                    . 'data-idgrupo="' . $rowIdGroup . '" '
+                                    . 'data-idteacher="' . $rowIdTeacher . '" '
+                                    . 'data-idyear="' . $rowIdYear . '" '
+                                    . 'data-idsubject="' . $subId . '" '
+                                    . 'title="Eliminar ' . $subName . '">'
+                                    . '<i class="bi bi-trash-fill"></i>'
+                                    . '</button>';
+                                echo '</div>';
+                            }
+                            echo '</div>';
+                            echo '</td>';
+                            
+                            echo '<td class="text-center">' . htmlspecialchars($row['lastnamePa']) . '</td>';
+                            echo '<td class="text-center">' . htmlspecialchars($row['lastnameMa']) . '</td>';
+                            echo '<td class="text-center fw-semibold">' . htmlspecialchars($row['names']) . '</td>';
+                            
                             echo '</tr>';
                         }
                     } else {
-                        echo '<tr><td colspan="8">No hay asignaciones registradas.</td></tr>';
+                        echo '<tr><td colspan="7" class="text-center text-muted py-4">';
+                        echo '<i class="bi bi-info-circle me-2"></i>';
+                        echo 'No hay asignaciones registradas.';
+                        echo '</td></tr>';
                     }
                     ?>
-                </tbody>
-            </table>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-     </main>
+    </main>
     <!-- END MAIN CONTENT --> 
         <!-- MODAL EDIT-->
-        <div class="modal fade modal-m" id="editModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 id="tituloModal" class="modal-title fs-5" id="exampleModalLabel">Editar Asignaciones:</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal fade modal-m" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white border-0">
+                        <h5 class="modal-title" id="editModalLabel">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Editar Asignación
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form id="formEditAssignment">
-                    <div class="row px-4">
-                        <div class="col-md-12" style="padding-right: 25vh;">
-                            <div class="mb-3">
-                                <label class="labelAgregar"for="grupo" class="form-label fw-bold">Grupo:</label>
-                                <?php
-                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                                $resultGroups = $conexion->query($sqlGroups);
-                                ?>
-                                <select class="form-select border-dark" name="grupo">
-                                    <option value="">Seleccionar Grupo</option>
-                                    <?php while($group = $resultGroups->fetch_assoc()) { ?>
-                                        <option value="<?php echo $group['idGroup']; ?>"><?php echo htmlspecialchars($group['grupo']); ?></option>
-                                    <?php } ?>
-                                </select>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="grupo" class="form-label fw-semibold">
+                                        <i class="bi bi-collection me-1"></i>
+                                        Grupo:
+                                    </label>
+                                    <?php
+                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                    $resultGroups = $conexion->query($sqlGroups);
+                                    ?>
+                                    <select class="form-select border-secondary" name="grupo">
+                                        <option value="">Seleccionar Grupo</option>
+                                        <?php while($group = $resultGroups->fetch_assoc()) { ?>
+                                            <option value="<?php echo $group['idGroup']; ?>"><?php echo htmlspecialchars($group['grupo']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="materia" class="form-label fw-semibold">
+                                        <i class="bi bi-book me-1"></i>
+                                        Materia:
+                                    </label>
+                                    <?php
+                                    $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
+                                    $resultSubjects = $conexion->query($sqlSubjects);
+                                    ?>
+                                    <select class="form-select border-secondary" name="materia">
+                                        <option value="">Seleccionar Materia</option>
+                                        <?php while($subject = $resultSubjects->fetch_assoc()) { ?>
+                                            <option value="<?php echo $subject['idSubject']; ?>"><?php echo htmlspecialchars($subject['name']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="docente" class="form-label fw-semibold">
+                                        <i class="bi bi-person-workspace me-1"></i>
+                                        Docente:
+                                    </label>
+                                    <?php
+                                    $sqlTeachers = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
+                                    $resultTeachers = $conexion->query($sqlTeachers);
+                                    ?>
+                                    <select class="form-select border-secondary" name="docente">
+                                        <option value="">Seleccionar Docente</option>
+                                        <?php while($teacher = $resultTeachers->fetch_assoc()) { ?>
+                                            <option value="<?php echo $teacher['idTeacher']; ?>"><?php echo htmlspecialchars($teacher['nombre']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciclo" class="form-label fw-semibold">
+                                        <i class="bi bi-calendar-date me-1"></i>
+                                        Ciclo Escolar:
+                                    </label>
+                                    <?php
+                                    $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                                    $resultYears = $conexion->query($sqlYears);
+                                    ?>
+                                    <select class="form-select border-secondary" name="ciclo">
+                                        <option value="">Seleccionar Ciclo Escolar</option>
+                                        <?php while($year = $resultYears->fetch_assoc()) { ?>
+                                            <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="labelAgregar"for="materia" class="form-label fw-bold">Materia:</label>
-                                <?php
-                                $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
-                                $resultSubjects = $conexion->query($sqlSubjects);
-                                ?>
-                                <select class="form-select border-dark" name="materia">
-                                    <option value="">Seleccionar Materia</option>
-                                    <?php while($subject = $resultSubjects->fetch_assoc()) { ?>
-                                        <option value="<?php echo $subject['idSubject']; ?>"><?php echo htmlspecialchars($subject['name']); ?></option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="labelAgregar"for="docente" class="form-label fw-bold">Docente:</label>
-                                <?php
-                                $sqlTeachers = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
-                                $resultTeachers = $conexion->query($sqlTeachers);
-                                ?>
-                                <select class="form-select border-dark" name="docente">
-                                    <option value="">Seleccionar Docente</option>
-                                    <?php while($teacher = $resultTeachers->fetch_assoc()) { ?>
-                                        <option value="<?php echo $teacher['idTeacher']; ?>"><?php echo htmlspecialchars($teacher['nombre']); ?></option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="labelAgregar"for="ciclo" class="form-label fw-bold">Ciclo Escolar:</label>
-                                <?php
-                                $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
-                                $resultYears = $conexion->query($sqlYears);
-                                ?>
-                                <select class="form-select border-dark" name="ciclo">
-                                    <option value="">Seleccionar Ciclo Escolar</option>
-                                    <?php while($year = $resultYears->fetch_assoc()) { ?>
-                                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                            <div class="padding-left:5vh;">
-                                <button class="botonEnter btn btn-primary fw-bold mb-3">
-                                    Reasignar <i id="iconoAdd" class="bi bi-check-circle-fill"></i>
-                                </button>
-                            </div>  
                         </div>
-                    </div> 
+                        <div class="modal-footer border-0 bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
-        <!-- MODAL EDIT-->
     <!-- MODAL delete-->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 id="tituloModal"class="modal-title fs-5" id="exampleModalLabel">¿Desea Eliminar Esta Asignación?</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center py-3">
+                        <i class="bi bi-question-circle-fill text-warning display-4 mb-3"></i>
+                        <h6 class="mb-0">¿Está seguro que desea eliminar esta asignación?</h6>
+                        <p class="text-muted mt-2">Esta acción no se puede deshacer.</p>
                     </div>
-                    <div class="modal-footer">
-                        <button class="botonCancelar" type="button" class="btn btn-secondary"data-bs-dismiss="modal">Cancelar
-                            <i id="iconoAdd" class="bi bi-x-circle-fill"></i>
-                        </button>
-                        <button class="botonEnter" type="submit" class="btn btn-primary"  data-bs-toggle="modal" data-bs-target="#confirmModal">Eliminar<i id="iconoAdd" class="bi bi-trash3-fill"></i></i></button>
-                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <i class="bi bi-trash3 me-1"></i>
+                        Eliminar
+                    </button>
                 </div>
             </div>
         </div>
-        <!-- MODAL delete-->
+    </div>
 
-        <!-- MODAL confirm delete-->
-        <div class="modal fade " id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 id="tituloModal" class="modal-title fs-5" id="exampleModalLabel">¿Está Seguro Que Desea Eliminar Esta Asignación?</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL confirm delete-->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="confirmModalLabel">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        Confirmación Final
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center py-3">
+                        <i class="bi bi-exclamation-diamond-fill text-danger display-4 mb-3"></i>
+                        <h6 class="mb-0">¿Está completamente seguro?</h6>
+                        <p class="text-muted mt-2">Esta asignación será eliminada permanentemente del sistema.</p>
                     </div>
-                    <div class="modal-footer">
-                        <button class="botonCancelar" type="button" class="btn btn-secondary"data-bs-dismiss="modal">Cambié de Opinión
-                            <i id="iconoAdd" class="bi bi-x-circle-fill"></i>
-                        </button>
-                        <button class="botonEnter" type="submit" class="btn btn-primary btnEliminar"  data-bs-toggle="modal" data-bs-target="" id="eliminar">Eliminar<i id="iconoAdd" class="bi bi-trash3-fill"></i></i></button>
-                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Cambié de Opinión
+                    </button>
+                    <button type="button" class="btn btn-danger btnEliminar" id="eliminar">
+                        <i class="bi bi-trash3-fill me-1"></i>
+                        Eliminar Definitivamente
+                    </button>
                 </div>
             </div>
         </div>
-        <!-- MODAL confirm delete-->
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/chartScript.js"></script>
@@ -420,25 +449,19 @@ $resultYears2 = $conexion->query($sqlYears1);
 
             // Función para asignar eventos CRUD
             function asignarEventosCRUD() {
-                // Asignar eventos de edición
-                document.querySelectorAll('.botonVerEdit').forEach(function(button) {
+                // Asignar eventos de edición a los botones dentro de los badges
+                document.querySelectorAll('.btn-edit-subject').forEach(function(button) {
                     button.addEventListener('click', function() {
-                        const row = this.closest('tr');
-                        // Obtener ids de la fila
-                        const idGrupo = row.getAttribute('data-idgrupo');
-                        const idSubject = row.getAttribute('data-idsubject');
-                        const idTeacher = row.getAttribute('data-idteacher');
-                        const idYear = row.getAttribute('data-idyear');
+                        // Obtener datos directamente del botón
+                        const idGrupo = this.getAttribute('data-idgrupo');
+                        const idSubject = this.getAttribute('data-idsubject');
+                        const idTeacher = this.getAttribute('data-idteacher');
+                        const idYear = this.getAttribute('data-idyear');
 
-                        // Obtener los textos de las celdas
-                        const txtGrupo = row.children[1].textContent.trim();
-                        const txtMateria = row.children[2].textContent.trim();
-                        const txtCiclo = row.children[0].textContent.trim();
-                        
-                        // Construir el nombre del docente
-                        const apellidoPa = row.children[3].textContent.trim();
-                        const apellidoMa = row.children[4].textContent.trim();
-                        const nombre = row.children[5].textContent.trim();
+                        const txtGrupo = this.getAttribute('data-txtgrupo');
+                        const txtMateria = this.getAttribute('data-txtmateria');
+                        const txtDocente = this.getAttribute('data-txtdocente');
+                        const txtCiclo = this.getAttribute('data-txtciclo');
 
                         // Rellenar selects del modal
                         const selectGrupo = document.querySelector('#editModal select[name="grupo"]');
@@ -459,7 +482,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                         // Establecer los valores seleccionados
                         setSelectedOption(selectGrupo, idGrupo, txtGrupo);
                         setSelectedOption(selectMateria, idSubject, txtMateria);
-                        setSelectedOption(selectDocente, idTeacher, `${nombre} ${apellidoPa} ${apellidoMa}`);
+                        setSelectedOption(selectDocente, idTeacher, txtDocente);
                         setSelectedOption(selectCiclo, idYear, txtCiclo);
 
                         // Guardar valores originales para update
@@ -471,18 +494,18 @@ $resultYears2 = $conexion->query($sqlYears1);
                     });
                 });
 
-                // Asignar eventos de eliminación
-                document.querySelectorAll('.botonVerDelete').forEach(function(button) {
+                // Asignar eventos de eliminación a los botones dentro de los badges
+                document.querySelectorAll('.btn-delete-subject').forEach(function(button) {
                     button.addEventListener('click', function() {
-                        const row = this.closest('tr');
                         const modal = document.getElementById('confirmModal');
-                        // Store the row reference on the modal
-                        modal._row = row;
-                        // Also store the data attributes for backward compatibility
-                        modal.setAttribute('data-idgrupo', row.getAttribute('data-idgrupo'));
-                        modal.setAttribute('data-idsubject', row.getAttribute('data-idsubject'));
-                        modal.setAttribute('data-idteacher', row.getAttribute('data-idteacher'));
-                        modal.setAttribute('data-idyear', row.getAttribute('data-idyear'));
+                        // Guardar datos en el modal
+                        modal.setAttribute('data-idgrupo', this.getAttribute('data-idgrupo'));
+                        modal.setAttribute('data-idsubject', this.getAttribute('data-idsubject'));
+                        modal.setAttribute('data-idteacher', this.getAttribute('data-idteacher'));
+                        modal.setAttribute('data-idyear', this.getAttribute('data-idyear'));
+                        
+                        // Limpiar referencia de fila ya que ahora eliminamos items individuales
+                        modal._row = null;
                     });
                 });
             }
@@ -512,85 +535,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                 });
             }
 
-            // Filtro de búsqueda por selección con AJAX
-            document.getElementById('buttonBuscar').addEventListener('click', function (e) {
-                e.preventDefault();
-                const tipoBusqueda = document.getElementById('busqueda').value;
-                let valor = null;
-                let param = '';
-                if (tipoBusqueda === '1') {
-                    valor = document.getElementById('selectGrupo').value;
-                    param = 'grupo';
-                } else if (tipoBusqueda === '2') {
-                    valor = document.getElementById('selectMaestro').value;
-                    param = 'maestro';
-                } else if (tipoBusqueda === '3') {
-                    valor = document.getElementById('selectMateria').value;
-                    param = 'materia';
-                }
-                if (valor) {
-                    // AJAX fetch
-                    fetch('searchAssignments.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: `buscar=${encodeURIComponent(param)}&valor=${encodeURIComponent(valor)}`
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        const tbody = document.querySelector('#tabla tbody');
-                        tbody.innerHTML = html;
-                        asignarEventosCRUD();
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error de conexión',
-                            text: 'No se pudo obtener los resultados.'
-                        });
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Seleccione un filtro',
-                        text: 'Debes elegir un valor para buscar.'
-                    });
-                }
-            });
 
-            // Botón para mostrar toda la tabla (reset)
-            document.getElementById('buttonReset').addEventListener('click', function () {
-                fetch('searchAssignments.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    const tbody = document.querySelector('#tabla tbody');
-                    tbody.innerHTML = html;
-                    
-                    // Reasignar los eventos CRUD
-                    asignarEventosCRUD();
-                    
-                    // Limpiar selects de filtro
-                    document.getElementById('busqueda').value = '';
-                    if(document.getElementById('divGrupo')) document.getElementById('divGrupo').classList.add('d-none');
-                    if(document.getElementById('divMaestro')) document.getElementById('divMaestro').classList.add('d-none');
-                    if(document.getElementById('divMateria')) document.getElementById('divMateria').classList.add('d-none');
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error de conexión',
-                        text: 'No se pudo obtener los resultados.'
-                    });
-                });
-            });
 
             // Evento para actualizar asignación
             document.getElementById('formEditAssignment').addEventListener('submit', function(e) {
@@ -608,48 +553,9 @@ $resultYears2 = $conexion->query($sqlYears1);
                 .then(res => res.json())
                 .then(res => {
                     if(res.success){
-                        // Actualizar la fila en la tabla sin recargar
-                        const idGrupo = form.querySelector('select[name="grupo"]').value;
-                        const idMateria = form.querySelector('select[name="materia"]').value;
-                        const idDocente = form.querySelector('select[name="docente"]').value;
-                        const idCiclo = form.querySelector('select[name="ciclo"]').value;
-                        
-                        // Obtener los textos seleccionados
-                        const txtGrupo = form.querySelector('select[name="grupo"] option:checked').textContent.trim();
-                        const txtMateria = form.querySelector('select[name="materia"] option:checked').textContent.trim();
-                        const txtDocente = form.querySelector('select[name="docente"] option:checked').textContent.trim();
-                        const txtCiclo = form.querySelector('select[name="ciclo"] option:checked').textContent.trim();
-                        
-                        // Buscar la fila original por ids antiguos
-                        const tr = document.querySelector(`#tabla tbody tr[data-idgrupo='${document.querySelector('#editModal').getAttribute('data-old-grupo')}'][data-idsubject='${document.querySelector('#editModal').getAttribute('data-old-materia')}'][data-idteacher='${document.querySelector('#editModal').getAttribute('data-old-docente')}']`);
-                        
-                        if(tr) {
-                            tr.setAttribute('data-idgrupo', idGrupo);
-                            tr.setAttribute('data-idsubject', idMateria);
-                            tr.setAttribute('data-idteacher', idDocente);
-                            tr.setAttribute('data-idyear', idCiclo);
-                            
-                            // Actualizar celdas visibles
-                            tr.children[0].textContent = txtCiclo;
-                            tr.children[1].textContent = txtGrupo;
-                            tr.children[2].textContent = txtMateria;
-                            
-                            // Procesar el nombre del docente correctamente
-                            const nombreCompleto = txtDocente.split(' ');
-                            // Asumimos que el formato es: nombres apellidoPaterno apellidoMaterno
-                            const nombres = nombreCompleto.slice(0, -2).join(' '); // Todo excepto los últimos dos elementos
-                            const apellidoPaterno = nombreCompleto[nombreCompleto.length - 2] || '';
-                            const apellidoMaterno = nombreCompleto[nombreCompleto.length - 1] || '';
-                            
-                            tr.children[3].textContent = apellidoPaterno;
-                            tr.children[4].textContent = apellidoMaterno;
-                            tr.children[5].textContent = nombres;
-                        }
-                        
-                        // Cerrar modal
-                        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal'));
-                        modal.hide();
-                        Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'La asignación fue actualizada correctamente.' });
+                        // Recargar la página para reflejar los cambios correctamente
+                        // ya que la estructura agrupada es compleja de actualizar via DOM
+                        window.location.reload();
                     } else {
                         Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo actualizar.' });
                     }
@@ -697,27 +603,8 @@ $resultYears2 = $conexion->query($sqlYears1);
                 .then(res => res.json())
                 .then(res => {
                     if(res.success){
-                        // Remove the row from the table if it exists
-                        if (rowToRemove && rowToRemove.parentNode) {
-                            rowToRemove.remove();
-                        } else {
-                            // If we couldn't find the exact row, try to find it again
-                            const tr = document.querySelector(`#tabla tbody tr[data-idgrupo='${idGroup}'][data-idsubject='${idSubject}'][data-idteacher='${idTeacher}']`);
-                            if (tr && tr.parentNode) {
-                                tr.remove();
-                            }
-                        }
-                        
-                        // Close the modal
-                        const modalInstance = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-                        modalInstance.hide();
-                        
-                        // Show success message
-                        Swal.fire({ 
-                            icon: 'success', 
-                            title: '¡Eliminado!', 
-                            text: 'La asignación fue eliminada correctamente.' 
-                        });
+                        // Recargar la página para reflejar los cambios correctamente
+                        window.location.reload();
                     } else {
                         Swal.fire({ 
                             icon: 'error', 
@@ -739,19 +626,140 @@ $resultYears2 = $conexion->query($sqlYears1);
     </script>
 
     <script>
-        document.getElementById('busqueda').addEventListener('change', function () {
-            document.getElementById('divGrupo').classList.add('d-none');
-            document.getElementById('divMaestro').classList.add('d-none');
-            document.getElementById('divMateria').classList.add('d-none');
-            const seleccion = this.value;
-            if (seleccion === '1') {
-                document.getElementById('divGrupo').classList.remove('d-none');
-            } else if (seleccion === '2') {
-                document.getElementById('divMaestro').classList.remove('d-none');
-            } else if (seleccion === '3') {
-                document.getElementById('divMateria').classList.remove('d-none');
+        // Filtro rápido por grupo
+        document.getElementById('filterGrupo').addEventListener('change', function() {
+            const grupoId = this.value;
+            const tbody = document.getElementById('tbody');
+            const rows = tbody.getElementsByTagName('tr');
+            
+            // Mostrar todas las filas si no hay filtro
+            if (!grupoId) {
+                Array.from(rows).forEach(row => {
+                    row.style.display = '';
+                });
+                return;
             }
+            
+            // Filtrar filas por grupo
+            Array.from(rows).forEach(row => {
+                const rowGrupoId = row.getAttribute('data-idgrupo');
+                if (rowGrupoId === grupoId) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         });
     </script>
+
+    <!-- Modal para crear asignación -->
+    <div class="modal fade" id="addAssignmentModal" tabindex="-1" aria-labelledby="addAssignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="addAssignmentModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nueva Asignación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form" action="./addAssignment.php" method="POST" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="grupo" class="form-label fw-semibold">
+                                    <i class="bi bi-collection me-1"></i>
+                                    Grupo:
+                                </label>
+                                <?php
+                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                $resultGroups = $conexion->query($sqlGroups);
+                                ?>
+                                <select class="form-select border-secondary" id="grupo" name="grupo" required>
+                                    <option value="" selected>Seleccionar grupo</option>
+                                    <?php while($group = $resultGroups->fetch_assoc()) { ?>
+                                        <option value="<?php echo $group['idGroup']; ?>"><?php echo htmlspecialchars($group['grupo']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un grupo.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="materia" class="form-label fw-semibold">
+                                    <i class="bi bi-book me-1"></i>
+                                    Materia:
+                                </label>
+                                <?php
+                                $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
+                                $resultSubjects = $conexion->query($sqlSubjects);
+                                ?>
+                                <select class="form-select border-secondary" id="materia" name="materia" required>
+                                    <option value="" selected>Seleccionar materia</option>
+                                    <?php while($subject = $resultSubjects->fetch_assoc()) { ?>
+                                        <option value="<?php echo $subject['idSubject']; ?>"><?php echo htmlspecialchars($subject['name']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione una materia.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label for="docente" class="form-label fw-semibold">
+                                    <i class="bi bi-person-workspace me-1"></i>
+                                    Docente:
+                                </label>
+                                <?php
+                                $sqlTeachers = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
+                                $resultTeachers = $conexion->query($sqlTeachers);
+                                ?>
+                                <select class="form-select border-secondary" id="docente" name="docente" required>
+                                    <option value="" selected>Seleccionar docente</option>
+                                    <?php while($teacher = $resultTeachers->fetch_assoc()) { ?>
+                                        <option value="<?php echo $teacher['idTeacher']; ?>"><?php echo htmlspecialchars($teacher['nombre']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un docente.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ciclo" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-date me-1"></i>
+                                    Ciclo Escolar:
+                                </label>
+                                <?php
+                                $sqlYears = "SELECT idSchoolYear, LEFT(startDate, 4) as year FROM schoolYear ORDER BY startDate DESC";
+                                $resultYears = $conexion->query($sqlYears);
+                                ?>
+                                <select class="form-select border-secondary" id="ciclo" name="ciclo" required>
+                                    <option value="" selected>Seleccionar ciclo escolar</option>
+                                    <?php while($year = $resultYears->fetch_assoc()) { ?>
+                                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un ciclo escolar.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Crear Asignación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

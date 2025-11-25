@@ -1,12 +1,8 @@
 <?php
 // Debe ser lo PRIMERO en el archivo, sin espacios/blancos antes
 require_once "check_session.php";
+require_once "../force_password_check.php";
 require_once "php/prevent_cache.php";
-
-// Verificar si es necesario restaurar los datos del usuario demo
-if (file_exists(__DIR__ . "/../demo/auto_restore.php")) {
-    include_once __DIR__ . "/../demo/auto_restore.php";
-}
 
 // Verificar si el usuario está logueado y es administrador
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'AD') {
@@ -71,71 +67,136 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
      <main class="flex-grow-1 col-9 p-0 ">
-        <?php
-            include "../layouts/header.php"; 
-        ?>
-        <section class="container mt-4" style="padding-top:10vh">
-            <h2 class="pt-3">BIENVENIDO</h2>
-            <div class="alert alert-info text-center my-3" >
-                Fecha límite de calificaciones: <strong id="fechaLimiteDashboard">Cargando...</strong>
+        <?php include "../layouts/header.php"; ?>
+        
+        <!-- Header de la página -->
+        <div class="container-fluid px-4 pt-5">
+            <div class="row">
+                <div class="col-12" style=" justify-content: center; display: flex;">
+                    <div class="page-header mb-3" style="padding-top: 5rem;">
+                        <h1 class="page-title">
+                            <i class="bi bi-speedometer2 me-3"></i>
+                            Panel Administrativo
+                        </h1>
+                        <p class="page-subtitle text-muted">
+                            Bienvenido al sistema de gestión de calificaciones
+                        </p>
+                    </div>
+                </div>
             </div>
-            <!-- STATS -->
-             <div class="row text-center">
-             <div class="col-4">
-    <div class="card" id="card" style="height: 100px;">
-                        <div class="card-body" >
-                            <label>Total de Alumnos</label>
-                            <h5 class="h2"id="totalAlumnos"> <?php echo $totalAlumnos; ?> </h5>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Alerta de fecha límite -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-info border-0 shadow-sm" style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); border-radius: 15px;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-event fs-4 me-3 text-info"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Fecha límite de calificaciones</h6>
+                                <strong id="fechaLimiteDashboard" class="text-dark">Cargando...</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="card" id="card" style="height: 100px;">
-                        <div class="card-body" >
-                            <label>Total de Docentes</label>
-                            <h5 class="h2"id="totalDocentes"> <?php echo $totalDocentes; ?> </h5>
+            </div>
+
+            <!-- Tarjetas de estadísticas -->
+            <div class="row mb-4">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="stats-icon me-3">
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="stats-label mb-1">Total de Alumnos</p>
+                                        <h3 class="stats-number mb-0"><?php echo $totalAlumnos; ?></h3>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="card" id="card" style="height: 100px;">
-                        <div class="card-body" >
-                            <label>Total de Materias</label>
-                            <h5 class="h2"id="totalMaterias"> <?php echo $totalMaterias; ?> </h5>
+                
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="stats-icon me-3">
+                                        <i class="bi bi-person-workspace"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="stats-label mb-1">Total de Docentes</p>
+                                        <h3 class="stats-number mb-0"><?php echo $totalDocentes; ?></h3>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-             </div>
-            <!-- STATS -->
-            <!-- CHARTS -->
-             <div class="row mt-4">
-                <div class="col-5">
-                    <div class="card" style="height: 600px;">
-                        <div class="card-header text-center">
-                            Calendario de Eventos
+                
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="stats-icon me-3">
+                                        <i class="bi bi-journal-bookmark-fill"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="stats-label mb-1">Total de Materias</p>
+                                        <h3 class="stats-number mb-0"><?php echo $totalMaterias; ?></h3>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body mt-1 mx-1 p-0 mb-0">
-                            <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sección de gráficos y calendario -->
+            <div class="row">
+                <div class="col-lg-5 mb-4">
+                    <div class="chart-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                    Calendario de Eventos
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="calendar" class="p-3"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-7">
-                    <div  class="card" style="height: 600px;">
-                        <div class="card-header text-center">
-                            Porcentaje de Grupos Aprobados
-                        </div>
-                        <div id="chart" class="card-body ms-4 position-absolute top-50 start-50 translate-middle " style="height: 500px; width: 500px;">
-                            <canvas id="chartCategorias" style="height: 300px; width: 300px;" class="ms-4"></canvas>
+                <div class="col-lg-7 mb-4">
+                    <div class="chart-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-pie-chart me-2 text-success"></i>
+                                    Porcentaje de Grupos Aprobados
+                                </h5>
+                            </div>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <div id="chart" style="width: 100%; max-width: 500px; height: 400px;">
+                                    <canvas id="chartCategorias"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-             </div> 
-             
-            <!-- CHARTS -->
-        </section>
-
-     </main>
+            </div>
+        </div>
+    </main>
     <!-- END MAIN CONTENT --> 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
@@ -185,19 +246,37 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
     </script>
     <script>
         // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos)
-        function mostrarFechaLimiteDashboard() {
+        function mostrarFechaLimiteDashboard(fechaLimite = null) {
+            const el = document.getElementById('fechaLimiteDashboard');
+            if (fechaLimite) {
+            let fecha = new Date(fechaLimite);
+            fecha.setHours(fecha.getHours() + 12);
+            const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+            el.textContent = fecha.toLocaleDateString('es-ES', opciones);
+            } else {
             fetch('get_fecha_limite.php')
                 .then(response => response.json())
                 .then(data => {
-                    const el = document.getElementById('fechaLimiteDashboard');
-                    if (data.success && data.fechaLimite) {
-                        el.textContent = data.fechaLimite;
-                    } else {
-                        el.textContent = 'No definida';
-                    }
+                if (data.success && data.fechaLimite) {
+                    let fecha = new Date(data.fechaLimite);
+                    fecha.setHours(fecha.getHours() + 12);
+                    const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+                    el.textContent = fecha.toLocaleDateString('es-ES', opciones);
+                } else {
+                    el.textContent = 'No definida';
+                }
                 });
+            }
         }
-        document.addEventListener('DOMContentLoaded', mostrarFechaLimiteDashboard);
+        document.addEventListener('DOMContentLoaded', () => mostrarFechaLimiteDashboard());
+
+        // Si tienes un input para seleccionar la fecha límite, actualiza el dashboard al seleccionar
+        const inputFechaLimite = document.getElementById('inputFechaLimite');
+        if (inputFechaLimite) {
+            inputFechaLimite.addEventListener('change', function() {
+            mostrarFechaLimiteDashboard(this.value);
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 <?php
 require_once "check_session.php";
+require_once "../force_password_check.php";
 require_once "../conection.php";
 
 // Obtener el idTeacher y el typeTeacher del usuario logueado
@@ -37,6 +38,8 @@ if ($teacher_id) {
     $subjects = array_values($uniqueSubjects);
 }
 ?>
+<!-- update test -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,59 +74,137 @@ if ($teacher_id) {
     <?php include "../layouts/asideTeacher.php"; ?>
     <main class="flex-grow-1 col-9 p-0 ">
         <?php include "../layouts/headerTeacher.php"; ?>
-        <section class="container mt-4">
-            <div id="contenedorYear" class="mb-3" style="width:30%;">
-                <label id="labelDocente" for="schoolYearSelect" class="form-label fw-bold">Año escolar:</label>
-                <select class="form-select border-dark" id="schoolYearSelect">
-                    <option value="" selected>Seleccionar año</option>
-                    <?php 
-                    $years = $conexion->query("SELECT idSchoolYear, startDate, endDate FROM schoolYear ORDER BY startDate DESC");
-                    while ($year = $years->fetch_assoc()):
-                        $label = substr($year['startDate'], 0, 4);
-                    ?>
-                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
-                    <?php endwhile; ?>
-                </select>
+        
+        <!-- Header de la página -->
+        <div class="container-fluid px-4" style="padding-top: 4rem; height: auto;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-header mb-3">
+                        <h1 class="page-title">
+                            <i class="bi bi-award me-3"></i>
+                            Calificaciones
+                        </h1>
+                        <p class="page-subtitle text-muted">
+                            Consulta y gestiona las calificaciones de tus estudiantes
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div id="contenedorQuarter" class="mb-3" style="width:30%; display:none;">
-                <label id="labelQuarter" for="schoolQuarterSelect" class="form-label fw-bold">Trimestre:</label>
-                <select class="form-select border-dark" id="schoolQuarterSelect">
-                    <option value="" selected>Seleccionar trimestre</option>
-                </select>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Panel de filtros -->
+            <div class="row mb-4 pb-4">
+                <div class="col-12">
+                    <div class="filter-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-sliders me-2 text-primary"></i>
+                                    Seleccionar Parámetros
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3" id="contenedorYear">
+                                        <label id="labelDocente" for="schoolYearSelect" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-date me-1"></i>
+                                            Año escolar:
+                                        </label>
+                                        <div class="form-select-container">
+                                            <select class="form-select border-secondary" id="schoolYearSelect">
+                                                <option value="" selected>Seleccionar año</option>
+                                                <?php 
+                                                $years = $conexion->query("SELECT idSchoolYear, startDate, endDate FROM schoolYear ORDER BY startDate DESC");
+                                                while ($year = $years->fetch_assoc()):
+                                                    $label = substr($year['startDate'], 0, 4);
+                                                ?>
+                                                    <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
+                                                <?php endwhile; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3" id="contenedorQuarter" style="display:none;">
+                                        <label id="labelQuarter" for="schoolQuarterSelect" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            Trimestre:
+                                        </label>
+                                        <div class="form-select-container">
+                                            <select class="form-select border-secondary" id="schoolQuarterSelect">
+                                                <option value="" selected>Seleccionar trimestre</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3" id="contenedorMateria" style="display:none;">
+                                        <label id="labelMatter" for="materia" class="form-label fw-semibold">
+                                            <i class="bi bi-book me-1"></i>
+                                            Materia:
+                                        </label>
+                                        <div class="form-select-container">
+                                            <select class="form-select border-secondary" id="materia">
+                                                <option value="" selected>Seleccionar Materia</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="contenedorMateria" class="mb-3" style="width:30%; display:none;">
-                <label id="labelMatter" for="materia" class="form-label fw-bold">Materia:</label>
-                <select class="form-select border-dark" id="materia">
-                    <option value="" selected>Seleccionar Materia</option>
-                </select>
-            </div>
-            
-            <div class="mb-3" style="width:30%;">
-               <label id="titulo" class="form-label fw-bold">Estudiantes inscritos</label>
-            </div>             
-            <div class="container">
-                <table class="table table-bordered border-dark" id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <?php if(isset($typeTeacher) && $typeTeacher === 'ME'): ?>
-                                <th>Grado</th>
-                                <th>Grupo</th>
-                            <?php endif; ?>
-                            <th>Apellido Paterno</th>
-                            <th>Apellido Materno</th>
-                            <th>Nombres</th>
-                            <th>Promedio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+
+            <!-- Tabla de estudiantes -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-table me-2 text-success"></i>
+                                    Lista de Estudiantes y Calificaciones
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="dataTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="fw-semibold">No.</th>
+                                                <?php if(isset($typeTeacher) && $typeTeacher === 'ME'): ?>
+                                                    <th class="fw-semibold">Grado</th>
+                                                    <th class="fw-semibold">Grupo</th>
+                                                <?php endif; ?>
+                                                <th class="fw-semibold">Apellido Paterno</th>
+                                                <th class="fw-semibold">Apellido Materno</th>
+                                                <th class="fw-semibold">Nombres</th>
+                                                <th class="fw-semibold">Promedio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                         <tr>
                             <td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Seleccione una materia, un año escolar y un trimestre.</td>
                         </tr>
-                    </tbody>
-                </table>   
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Estado vacío -->
+                                <div id="emptyState" class="text-center py-5" style="display: none;">
+                                    <div class="mb-3">
+                                        <i class="bi bi-inbox display-4 text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No hay estudiantes registrados</h5>
+                                    <p class="text-muted">Selecciona un año, trimestre y materia para ver los estudiantes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
     </main>
     <script>
         // Hide preloader when page is fully loaded
@@ -149,6 +230,12 @@ if ($teacher_id) {
         contQuarter.style.display = idSchoolYear ? '' : 'none';
         contMateria.style.display = 'none';
         materiaSelect.innerHTML = '<option value="" selected>Seleccionar Materia</option>';
+        
+        // Actualizar indicadores visuales
+        updateSelectIndicator(this);
+        updateSelectIndicator(quarterSelect);
+        updateSelectIndicator(materiaSelect);
+        
         if (!idSchoolYear) return;
         fetch(`get_quarters.php?idSchoolYear=${idSchoolYear}`)
             .then(response => response.json())
@@ -170,6 +257,11 @@ if ($teacher_id) {
         const idSchoolQuarter = this.value;
         materiaSelect.innerHTML = '<option value="" selected>Seleccionar Materia</option>';
         contMateria.style.display = idSchoolQuarter ? '' : 'none';
+        
+        // Actualizar indicadores visuales
+        updateSelectIndicator(this);
+        updateSelectIndicator(materiaSelect);
+        
         if (!idSchoolQuarter) return;
         fetch(`get_subjects.php?idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
             .then(response => response.json())
@@ -186,7 +278,20 @@ if ($teacher_id) {
     });
 
     // Mostrar alumnos solo cuando los 3 selects tienen valor
-    materiaSelect.addEventListener('change', cargarEstudiantesConPromedio);
+    materiaSelect.addEventListener('change', function() {
+        updateSelectIndicator(this);
+        cargarEstudiantesConPromedio();
+    });
+
+    // Función para actualizar indicadores visuales
+    function updateSelectIndicator(selectElement) {
+        const container = selectElement.parentElement;
+        if (selectElement.value && selectElement.value !== '') {
+            container.style.setProperty('--show-indicator', '1');
+        } else {
+            container.style.setProperty('--show-indicator', '0');
+        }
+    }
 
     function cargarEstudiantesConPromedio() {
         const idSubject = materiaSelect.value;
@@ -198,7 +303,7 @@ if ($teacher_id) {
             return;
         }
         tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Cargando...</td></tr>`;
-        fetch(`getAveragesBySubject.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
+        fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.students.length > 0) {
@@ -213,7 +318,7 @@ if ($teacher_id) {
                             <td>${student.lastnamePa}</td>
                             <td>${student.lastnameMa}</td>
                             <td>${student.names}</td>
-                            <td>${student.average !== null && student.average !== undefined ? Number(student.average).toFixed(2) : '-'}</td>
+                            <td>${student.average !== null && student.average !== undefined ? (Math.ceil(Number(student.average) * 10) / 10).toFixed(1) : '-'}</td>
                         `;
                         tr.innerHTML = rowHTML;
                         tbody.appendChild(tr);

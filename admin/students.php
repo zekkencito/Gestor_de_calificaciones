@@ -1,6 +1,54 @@
 <?php
 require_once "check_session.php";
+require_once "../force_password_check.php";
 include '../conection.php';
+
+// --- FECHA LIMITE GLOBAL PARA DESCARGAS ---
+$fechaLimite = null;
+$res = $conexion->query("SELECT limitDate FROM limitDate WHERE idLimitDate = 1 LIMIT 1");
+if ($row = $res->fetch_assoc()) {
+    $fechaLimite = $row['limitDate'];
+}
+$hoy = date('Y-m-d');
+$descargasHabilitadas = ($fechaLimite && $hoy > date('Y-m-d', strtotime($fechaLimite . ' +0 day')));
+
+// Obtener los ciclos escolares disponibles
+$schoolYears = [];
+$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate, description 
+                   FROM schoolYear 
+                   ORDER BY startDate DESC";
+$resultSchoolYears = $conexion->query($sqlSchoolYears);
+
+// Verificar si la consulta tuvo éxito y si hay años escolares
+if (!$resultSchoolYears) {
+    echo "<!-- Error en la consulta: " . $conexion->error . " -->";
+}
+
+if ($resultSchoolYears) {
+    while ($row = $resultSchoolYears->fetch_assoc()) {
+        $schoolYears[] = $row;
+    }
+    $resultSchoolYears->close();
+}
+
+// Verificar si hay ciclos escolares
+echo "<!-- Número de ciclos escolares: " . count($schoolYears) . " -->";
+if (count($schoolYears) > 0) {
+    echo "<!-- Primer ciclo: " . json_encode($schoolYears[0]) . " -->";
+} else {
+    echo "<!-- No hay ciclos escolares disponibles -->";
+}
+
+// Obtener los trimestres/periodos disponibles
+$quarters = [];
+$sqlQuarters = "SELECT idSchoolQuarter, name FROM schoolQuarter";
+$resultQuarters = $conexion->query($sqlQuarters);
+if ($resultQuarters) {
+    while ($row = $resultQuarters->fetch_assoc()) {
+        $quarters[] = $row;
+    }
+    $resultQuarters->close();
+}
 
 // Consulta para obtener la lista de estudiantes con información relacionada
 $sql = "SELECT 
@@ -83,7 +131,7 @@ if (!$resultado) {
     <link rel="icon" href="../img/logo.ico">
 
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="row d-flex" style="height: 100vh; width: 100%; margin: 0; padding: 0; overflow: hidden;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -94,95 +142,154 @@ if (!$resultado) {
 
     
     <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 col-9 p-0">
+    <main class="flex-grow-1 col-9 p-0" style="height: 100vh; overflow-y: auto;">
         <?php include "../layouts/header.php"; ?>
         
-        <div class="container mt-4" style="padding-top:12vh">
+        <!-- Header de la página -->
+        <div class="container-fluid px-4 pt-5">
             <div class="row">
-                <!-- Primera fila de búsquedas -->
-                <div class="col-md-6">
-                    <!-- BUSCAR POR ALUMNO -->
-                    <div class="search-container">
-                        <label id="labelAlumno" for="alumno" class="form-label fw-bold">Buscar por Alumno:</label>
-                        <div class="input-group search-group">
-                            <input type="text" class="form-control border-dark" id="alumno" placeholder="Buscar alumno...">
-                            <span class="input-group-text bg-white border-dark">
-                                <i id="iBuscar" class="bi bi-search"></i>
-                            </span>
+                <div class="col-12">
+                    <div class="page-header mb-3">
+                        <h1 class="page-title">
+                            <i class="bi bi-people me-3"></i>
+                            Gestión de Estudiantes
+                        </h1>
+                        <p class="page-subtitle">
+                            Administra la información de los estudiantes del sistema
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="container-fluid px-4">
+            <!-- Panel de filtros -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="filter-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2 text-primary"></i>
+                                    Filtros de Búsqueda
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <!-- BUSCAR POR ALUMNO -->
+                                        <div class="search-container">
+                                            <label for="alumno" class="form-label fw-semibold">
+                                                <i class="bi bi-person-search me-1"></i>
+                                                Buscar por Alumno:
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control border-secondary" id="alumno" placeholder="Buscar alumno...">
+                                                <span class="input-group-text bg-light border-secondary">
+                                                    <i class="bi bi-search text-primary"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <!-- BUSCAR POR AÑO ESCOLAR -->
+                                        <div class="search-container">
+                                            <label for="schoolYear" class="form-label fw-semibold">
+                                                <i class="bi bi-calendar-date me-1"></i>
+                                                Año Escolar:
+                                            </label>
+                                            <select class="form-select border-secondary" id="schoolYear" name="schoolYear">
+                                                <option value="">Todos los años</option>
+                                                <?php
+                                                $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                                                $resultYears = $conexion->query($sqlYears);
+                                                while ($year = $resultYears->fetch_assoc()) {
+                                                    $selected = (isset($_GET['year']) && $_GET['year'] == $year['idSchoolYear']) ? 'selected' : '';
+                                                    echo "<option value='" . $year['idSchoolYear'] . "' $selected>" . $year['year'] . "</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-2">
+                                    <!-- Segunda fila de búsquedas -->
+                                    <div class="col-md-6">
+                                        <!-- BUSCAR POR GRUPO -->
+                                        <div class="search-container">
+                                            <label for="grupo" class="form-label fw-semibold">
+                                                <i class="bi bi-collection me-1"></i>
+                                                Buscar por Grupo:
+                                            </label>
+                                            <select class="form-select border-secondary" id="grupo" name="grupo">
+                                                <option value="">Todos los grupos</option>
+                                                <?php
+                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                                $resultGroups = $conexion->query($sqlGroups);
+                                                while ($group = $resultGroups->fetch_assoc()) {
+                                                    $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
+                                                    echo "<option value='" . $group['idGroup'] . "' $selected>" . $group['grupo'] . "</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <!-- Botones de acción -->
+                                        <div class="d-flex gap-2 w-100">
+                                            <!-- Botón para descargar PDFs del grupo (oculto por defecto) -->
+                                            <button id="btnDescargarGrupo" 
+                                                    class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> d-none flex-fill" 
+                                                    <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
+                                                <i class="bi bi-download me-2"></i> 
+                                                <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
+                                            </button>
+                                            
+                                            <button class="btn btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                                                <i class="bi bi-plus-lg me-2"></i>
+                                                Inscribir alumno
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-6">
-                    <!-- BUSCAR POR AÑO ESCOLAR -->
-                    <div class="search-container">
-                        <label id="labelAlumno" for="schoolYear" class="form-label fw-bold">Año Escolar:</label>
-                        <select class="form-select search-select border-dark" id="schoolYear" name="schoolYear">
-                            <option value="">Todos los años</option>
-                            <?php
-                            $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
-                            $resultYears = $conexion->query($sqlYears);
-                            while ($year = $resultYears->fetch_assoc()) {
-                                $selected = (isset($_GET['year']) && $_GET['year'] == $year['idSchoolYear']) ? 'selected' : '';
-                                echo "<option value='" . $year['idSchoolYear'] . "' $selected>" . $year['year'] . "</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
-                </div>
             </div>
 
-            <div class="row mt-3">
-                <!-- Segunda fila de búsquedas -->
-                <div class="col-md-6">
-                    <!-- BUSCAR POR GRUPO -->
-                    <div class="search-container">
-                        <label id="labelAlumno" for="grupo" class="form-label fw-bold">Buscar por Grupo:</label>
-                        <select class="form-select search-select border-dark" id="grupo" name="grupo">
-                            <option value="">Todos los grupos</option>
-                            <?php
-                            $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                            $resultGroups = $conexion->query($sqlGroups);
-                            while ($group = $resultGroups->fetch_assoc()) {
-                                $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
-                                echo "<option value='" . $group['idGroup'] . "' $selected>" . $group['grupo'] . "</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <!-- Botón Agregar Alumno -->
-                    <div class="d-flex justify-content-end mt-4">
-                        <button class="buttonInscribir" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                            Inscribir alumno <i class="bi bi-plus-lg"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Título y Tabla -->
-            <div class="row mt-4">
+            <!-- Tabla de estudiantes -->
+            <div class="row">
                 <div class="col-12">
-                    <h1 id="listaAlumnos">Lista de Alumnos</h1>
-                    <div id="tabla" class="mt-4 contenedorTabla">
-                        <table class="table table-bordered border-dark">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>A. Paterno</th>
-                                    <th>A. Materno</th>
-                                    <th>Nombres</th>
-                                    <th>Grupo</th>
-                                    <th>Año Escolar</th>
-                                    <th>Estado</th>
-                                    <th>Boleta</th>
-                                    <th>Ver</th>
-                                    <th>Editar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="alumnosBody">
+                    <div class="table-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-table me-2 text-success"></i>
+                                    Lista de Alumnos
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="fw-semibold">No.</th>
+                                                <th class="fw-semibold">A. Paterno</th>
+                                                <th class="fw-semibold">A. Materno</th>
+                                                <th class="fw-semibold">Nombres</th>
+                                                <th class="fw-semibold">Grupo</th>
+                                                <th class="fw-semibold">Año Escolar</th>
+                                                <th class="fw-semibold">Estado</th>
+                                                <th class="fw-semibold text-center">Boleta</th>
+                                                <th class="fw-semibold text-center">Ver</th>
+                                                <th class="fw-semibold text-center">Editar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="alumnosBody">
                     <?php while ($row = $resultado->fetch_assoc()) { ?>
                         <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear']); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup']); ?>">
                             <td><?php echo htmlspecialchars($row['idStudent']); ?></td>
@@ -210,13 +317,22 @@ if (!$resultado) {
                                     echo '<span class="badge bg-light">' . $row['status'] . '</span>';
                                 }
                             ?></td>
-                            <td>
-                                <button id="botonVer" data-bs-toggle="modal" data-bs-target="#modalCamposFormativos">
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalCamposFormativos"
+                                    data-id="<?php echo $row['idStudent']; ?>"
+                                    data-nombres="<?php echo htmlspecialchars($row['names']); ?>"
+                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa']); ?>"
+                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa']); ?>"
+                                    data-grade="<?php echo htmlspecialchars($row['grade']); ?>"
+                                    data-grupo="<?php echo htmlspecialchars($row['grupo']); ?>"
+                                    title="Ver boleta">
                                     <i class="bi bi-file-earmark-text-fill"></i>
                                 </button>
                             </td>
-                            <td>
-                                <button class="botonVer btn-ver" id="botonVer"
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-info btn-ver" 
                                 data-id="<?php echo isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : ''; ?>"
                                 data-nombres="<?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?>"
                                 data-paterno="<?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?>"
@@ -226,6 +342,7 @@ if (!$resultado) {
                                 data-schoolyear="<?php echo isset($row['schoolYear']) ? htmlspecialchars($row['schoolYear']) : ''; ?>"
                                 data-genero="<?php echo isset($row['gender']) ? htmlspecialchars($row['gender']) : ''; ?>"
                                 data-direccion="<?php echo isset($row['street']) ? htmlspecialchars($row['street']) : ''; ?>"
+                                data-telefono="<?php echo isset($row['phone']) ? htmlspecialchars($row['phone']) : ''; ?>"
                                 data-username="<?php echo isset($row['username']) ? htmlspecialchars($row['username']) : ''; ?>"
                                 data-email="<?php echo isset($row['email']) ? htmlspecialchars($row['email']) : ''; ?>"
                                 data-curp="<?php echo isset($row['curp']) ? htmlspecialchars($row['curp']) : ''; ?>"
@@ -237,12 +354,13 @@ if (!$resultado) {
                                 data-tutortelefono="<?php echo isset($row['tutorPhone']) ? htmlspecialchars($row['tutorPhone']) : ''; ?>"
                                 data-tutoremail="<?php echo isset($row['tutorEmail']) ? htmlspecialchars($row['tutorEmail']) : ''; ?>"
                                 data-tutordireccion="<?php echo isset($row['tutorAddress']) ? htmlspecialchars($row['tutorAddress']) : ''; ?>"
-                                data-tutorparentesco="<?php echo isset($row['tutorRelationship']) ? htmlspecialchars($row['tutorRelationship']) : ''; ?>">
+                                data-tutorparentesco="<?php echo isset($row['tutorRelationship']) ? htmlspecialchars($row['tutorRelationship']) : ''; ?>"
+                                title="Ver detalles">
                                 <i class="bi bi-person-fill"></i>
                             </button>
                             </td>
-                            <td>
-                            <button class="botonVer btn-editar" id="botonVer"    
+                            <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning btn-editar"    
                                 data-id="<?php echo isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : ''; ?>"
                                 data-nombres="<?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?>"
                                 data-paterno="<?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?>"
@@ -264,13 +382,31 @@ if (!$resultado) {
                                 data-username="<?php echo isset($row['username']) ? htmlspecialchars($row['username']) : ''; ?>"
                                 data-email="<?php echo isset($row['email']) ? htmlspecialchars($row['email']) : ''; ?>"
                                 data-curp="<?php echo isset($row['curp']) ? htmlspecialchars($row['curp']) : ''; ?>"
-                                >
+                                title="Editar estudiante">
                                 <i class="bi bi-pencil-fill"></i>
                             </button>
                             </td>
-                            </td>
                         </tr>
                     <?php } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Estado vacío -->
+                                <div id="emptyState" class="text-center py-5" style="display: none;">
+                                    <div class="mb-3">
+                                        <i class="bi bi-inbox display-4 text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No hay estudiantes registrados</h5>
+                                    <p class="text-muted">Agrega estudiantes usando el botón "Inscribir alumno"</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
                 </tbody>
                         </table>
                     </div>
@@ -283,343 +419,463 @@ if (!$resultado) {
     <!-- MODAL AGREGAR ALUMNO -->
     <div class="modal fade modal-lg" id="addStudentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5">Inscribir Alumno</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h1 id="tituloModal" class="modal-title fs-5">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Inscribir Alumno
+                    </h1>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="addStudent.php" id="formInscribir" method="POST" class="needs-validation" novalidate>
-                    <div class="modal-body">
-                        <div class="row mb-3">   
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtName">Nombres:</label>
-                                <input required type="text" name="txtName" class="form-control" placeholder="Nombres">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtLastnamePa">Apellido Paterno:</label>
-                                <input required type="text" name="txtLastnamePa" class="form-control" placeholder="Apellido Paterno">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtLastnameMa">Apellido Materno:</label>
-                                <input required type="text" name="txtLastnameMa" class="form-control" placeholder="Apellido Materno">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtPhone">Teléfono:</label>
-                                <input required type="tel" name="txtPhone" class="form-control" placeholder="Teléfono">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtEmail">Correo:</label>
-                                <input required type="email" name="txtEmail" class="form-control" placeholder="Correo">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Ingrese un correo válido</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtGender">Género:</label>
-                                <select required name="txtGender" class="form-select">
-                                    <option value="">Seleccionar género</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
-                                </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Seleccione una opción</div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtGroup">Grupo:</label>
-                                <select required name="txtGroup" class="form-select">
-                                    <option value="">Seleccionar grupo</option>
-                                    <?php
-                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                                    $resultGroups = $conexion->query($sqlGroups);
-                                    while ($group = $resultGroups->fetch_assoc()) {
-                                        echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Seleccione una opción</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtSchoolYear">Año Escolar:</label>
-                                <select required name="txtSchoolYear" class="form-select">
-                                    <option value="">Seleccionar año</option>
-                                    <?php
-                                    $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
-                                    $resultYears = $conexion->query($sqlYears);
-                                    while ($year = $resultYears->fetch_assoc()) {
-                                        echo "<option value='" . $year['idSchoolYear'] . "'>" . $year['year'] . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Seleccione una opción</div>
+                <div class="modal-body">
+                    <form action="addStudent.php" id="formInscribir" method="POST" class="needs-validation" novalidate>
+                        <!-- Información Personal -->
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-person me-2"></i>
+                                Información Personal
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtName">
+                                        <i class="bi bi-person me-1"></i>
+                                        Nombres:
+                                    </label>
+                                    <input required type="text" name="txtName" class="form-control border-secondary" placeholder="Nombres">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtLastnamePa">
+                                        <i class="bi bi-person me-1"></i>
+                                        Apellido Paterno:
+                                    </label>
+                                    <input required type="text" name="txtLastnamePa" class="form-control border-secondary" placeholder="Apellido Paterno">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtLastnameMa">
+                                        <i class="bi bi-person me-1"></i>
+                                        Apellido Materno:
+                                    </label>
+                                    <input required type="text" name="txtLastnameMa" class="form-control border-secondary" placeholder="Apellido Materno">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtGender">
+                                        <i class="bi bi-gender-ambiguous me-1"></i>
+                                        Género:
+                                    </label>
+                                    <select required name="txtGender" class="form-select border-secondary">
+                                        <option value="">Seleccionar género</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Femenino</option>
+                                    </select>
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Seleccione una opción</div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold" for="txtCurp">
+                                        <i class="bi bi-card-text me-1"></i>
+                                        CURP:
+                                    </label>
+                                    <input required type="text" name="txtCurp" class="form-control border-secondary" placeholder="CURP">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtAddress">Dirección:</label>
-                                <input required type="text" name="txtAddress" class="form-control" placeholder="Dirección">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
+                        <!-- Información de Contacto -->
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-telephone me-2"></i>
+                                Información de Contacto
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="txtPhone">
+                                        <i class="bi bi-telephone me-1"></i>
+                                        Teléfono:
+                                    </label>
+                                    <input required type="tel" name="txtPhone" class="form-control border-secondary" placeholder="Teléfono">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="txtEmail">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        Correo:
+                                    </label>
+                                    <input required type="email" name="txtEmail" class="form-control border-secondary" placeholder="Correo">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Ingrese un correo válido</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold" for="txtAddress">
+                                        <i class="bi bi-geo-alt me-1"></i>
+                                        Dirección:
+                                    </label>
+                                    <input required type="text" name="txtAddress" class="form-control border-secondary" placeholder="Dirección">
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Campo requerido</div>
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtCurp">CURP:</label>
-                                <input required type="text" name="txtCurp" class="form-control" placeholder="CURP">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">Campo requerido</div>
+                        </div>
+
+                        <!-- Información Académica -->
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-book me-2"></i>
+                                Información Académica
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="txtGroup">
+                                        <i class="bi bi-people me-1"></i>
+                                        Grupo:
+                                    </label>
+                                    <select required name="txtGroup" class="form-select border-secondary">
+                                        <option value="">Seleccionar grupo</option>
+                                        <?php
+                                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                        $resultGroups = $conexion->query($sqlGroups);
+                                        while ($group = $resultGroups->fetch_assoc()) {
+                                            echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Seleccione una opción</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="txtSchoolYear">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Año Escolar:
+                                    </label>
+                                    <select required name="txtSchoolYear" class="form-select border-secondary">
+                                        <option value="">Seleccionar año</option>
+                                        <?php
+                                        $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                                        $resultYears = $conexion->query($sqlYears);
+                                        while ($year = $resultYears->fetch_assoc()) {
+                                            echo "<option value='" . $year['idSchoolYear'] . "'>" . $year['year'] . "</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                    <div class="valid-feedback">Correcto</div>
+                                    <div class="invalid-feedback">Seleccione una opción</div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Información del Tutor -->
-                        <div class="modal-header border-top">
-                            <h5 class="modal-title">Información del Tutor</h5>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">   
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorName">Nombres:</label>
-                                    <input required type="text" name="txtTutorName" class="form-control" placeholder="Nombres del tutor">
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-person-heart me-2"></i>
+                                Información del Tutor
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorName">
+                                        <i class="bi bi-person me-1"></i>
+                                        Nombres:
+                                    </label>
+                                    <input required type="text" name="txtTutorName" class="form-control border-secondary" placeholder="Nombres del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorLastnames">Apellidos:</label>
-                                    <input required type="text" name="txtTutorLastnames" class="form-control" placeholder="Apellidos del tutor">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorLastnames">
+                                        <i class="bi bi-person me-1"></i>
+                                        Apellidos:
+                                    </label>
+                                    <input required type="text" name="txtTutorLastnames" class="form-control border-secondary" placeholder="Apellidos del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorIne">INE:</label>
-                                    <input required type="text" name="txtTutorIne" class="form-control" placeholder="INE del tutor">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorIne">
+                                        <i class="bi bi-card-text me-1"></i>
+                                        INE:
+                                    </label>
+                                    <input required type="text" name="txtTutorIne" class="form-control border-secondary" placeholder="INE del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorPhone">Teléfono:</label>
-                                    <input required type="tel" name="txtTutorPhone" class="form-control" placeholder="Teléfono del tutor">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorPhone">
+                                        <i class="bi bi-telephone me-1"></i>
+                                        Teléfono:
+                                    </label>
+                                    <input required type="tel" name="txtTutorPhone" class="form-control border-secondary" placeholder="Teléfono del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorEmail">Correo:</label>
-                                    <input required type="email" name="txtTutorEmail" class="form-control" placeholder="Correo del tutor">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorEmail">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        Correo:
+                                    </label>
+                                    <input required type="email" name="txtTutorEmail" class="form-control border-secondary" placeholder="Correo del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Ingrese un correo válido</div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="labelAgregar" for="txtTutorAddress">Dirección:</label>
-                                    <input required type="text" name="txtTutorAddress" class="form-control" placeholder="Dirección del tutor">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="txtTutorRelative">
+                                        <i class="bi bi-heart me-1"></i>
+                                        Parentesco:
+                                    </label>
+                                    <input required type="text" name="txtTutorRelative" class="form-control border-secondary" placeholder="Parentesco del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <label class="labelAgregar" for="txtTutorRelative">Parentesco:</label>
-                                    <input required type="text" name="txtTutorRelative" class="form-control" placeholder="Parentesco del tutor">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold" for="txtTutorAddress">
+                                        <i class="bi bi-geo-alt me-1"></i>
+                                        Dirección:
+                                    </label>
+                                    <input required type="text" name="txtTutorAddress" class="form-control border-secondary" placeholder="Dirección del tutor">
                                     <div class="valid-feedback">Correcto</div>
                                     <div class="invalid-feedback">Campo requerido</div>
                                 </div>
                             </div>
                         </div>
 
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="botonCancelar" data-bs-dismiss="modal">
-                            Cancelar <i class="bi bi-x-circle-fill"></i>
-                        </button>
-                        <button type="submit" class="botonEnter">
-                            Inscribir <i class="bi bi-check-circle-fill"></i>
-                        </button>
-                    </div>
-                    <div class="alert alert-danger mx-3 mb-3 d-none" id="divAlerta">
-                        Favor de llenar todos los campos correctamente
-                    </div>
-                </form>
+                        <div class="alert alert-danger d-none" id="divAlerta">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Favor de llenar todos los campos correctamente
+                        </div>
+
+                        <div class="modal-footer border-0 bg-light mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Inscribir Alumno
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL VER ALUMNO -->
-    <div class="modal fade modal-lg" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5">Información Personal</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Modal para mostrar detalles del estudiante -->
+    <div class="modal fade modal-lg" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="showModalLabel">
+                        <i class="bi bi-person-circle me-2"></i>
+                        Información del Estudiante
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="#" enctype="multipart/form-data" method="post" class="needs-validation" novalidate id="form">
-                    <div class="modal-body">
-                        <div class="row">   
-                            <div class="col-6" style="padding-right: 0;">
-                                <label class="labelAgregar" for="txtName">Nombres:</label>
-                                <p id="show_nombres"></p>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtLastname">Apellidos:</label>
-                                <p><span id="show_paterno"></span> <span id="show_materno"></span></p>
-
-                            </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Información Personal -->
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-person-badge me-2"></i>
+                                Datos Personales
+                            </h6>
                         </div>
-                        <div class="row pt-2">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtCurp">CURP:</label>
-                                <p id="show_curp"></p>
-                            </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-muted">ID:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_id">-</p>
                         </div>
-                        <div class="row pt-2">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtGroup">Grupo:</label>
-                                <p id="show_grupo"></p>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtSchoolYear">Año Escolar:</label>
-                                <p id="show_schoolYear"></p>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Nombres:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_nombres">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-muted">Estado:</label>
+                            <div class="border rounded px-3 py-2 bg-light d-flex align-items-center" id="show_status">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Apellido Paterno:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_paterno">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Apellido Materno:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_materno">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">CURP:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_curp">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Género:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_genero">-</p>
+                        </div>
+                        
+                        <!-- Información Académica -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-book me-2"></i>
+                                Información Académica
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Grupo:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_grupo">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Año Escolar:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_schoolYear">-</p>
+                        </div>
+                        
+                        <!-- Información de Contacto -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-telephone me-2"></i>
+                                Información de Contacto
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Teléfono:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_telefono">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Email:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_email">-</p>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-muted">Dirección:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_direccion">-</p>
+                        </div>
+                        
+                        <!-- Información del Tutor -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-person-hearts me-2"></i>
+                                Información del Tutor
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Nombres del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorNombres">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Apellidos del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorApellidos">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">INE del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorIne">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Parentesco:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorParentesco">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Teléfono del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorPhone">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Email del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorEmail">-</p>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-muted">Dirección del Tutor:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="show_tutorAddress">-</p>
                         </div>
                     </div>
-
-                    <div class="modal-header">
-                        <h1 id="tituloModal" class="modal-title fs-5">Información del Tutor</h1>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">   
-                            <div class="col-6" style="padding-right: 0;">
-                                <label class="labelAgregar" for="txtTutorName">Nombres:</label>
-                                <p id="show_tutorNombres"></p>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorLastname">Apellidos:</label>
-                                <p id="show_tutorApellidos"></p>
-                            </div>
-                        </div>
-                        <div class="row pt-2">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorIne">INE:</label>
-                                <p id="show_tutorIne"></p>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorEmail">Correo:</label>
-                                <p id="show_tutorEmail"></p>
-                            </div>
-                        </div>
-                        <div class="row pt-2">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorPhone">Número de teléfono:</label>
-                                <p id="show_tutorPhone"></p>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorAddress">Dirección:</label>
-                                <p id="show_tutorAddress"></p>
-                            </div>
-                        </div>
-                        <div class="modal-footer d-flex justify-content-between" style="border-top: 0;">
-                            <button class="botonCancelar" type="button" style="margin-left: 68vh;" class="btn btn-secondary w-25" data-bs-toggle="modal" data-bs-target="#deleteModal">Eliminar Información
-                                <i id="iconoAdd" class="bi bi-trash-fill"></i>
-                            </button>
-                           
-                        </div>
-                        <div class="alert alert-danger mt-4 d-none" id="divAlerta" role="alert">
-                            Favor de llenar los campos
-                        </div>
-                    </div>
-                </form>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash me-1"></i>
+                        Eliminar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EDITAR ALUMNO -->
-    <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5">Información Personal</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Modal para editar estudiante -->
+    <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="editModalLabel">
+                        <i class="bi bi-pencil me-2"></i>
+                        Editar Estudiante
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="updateStudent.php" enctype="multipart/form-data" method="post" class="needs-validation" novalidate id="formEditStudent">
-                    <input type="hidden" name="studentId" id="studentId">
-                    <div class="modal-body">
-                        <div class="row">   
-                            <div class="col-6" style="padding-right: 0;">
-                                <label class="labelAgregar" for="txtName">Nombres:</label>
-                                <input required type="text" name="txtName" class="form-control" id="editName">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                <div class="modal-body">
+                    <form action="updateStudent.php" method="POST" class="needs-validation" novalidate id="formEditStudent">
+                        <input type="hidden" name="studentId" id="studentId">
+                        <div class="row g-3">
+                            <!-- Información Personal -->
+                            <div class="col-12">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-person-badge me-2"></i>
+                                    Datos Personales
+                                </h6>
                             </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtLastnamePa">Apellido Paterno:</label>
-                                <input required type="text" name="txtLastnamePa" class="form-control" id="editLastnamePa">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editName" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Nombres <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editName" name="txtName" required>
+                                <div class="invalid-feedback">Por favor ingrese los nombres.</div>
                             </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtLastnameMa">Apellido Materno:</label>
-                                <input required type="text" name="txtLastnameMa" class="form-control" id="editLastnameMa">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editLastnamePa" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Apellido Paterno <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editLastnamePa" name="txtLastnamePa" required>
+                                <div class="invalid-feedback">Por favor ingrese el apellido paterno.</div>
                             </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtCurp">CURP:</label>
-                                <input required type="text" name="txtCurp" class="form-control" id="editCurp">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editLastnameMa" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Apellido Materno <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editLastnameMa" name="txtLastnameMa" required>
+                                <div class="invalid-feedback">Por favor ingrese el apellido materno.</div>
                             </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtPhone">Teléfono:</label>
-                                <input required type="text" name="txtPhone" class="form-control" id="editPhone">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editCurp" class="form-label fw-semibold">
+                                    <i class="bi bi-card-text me-1"></i>
+                                    CURP <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editCurp" name="txtCurp" required>
+                                <div class="invalid-feedback">Por favor ingrese el CURP.</div>
                             </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtEmail">Email:</label>
-                                <input required type="email" name="txtEmail" class="form-control" id="editEmail">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtGender">Género:</label>
-                                <select required name="txtGender" class="form-select" id="editGender">
+                            <div class="col-md-6">
+                                <label for="editGender" class="form-label fw-semibold">
+                                    <i class="bi bi-gender-ambiguous me-1"></i>
+                                    Género <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select border-secondary" id="editGender" name="txtGender" required>
                                     <option value="">Seleccionar género</option>
                                     <option value="M">Masculino</option>
                                     <option value="F">Femenino</option>
                                 </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                                <div class="invalid-feedback">Por favor seleccione un género.</div>
                             </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtAddress">Dirección:</label>
-                                <input required type="text" name="txtAddress" class="form-control" id="editAddress">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtStatus">Estado:</label>
-                                <select required name="txtStatus" class="form-select" id="editStatus">
-                                    <option value="1">Activo, actualmente cursando el ciclo escolar</option>
+                            <div class="col-md-6">
+                                <label for="editStatus" class="form-label fw-semibold">
+                                    <i class="bi bi-bookmark me-1"></i>
+                                    Estado <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select border-secondary" id="editStatus" name="txtStatus" required>
+                                    <option value="">Seleccionar estado</option>
+                                    <option value="1">Activo, actualmente cursando el año escolar</option>
                                     <option value="2">Dado de baja (por traslado, abandono u otras razones)</option>
                                     <option value="3">Reinscrito después de una baja</option>
                                     <option value="4">Egresado</option>
@@ -628,124 +884,203 @@ if (!$resultado) {
                                     <option value="7">Repetidor de grado</option>
                                     <option value="8">Intercambio temporal</option>
                                 </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                                <div class="invalid-feedback">Por favor seleccione un estado.</div>
                             </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtGroup">Grupo:</label>
-                               <select required name="txtGroup" class="form-select" id="editGroup">
+
+                            <!-- Información Académica -->
+                            <div class="col-12 mt-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-book me-2"></i>
+                                    Información Académica
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editGroup" class="form-label fw-semibold">
+                                    <i class="bi bi-people me-1"></i>
+                                    Grupo <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select border-secondary" id="editGroup" name="txtGroup" required>
                                     <option value="">Seleccionar grupo</option>
                                     <?php
                                     $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                     $resultGroups = $conexion->query($sqlGroups);
                                     while ($group = $resultGroups->fetch_assoc()) {
-                                        // La comparación se hará dinámicamente con JavaScript
                                         echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";
                                     }
                                     ?>
                                 </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                                <div class="invalid-feedback">Por favor seleccione un grupo.</div>
                             </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtSchoolYear">Año Escolar:</label>
-                                <select required name="txtSchoolYear" class="form-select" id="editSchoolYear">
+                            <div class="col-md-6">
+                                <label for="editSchoolYear" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    Año Escolar <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select border-secondary" id="editSchoolYear" name="txtSchoolYear" required>
                                     <option value="">Seleccionar año</option>
                                     <?php
                                     $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
                                     $resultYears = $conexion->query($sqlYears);
                                     while ($year = $resultYears->fetch_assoc()) {
-                                        // La comparación se hará dinámicamente con JavaScript
                                         echo "<option value='" . $year['idSchoolYear'] . "'>" . $year['year'] . "</option>";
                                     }
                                     ?>
                                 </select>
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                                <div class="invalid-feedback">Por favor seleccione un año escolar.</div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5">Información del Tutor</h1>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">   
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtTutorName">Nombres:</label>
-                                <input required type="text" name="txtTutorName" class="form-control" id="editTutorName">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <!-- Información de Contacto -->
+                            <div class="col-12 mt-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    Información de Contacto
+                                </h6>
                             </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtTutorLastnamePa">Apellido Paterno:</label>
-                                <input required type="text" name="txtTutorLastnamePa" class="form-control" id="editTutorLastnamePa">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editPhone" class="form-label fw-semibold">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    Teléfono <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" class="form-control border-secondary" id="editPhone" name="txtPhone" required>
+                                <div class="invalid-feedback">Por favor ingrese un teléfono válido.</div>
                             </div>
-                            <div class="col-4">
-                                <label class="labelAgregar" for="txtTutorLastnameMa">Apellido Materno:</label>
-                                <input required type="text" name="txtTutorLastnameMa" class="form-control" id="editTutorLastnameMa">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
+                            <div class="col-md-6">
+                                <label for="editEmail" class="form-label fw-semibold">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    Email <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" class="form-control border-secondary" id="editEmail" name="txtEmail" required>
+                                <div class="invalid-feedback">Por favor ingrese un email válido.</div>
+                            </div>
+                            <div class="col-12">
+                                <label for="editAddress" class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Dirección <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control border-secondary" id="editAddress" name="txtAddress" rows="2" required></textarea>
+                                <div class="invalid-feedback">Por favor ingrese la dirección.</div>
+                            </div>
+
+                            <!-- Información del Tutor -->
+                            <div class="col-12 mt-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-person-hearts me-2"></i>
+                                    Información del Tutor
+                                </h6>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editTutorName" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Nombres del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editTutorName" name="txtTutorName" required>
+                                <div class="invalid-feedback">Por favor ingrese los nombres del tutor.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editTutorLastnamePa" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Apellido Paterno del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editTutorLastnamePa" name="txtTutorLastnamePa" required>
+                                <div class="invalid-feedback">Por favor ingrese el apellido paterno del tutor.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editTutorLastnameMa" class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    Apellido Materno del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editTutorLastnameMa" name="txtTutorLastnameMa" required>
+                                <div class="invalid-feedback">Por favor ingrese el apellido materno del tutor.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editTutorIne" class="form-label fw-semibold">
+                                    <i class="bi bi-card-heading me-1"></i>
+                                    INE del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editTutorIne" name="txtTutorIne" required>
+                                <div class="invalid-feedback">Por favor ingrese el INE del tutor.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editTutorRelative" class="form-label fw-semibold">
+                                    <i class="bi bi-heart me-1"></i>
+                                    Parentesco <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control border-secondary" id="editTutorRelative" name="txtTutorRelative" required>
+                                <div class="invalid-feedback">Por favor ingrese el parentesco.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editTutorPhone" class="form-label fw-semibold">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    Teléfono del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" class="form-control border-secondary" id="editTutorPhone" name="txtTutorPhone" required>
+                                <div class="invalid-feedback">Por favor ingrese el teléfono del tutor.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editTutorEmail" class="form-label fw-semibold">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    Email del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" class="form-control border-secondary" id="editTutorEmail" name="txtTutorEmail" required>
+                                <div class="invalid-feedback">Por favor ingrese un email válido para el tutor.</div>
+                            </div>
+                            <div class="col-12">
+                                <label for="editTutorAddress" class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Dirección del Tutor <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control border-secondary" id="editTutorAddress" name="txtTutorAddress" rows="2" required></textarea>
+                                <div class="invalid-feedback">Por favor ingrese la dirección del tutor.</div>
                             </div>
                         </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorIne">INE:</label>
-                                <input required type="text" name="txtTutorIne" class="form-control" id="editTutorIne">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorEmail">Correo:</label>
-                                <input required type="email" name="txtTutorEmail" class="form-control" id="editTutorEmail">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorPhone">Teléfono:</label>
-                                <input required type="text" name="txtTutorPhone" class="form-control" id="editTutorPhone">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorAddress">Dirección:</label>
-                                <input required type="text" name="txtTutorAddress" class="form-control" id="editTutorAddress">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                        </div>
-                        <div class="row pt-3">
-                            <div class="col-6">
-                                <label class="labelAgregar" for="txtTutorRelative">Parentesco:</label>
-                                <input required type="text" name="txtTutorRelative" class="form-control" id="editTutorRelative">
-                                <div class="valid-feedback">Correcto</div>
-                                <div class="invalid-feedback">No válido</div>
-                            </div>
-                        </div>
-                        <div class="modal-footer d-flex justify-content-between" style="border-top: 0;">
-                            <button class="botonCancelar" type="button" class="btn btn-secondary w-25" data-bs-dismiss="modal">Cancelar
-                                <i id="iconoAdd" class="bi bi-x-circle-fill"></i>
+                        <div class="modal-footer border-0 bg-light mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
                             </button>
-                            <button class="botonEnter" type="submit" class="btn btn-primary w-25">Guardar Cambios
-                                <i id="iconoAdd" class="bi bi-floppy2-fill"></i>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Actualizar Estudiante
                             </button>
                         </div>
-                        <div class="alert alert-danger mt-4 d-none" id="divAlerta" role="alert">
-                            Favor de llenar los campos
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL ELIMINAR ALUMNO -->
+
+     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="bi bi-person-x text-danger display-1 mb-3"></i>
+                        <h5>¿Está seguro que desea eliminar este docente?</h5>
+                        <p class="text-muted" id="delete-teacher-info">Esta acción no se puede deshacer.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger"  id="eliminar">
+                        <i class="bi bi-trash me-2"></i>
+                        Eliminar Docente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL ELIMINAR ALUMNO 
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -763,9 +1098,9 @@ if (!$resultado) {
                 </div>
             </div>
         </div>
-    </div>
+    </div>-->
 
-    <!-- MODAL CONFIRMAR ELIMINACIÓN -->
+    <!-- MODAL CONFIRMAR ELIMINACIÃ“N 
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -783,58 +1118,67 @@ if (!$resultado) {
                 </div>
             </div>
         </div>
-    </div>
+    </div>-->
 
     <!-- MODAL BOLETA -->
     <div class="modal fade" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 id="tituloModalBoleta" class="modal-title">Boleta</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar" style="color:white;"></button>
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="modalCamposFormativosLabel">Boleta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="labelAgregar" for="cicloFormativo">Ciclo Escolar:</label>
-                        <select class="form-select border-dark" id="cicloFormativo">
-                            <option id="subject" value="" selected disabled>Seleccionar ciclo</option>
-                            <option value="2023">2023 - 2024</option>
-                            <option value="2024">2024 - 2025</option>
-                        </select>
+                    <!-- Ãrea para mostrar la información del estudiante -->
+                    <!--div id="studentInfo" class="alert alert-light mb-4 border">
+                        <-- La información del estudiante se cargará dinámicamente --
+                    </div-->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cicloFormativo" class="form-label fw-bold">Año Escolar:</label>
+                                <select class="form-select" id="cicloFormativo">
+                                    <option value="" selected>Seleccionar año escolar</option>
+                                    <?php 
+                                    $years = $conexion->query("SELECT idSchoolYear, startDate, endDate FROM schoolYear ORDER BY startDate DESC");
+                                    while ($year = $years->fetch_assoc()):
+                                        $label = substr($year['startDate'], 0, 4);
+                                    ?>
+                                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                        </div>
+                     <div class="col-md-6">        
+                        <div class="mb-3 d-none" id="divTrimestreFormativo">
+                            <label for="trimestreFormativo" class="form-label fw-bold">Trimestre:</label>
+                            <select class="form-select" id="trimestreFormativo" disabled>
+                                <option value="">Seleccionar trimestre</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3 d-none" id="divTrimestreFormativo">
-                        <label class="labelAgregar" for="trimestreFormativo">Trimestre:</label>
-                        <select class="form-select border-dark" id="trimestreFormativo">
-                            <option id="subject" value="" selected disabled>Seleccionar trimestre</option>
-                            <option value="1">Primer Trimestre</option>
-                            <option value="2">Segundo Trimestre</option>
-                            <option value="3">Tercer Trimestre</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 d-none" id="divCamposFormativos">
-                        <h6 class="labelAgregar fw-bold">Campos Formativos</h6>
-                        <ul class="list-group">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Matemáticas
-                                <span class="badge bg-success rounded-pill">9.5</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Ciencias Naturales
-                                <span class="badge bg-success rounded-pill">8.7</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Historia
-                                <span class="badge bg-warning rounded-pill">7.8</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Lengua Española
-                                <span class="badge bg-danger rounded-pill">6.2</span>
-                            </li>
+                    
+                    <div class="mb-4 d-none" id="divCamposFormativos">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3">Campos Formativos</h6>
+                        
+                        <div id="loadingGrades" class="text-center my-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2">Cargando calificaciones...</p>
+                        </div>
+                        
+                        <ul class="list-group shadow-sm" id="gradesList">
                         </ul>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="button" type="button" class="btn btn-primary">Ver detalles</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button id="btnVerDetalles" type="button" 
+                            class="btn <?php echo $descargasHabilitadas ? 'btn-primary' : 'btn-secondary'; ?>"
+                            <?php if(!$descargasHabilitadas) echo 'title="Disponible después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
+                        <?php echo $descargasHabilitadas ? 'Imprimir boleta' : 'Boleta disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
+                    </button>
                 </div>
             </div>
         </div>
@@ -845,6 +1189,460 @@ if (!$resultado) {
     <script src="../js/chartScript.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.js"></script>
+
+    <!-- Scripts para manejar la carga dinámica de boletas -->
+    <script>
+        // Variables para los elementos del DOM
+        const yearSelect = document.getElementById('cicloFormativo');
+        const quarterSelect = document.getElementById('trimestreFormativo');
+        const divTrimestreFormativo = document.getElementById('divTrimestreFormativo');
+        const divCamposFormativos = document.getElementById('divCamposFormativos');
+        let selectedStudentId = '';
+        let studentName = '';
+        
+        // Debug: verificar que todos los elementos fueron encontrados
+        console.log('yearSelect:', yearSelect);
+        console.log('quarterSelect:', quarterSelect);
+        console.log('divTrimestreFormativo:', divTrimestreFormativo);
+        console.log('divCamposFormativos:', divCamposFormativos);
+        
+        // Debug adicional: verificar Bootstrap
+        if (divTrimestreFormativo) {
+            console.log('Estado inicial divTrimestreFormativo:');
+            console.log('- classList:', divTrimestreFormativo.classList.toString());
+            console.log('- style.display:', divTrimestreFormativo.style.display);
+            console.log('- offsetHeight:', divTrimestreFormativo.offsetHeight);
+            console.log('- computedStyle display:', window.getComputedStyle(divTrimestreFormativo).display);
+        }
+        
+        // Event listener para el año escolar
+        yearSelect.addEventListener('change', function() {
+            const idSchoolYear = this.value;
+            console.log(`Año escolar seleccionado: ${idSchoolYear}`);
+            quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
+            
+            if (!idSchoolYear) {
+                console.log('No se seleccionó año escolar, ocultando trimestres');
+                divTrimestreFormativo.classList.add('d-none');
+                divCamposFormativos.classList.add('d-none');
+                return;
+            }
+            
+            console.log(`Obteniendo trimestres para el año ${idSchoolYear}`);
+            fetch(`get_quarters.php?idSchoolYear=${idSchoolYear}`)
+                .then(response => {
+                    console.log(`Respuesta del servidor: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos de trimestres recibidos:', data);
+                    if (data.success && data.quarters && data.quarters.length > 0) {
+                        console.log(`Mostrando div de trimestre y cargando ${data.quarters.length} trimestres`);
+                        divTrimestreFormativo.classList.remove('d-none');
+                        
+                        // Limpiar las opciones anteriores y habilitar el select
+                        quarterSelect.innerHTML = '<option value="">Seleccionar trimestre</option>';
+                        quarterSelect.disabled = false;
+                        console.log('Después de remover d-none - clase actual:', divTrimestreFormativo.className);
+                        console.log('Después de remover d-none - display style:', divTrimestreFormativo.style.display);
+                        console.log('Después de remover d-none - offsetHeight:', divTrimestreFormativo.offsetHeight);
+                        console.log('Después de remover d-none - computedStyle display:', window.getComputedStyle(divTrimestreFormativo).display);
+                        console.log('Elemento visible?:', !divTrimestreFormativo.classList.contains('d-none'));
+                        data.quarters.forEach(q => {
+                            const option = document.createElement('option');
+                            option.value = q.idSchoolQuarter;
+                            option.textContent = q.name;
+                            quarterSelect.appendChild(option);
+                        });
+                    } else {
+                        console.log('No se encontraron trimestres, mostrando mensaje de error');
+                        quarterSelect.innerHTML = '<option value="" selected>No hay trimestres disponibles</option>';
+                        divTrimestreFormativo.classList.remove('d-none'); // Mostrar aunque sea para el mensaje
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar trimestres:', error);
+                    quarterSelect.innerHTML = '<option value="" selected>Error al cargar trimestres</option>';
+                    divTrimestreFormativo.classList.remove('d-none'); // Mostrar aunque sea para el mensaje
+                });
+        });
+
+        // Event listener para el trimestre
+        quarterSelect.addEventListener('change', function() {
+            if (this.value && yearSelect.value && selectedStudentId) {
+                divCamposFormativos.classList.remove('d-none');
+                loadStudentGrades(selectedStudentId, yearSelect.value, this.value);
+            } else {
+                divCamposFormativos.classList.add('d-none');
+            }
+        });
+
+        // Función para obtener las calificaciones del estudiante
+        function loadStudentGrades(studentId, schoolYearId, quarterId) {
+            const gradesList = document.getElementById('gradesList');
+            const loadingIndicator = document.getElementById('loadingGrades');
+            
+            // Mostrar indicador de carga y limpiar lista
+            loadingIndicator.classList.remove('d-none');
+            gradesList.innerHTML = '';
+            
+            console.log(`Cargando calificaciones para estudiante ID=${studentId}, año=${schoolYearId}, trimestre=${quarterId}`);
+            
+            // Obtener las materias asignadas al estudiante
+            fetch(`get_student_subjects.php?idStudent=${studentId}&idSchoolYear=${schoolYearId}&idSchoolQuarter=${quarterId}`)
+                .then(response => {
+                    console.log(`Respuesta del servidor para materias: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.text(); // Primero obtenemos como texto para ver qué recibimos
+                })
+                .then(text => {
+                    console.log('Respuesta raw del servidor:', text);
+                    try {
+                        return JSON.parse(text); // Luego intentamos parsearlo como JSON
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        console.error('Texto recibido:', text.substring(0, 500)); // Mostrar primeros 500 caracteres
+                        throw new Error('La respuesta del servidor no es JSON válido');
+                    }
+                })
+                .then(subjectsData => {
+                    console.log('Respuesta de get_subjects:', subjectsData);
+                    
+                    if (!subjectsData.success) {
+                        throw new Error(subjectsData.message || 'Error al obtener materias');
+                    }
+                    
+                    if (!subjectsData.subjects || subjectsData.subjects.length === 0) {
+                        console.log('No hay materias asignadas para este estudiante');
+                        loadingIndicator.classList.add('d-none');
+                        gradesList.innerHTML = '<div class="alert alert-info">No hay materias con calificaciones para este estudiante en el período seleccionado</div>';
+                        return null;
+                    }
+
+                    console.log(`Encontradas ${subjectsData.subjects.length} materias para el estudiante`);
+
+                    // Para cada materia, obtener sus promedios
+                    const promises = subjectsData.subjects.map(subject => 
+                        fetch(`getAveragesBySubject.php?idSubject=${subject.idSubject}&idSchoolYear=${schoolYearId}&idSchoolQuarter=${quarterId}&idStudent=${studentId}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log(`Respuesta para materia ${subject.name}:`, data);
+                                return {
+                                    ...data, 
+                                    subjectName: subject.name, 
+                                    idSubject: subject.idSubject,
+                                    idLearningArea: subject.idLearningArea,
+                                    learningAreaName: subject.learningAreaName
+                                };
+                            })
+                    );
+
+                    return Promise.all(promises);
+                })
+                .then(results => {
+                    if (!results) return null;
+
+                    console.log('Resultados obtenidos:', results);
+                    
+                    let allGrades = [];
+                    results.forEach(data => {
+                        if (data.success && data.students) {
+                            // Filtrar para encontrar solo el estudiante solicitado
+                            const studentData = data.students.find(s => s.idStudent == studentId);
+                            if (studentData) {
+                                const subjectData = {
+                                    name: data.subjectName,
+                                    idSubject: data.idSubject,
+                                    grade: studentData.average || '0',
+                                    idLearningArea: data.idLearningArea,
+                                    learningAreaName: data.learningAreaName
+                                };
+                                allGrades.push(subjectData);
+                            } else {
+                                // Si no hay datos para este estudiante, agregar con calificación 0
+                                const subjectData = {
+                                    name: data.subjectName,
+                                    idSubject: data.idSubject,
+                                    grade: '0',
+                                    idLearningArea: data.idLearningArea,
+                                    learningAreaName: data.learningAreaName
+                                };
+                                allGrades.push(subjectData);
+                            }
+                        } else {
+                            // Si hay error en esta materia, agregar con calificación 0
+                            const subjectData = {
+                                name: data.subjectName || 'Materia desconocida',
+                                idSubject: data.idSubject || 0,
+                                grade: '0',
+                                idLearningArea: data.idLearningArea || 0,
+                                learningAreaName: data.learningAreaName || 'Área desconocida'
+                            };
+                            allGrades.push(subjectData);
+                        }
+                    });
+
+                    console.log('Calificaciones procesadas:', allGrades);
+                    
+                    loadingIndicator.classList.add('d-none');
+                    
+                    if (allGrades.length === 0) {
+                        gradesList.innerHTML = '<div class="alert alert-info">No hay calificaciones disponibles para este período</div>';
+                        return null;
+                    }
+                    
+                    displayGrades(allGrades);
+                })
+                .catch(error => {
+                    console.error('Error al cargar calificaciones:', error);
+                    loadingIndicator.classList.add('d-none');
+                    gradesList.innerHTML = `<div class="alert alert-danger">Error al cargar calificaciones: ${error.message}</div>`;
+                });
+        }
+        
+        // Función para mostrar las calificaciones en el modal
+        // Función para redondear hacia arriba con 1 decimal (igual que saveGrades.php)
+        function ceilToOneDecimal(value) {
+            return Math.ceil(value * 10) / 10;
+        }
+
+        function displayGrades(grades) {
+            const gradesList = document.getElementById('gradesList');
+            gradesList.innerHTML = '';
+            
+            console.log('Mostrando calificaciones:', grades);
+            
+            // Agrupar por áreas de aprendizaje
+            const learningAreas = {};
+            
+            grades.forEach(subject => {
+                const areaId = subject.idLearningArea;
+                if (!learningAreas[areaId]) {
+                    learningAreas[areaId] = {
+                        name: subject.learningAreaName,
+                        subjects: [],
+                        totalGrade: 0,
+                        subjectCount: 0,
+                        average: 0
+                    };
+                }
+                
+                const grade = parseFloat(subject.grade) || 0;
+                learningAreas[areaId].subjects.push({
+                    name: subject.name,
+                    average: grade
+                });
+                learningAreas[areaId].totalGrade += grade;
+                learningAreas[areaId].subjectCount++;
+            });
+            
+            // Calcular promedio por área
+            for (const areaId in learningAreas) {
+                const area = learningAreas[areaId];
+                area.average = area.subjectCount > 0 ? ceilToOneDecimal(area.totalGrade / area.subjectCount) : 0;
+            }
+            
+            console.log('Áreas de aprendizaje agrupadas:', learningAreas);
+            
+            // Calcular promedio general considerando TODAS las áreas de aprendizaje
+            const areaAverages = Object.values(learningAreas).map(area => area.average);
+            const generalAverage = areaAverages.length > 0 ? ceilToOneDecimal(areaAverages.reduce((sum, avg) => sum + avg, 0) / areaAverages.length) : 0;
+
+            // Mostrar promedio general
+            const avgItem = document.createElement('div');
+            avgItem.className = 'alert alert-primary fw-bold text-center mb-3';
+            
+            // Determinar el color del promedio
+            let avgBadgeClass = 'bg-secondary';
+            if (generalAverage >= 9) avgBadgeClass = 'bg-success';
+            else if (generalAverage >= 7) avgBadgeClass = 'bg-warning';
+            else if (generalAverage >= 0) avgBadgeClass = 'bg-danger';
+            
+            avgItem.innerHTML = `
+                PROMEDIO GENERAL: <span class="badge ${avgBadgeClass} rounded-pill">${Number(generalAverage || 0).toFixed(1)}</span>
+            `;
+            gradesList.appendChild(avgItem);
+            
+            // Crear tabla de áreas de aprendizaje
+            const table = document.createElement('table');
+            table.className = 'table table-bordered table-hover';
+            
+            // Cabecera de la tabla
+            const thead = document.createElement('thead');
+            thead.className = 'table-primary';
+            thead.innerHTML = `
+                <tr>
+                    <th>Campo Formativo</th>
+                    <th>Materia</th>
+                    <th>Calificación</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            // Cuerpo de la tabla
+            const tbody = document.createElement('tbody');
+            
+            Object.values(learningAreas).forEach(area => {
+                // Primera fila del área con rowspan
+                const firstSubject = area.subjects[0];
+                const firstRow = document.createElement('tr');
+                
+                // Celda del área (con rowspan)
+                const areaCell = document.createElement('td');
+                areaCell.rowSpan = area.subjects.length;
+                areaCell.className = 'align-middle fw-bold text-center table-light';
+                
+                // Color para el promedio del área
+                let areaBadgeClass = 'bg-secondary';
+                if (area.average >= 9) areaBadgeClass = 'bg-success';
+                else if (area.average >= 7) areaBadgeClass = 'bg-warning';
+                else if (area.average >= 0) areaBadgeClass = 'bg-danger';
+                
+                areaCell.innerHTML = `
+                    ${area.name}<br>
+                    <small class="badge ${areaBadgeClass} rounded-pill mt-1">${Number(area.average || 0).toFixed(1)}</small>
+                `;
+                firstRow.appendChild(areaCell);
+                
+                // Celda de la primera materia
+                const subjectCell = document.createElement('td');
+                subjectCell.textContent = firstSubject.name;
+                firstRow.appendChild(subjectCell);
+                
+                // Celda de la primera calificación
+                const gradeCell = document.createElement('td');
+                gradeCell.className = 'text-center';
+                
+                let gradeBadgeClass = 'bg-secondary';
+                if (firstSubject.average >= 9) gradeBadgeClass = 'bg-success';
+                else if (firstSubject.average >= 7) gradeBadgeClass = 'bg-warning';
+                else if (firstSubject.average >= 0) gradeBadgeClass = 'bg-danger';
+                
+                gradeCell.innerHTML = `<span class="badge ${gradeBadgeClass} rounded-pill">${Number(firstSubject.average || 0).toFixed(1)}</span>`;
+                firstRow.appendChild(gradeCell);
+                
+                tbody.appendChild(firstRow);
+                
+                // Resto de materias del área
+                for (let i = 1; i < area.subjects.length; i++) {
+                    const subject = area.subjects[i];
+                    const row = document.createElement('tr');
+                    
+                    // Solo materia y calificación (no área)
+                    const subjectCell = document.createElement('td');
+                    subjectCell.textContent = subject.name;
+                    row.appendChild(subjectCell);
+                    
+                    const gradeCell = document.createElement('td');
+                    gradeCell.className = 'text-center';
+                    
+                    let gradeBadgeClass = 'bg-secondary';
+                    if (subject.average >= 9) gradeBadgeClass = 'bg-success';
+                    else if (subject.average >= 7) gradeBadgeClass = 'bg-warning';
+                    else if (subject.average >= 0) gradeBadgeClass = 'bg-danger';
+                    
+                    gradeCell.innerHTML = `<span class="badge ${gradeBadgeClass} rounded-pill">${Number(subject.average || 0).toFixed(1)}</span>`;
+                    row.appendChild(gradeCell);
+                    
+                    tbody.appendChild(row);
+                }
+            });
+            
+            table.appendChild(tbody);
+            gradesList.appendChild(table);
+        }
+
+        // Configurar el modal de boletas
+        const modalCamposFormativos = document.getElementById('modalCamposFormativos');
+        
+        // Guardar el ID y nombre del estudiante cuando se abra el modal
+        modalCamposFormativos.addEventListener('show.bs.modal', function(event) {
+            console.log('Modal abierto - Debug inicial');
+            console.log('divTrimestreFormativo tiene clase d-none:', divTrimestreFormativo.classList.contains('d-none'));
+            console.log('divTrimestreFormativo display style:', divTrimestreFormativo.style.display);
+            
+            const button = event.relatedTarget;
+            
+            // Guardar datos del estudiante
+            selectedStudentId = button.getAttribute('data-id');
+            const nombres = button.getAttribute('data-nombres') || '';
+            const paterno = button.getAttribute('data-paterno') || '';
+            const materno = button.getAttribute('data-materno') || '';
+            studentName = `${nombres} ${paterno} ${materno}`.trim();
+            
+            console.log(`Modal abierto para estudiante: ${studentName}, ID: ${selectedStudentId}`);
+            
+            // Actualizar el título del modal con el nombre del estudiante
+            const modalTitle = modalCamposFormativos.querySelector('.modal-title');
+            modalTitle.textContent = `Boleta de ${studentName}`;
+            
+            // Añadir información del estudiante al modal
+            const gradeInfo = button.getAttribute('data-grade') || '';
+            const groupInfo = button.getAttribute('data-grupo') || '';
+            
+            // Actualizar la información del estudiante en el área designada
+            /*const studentInfoDiv = document.getElementById('studentInfo');
+            studentInfoDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1"><strong>${studentName}</strong></h5>
+                         Grupo: <strong>${groupInfo}</strong></p>
+                    </div>
+
+                </div>
+            `;*/
+        });
+        
+        // Reiniciar el modal cuando se cierre
+        modalCamposFormativos.addEventListener('hidden.bs.modal', function() {
+            // Restablecer los selectores
+            document.getElementById('cicloFormativo').selectedIndex = 0;
+            document.getElementById('trimestreFormativo').selectedIndex = 0;
+            document.getElementById('divTrimestreFormativo').classList.add('d-none');
+            document.getElementById('divCamposFormativos').classList.add('d-none');
+            document.getElementById('gradesList').innerHTML = '';
+            
+            // Limpiar variables
+            selectedStudentId = '';
+            studentName = '';
+        });
+
+        // Evento: Botón Ver detalles
+        document.getElementById('btnVerDetalles').addEventListener('click', function() {
+            // Verificar si las descargas están habilitadas
+            <?php if(!$descargasHabilitadas): ?>
+            Swal.fire({
+                icon: 'info',
+                title: 'Descarga no disponible',
+                text: 'Las descargas se habilitarán después del <?php echo date('d/m/Y', strtotime($fechaLimite)); ?>',
+                confirmButtonText: 'Entendido'
+            });
+            return;
+            <?php endif; ?>
+
+            const schoolYearId = document.getElementById('cicloFormativo').value;
+            const quarterId = document.getElementById('trimestreFormativo').value;
+            
+            if (schoolYearId && quarterId && selectedStudentId) {
+                // Generar URL del PDF con los parámetros necesarios (usando el archivo local de admin)
+                const pdfUrl = `generate_boleta_pdf.php?idStudent=${selectedStudentId}&idSchoolYear=${schoolYearId}&idSchoolQuarter=${quarterId}`;
+                
+                // Abrir el PDF en una nueva ventana
+                window.open(pdfUrl, '_blank');
+            } else {
+                alert('Por favor, seleccione un año escolar y un trimestre para ver los detalles.');
+            }
+        });
+    </script>
+       
+    </script>
     <script>
         // Hide preloader when page is fully loaded
         window.addEventListener('load', function() {
@@ -1003,22 +1801,139 @@ if (!$resultado) {
             }
             // Event listener para el selector de año escolar
             const yearSelect = document.getElementById('schoolYear');
+            const groupSelect = document.getElementById('grupo');
+            const btnDescargarGrupo = document.getElementById('btnDescargarGrupo');
+            
+            // Función para verificar si mostrar el botón de descarga
+            function checkDownloadButton() {
+                if (yearSelect && groupSelect && btnDescargarGrupo) {
+                    const yearSelected = yearSelect.value;
+                    const groupSelected = groupSelect.value;
+                    
+                    if (yearSelected && groupSelected) {
+                        btnDescargarGrupo.classList.remove('d-none');
+                    } else {
+                        btnDescargarGrupo.classList.add('d-none');
+                    }
+                }
+            }
+            
             if (yearSelect) {
                 yearSelect.addEventListener('change', function() {
                     searchTable(); // Filtra en vivo
+                    checkDownloadButton(); // Verificar si mostrar botón de descarga
                     const url = new URL(window.location.href);
                     url.searchParams.delete('year');
                     window.history.replaceState({}, document.title, url.pathname + url.search);
                 });
             }
             // Event listener para el selector de grupo
-            const groupSelect = document.getElementById('grupo');
             if (groupSelect) {
                 groupSelect.addEventListener('change', function() {
                     searchTable(); // Filtra en vivo
+                    checkDownloadButton(); // Verificar si mostrar botón de descarga
                     const url = new URL(window.location.href);
                     url.searchParams.delete('group');
                     window.history.replaceState({}, document.title, url.pathname + url.search);
+                });
+            }
+            
+            // Event listener para el botón de descarga grupal
+            if (btnDescargarGrupo) {
+                btnDescargarGrupo.addEventListener('click', function() {
+                    // Verificar si las descargas están habilitadas
+                    <?php if(!$descargasHabilitadas): ?>
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Descarga no disponible',
+                        text: 'Las descargas se habilitarán después del <?php echo date('d/m/Y', strtotime($fechaLimite)); ?>',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                    <?php endif; ?>
+
+                    const yearSelected = yearSelect.value;
+                    const groupSelected = groupSelect.value;
+                    
+                    if (!yearSelected || !groupSelected) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Selección incompleta',
+                            text: 'Por favor selecciona el año escolar y el grupo antes de descargar.'
+                        });
+                        return;
+                    }
+
+                    // Confirmar descarga
+                    Swal.fire({
+                        title: '¿Confirmar descarga?',
+                        text: 'Se generarán los PDFs de todos los alumnos del grupo seleccionado',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, descargar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            descargarPDFsGrupo(yearSelected, groupSelected);
+                        }
+                    });
+                });
+            }
+
+            // Función para descargar PDFs del grupo
+            function descargarPDFsGrupo(yearSelected, groupSelected) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Generando PDFs...',
+                    text: 'Por favor espera mientras se generan los archivos',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Realizar la petición
+                fetch('generate_group_pdfs.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `idSchoolYear=${yearSelected}&idGroup=${groupSelected}`
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Crear enlace de descarga
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `Boletas_Grupo_${yearSelected}_${groupSelected}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // Cerrar loading y mostrar éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Descarga completada!',
+                        text: 'Los PDFs del grupo se han descargado exitosamente.'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Hubo un problema al generar los PDFs. Por favor intenta nuevamente.'
+                    });
                 });
             }
         });
@@ -1046,6 +1961,7 @@ if (!$resultado) {
                     schoolYear: this.getAttribute('data-schoolyear'),
                     genero: this.getAttribute('data-genero'),
                     direccion: this.getAttribute('data-direccion'),
+                    telefono: this.getAttribute('data-telefono'),
                     username: this.getAttribute('data-username'),
                     email: this.getAttribute('data-email'),
                     curp: this.getAttribute('data-curp'),
@@ -1065,26 +1981,51 @@ if (!$resultado) {
                 };
 
                 // Llenar el modal show (alumno)
+                if(document.getElementById('show_id')) document.getElementById('show_id').textContent = data.id || 'No especificado';
                 if(document.getElementById('show_nombres')) document.getElementById('show_nombres').textContent = data.nombres || 'No especificado';
                 if(document.getElementById('show_paterno')) document.getElementById('show_paterno').textContent = data.paterno || 'No especificado';
                 if(document.getElementById('show_materno')) document.getElementById('show_materno').textContent = data.materno || 'No especificado';
+                
+                // Manejar el estado con badge
+                const statusElement = document.getElementById('show_status');
+                if (statusElement) {
+                    if (data.status === 'Activo') {
+                        statusElement.innerHTML = '<span class="badge bg-success">Activo</span>';
+                    } else if (data.status === 'Inactivo') {
+                        statusElement.innerHTML = '<span class="badge bg-danger">Inactivo</span>';
+                    } else {
+                        statusElement.innerHTML = '<span class="badge bg-secondary">' + (data.status || 'No especificado') + '</span>';
+                    }
+                }
+                
                 if(document.getElementById('show_grupo')) document.getElementById('show_grupo').textContent = data.grupo || 'No asignado';
                 if(document.getElementById('show_schoolYear')) document.getElementById('show_schoolYear').textContent = data.schoolYear || 'No especificado';
                 if(document.getElementById('show_direccion')) document.getElementById('show_direccion').textContent = data.direccion || 'No especificado';
+                if(document.getElementById('show_telefono')) document.getElementById('show_telefono').textContent = data.telefono || 'No especificado';
                 if(document.getElementById('show_username')) document.getElementById('show_username').textContent = data.username || 'No especificado';
                 if(document.getElementById('show_email')) document.getElementById('show_email').textContent = data.email || 'No especificado';
                 if(document.getElementById('show_curp')) document.getElementById('show_curp').textContent = data.curp || 'No especificado';
-                if(document.getElementById('show_grado')) document.getElementById('show_grado').textContent = data.grado || 'No especificado';
-                if(document.getElementById('show_genero')) document.getElementById('show_genero').textContent = data.genero || 'No especificado';
+                
+                // Convertir género de letra a texto completo
+                const generoElement = document.getElementById('show_genero');
+                if (generoElement) {
+                    let generoTexto = 'No especificado';
+                    if (data.genero === 'M') {
+                        generoTexto = 'Masculino';
+                    } else if (data.genero === 'F') {
+                        generoTexto = 'Femenino';
+                    }
+                    generoElement.textContent = generoTexto;
+                }
 
                 // Llenar el modal show (tutor)
                 if(document.getElementById('show_tutorNombres')) document.getElementById('show_tutorNombres').textContent = tutorData.nombres || 'No registrado';
-                if(document.getElementById('show_tutorApellidos')) document.getElementById('show_tutorApellidos').textContent = `${tutorData.paterno || ''} ${tutorData.materno || ''}`.trim();
+                if(document.getElementById('show_tutorApellidos')) document.getElementById('show_tutorApellidos').textContent = `${tutorData.paterno || ''} ${tutorData.materno || ''}`.trim() || 'No registrado';
                 if(document.getElementById('show_tutorIne')) document.getElementById('show_tutorIne').textContent = tutorData.ine || 'No registrado';
                 if(document.getElementById('show_tutorPhone')) document.getElementById('show_tutorPhone').textContent = tutorData.telefono || 'No registrado';
                 if(document.getElementById('show_tutorEmail')) document.getElementById('show_tutorEmail').textContent = tutorData.email || 'No registrado';
                 if(document.getElementById('show_tutorAddress')) document.getElementById('show_tutorAddress').textContent = tutorData.direccion || 'No registrado';
-                if(document.getElementById('show_tutorRelative')) document.getElementById('show_tutorRelative').textContent = tutorData.parentesco || 'No registrado';
+                if(document.getElementById('show_tutorParentesco')) document.getElementById('show_tutorParentesco').textContent = tutorData.parentesco || 'No registrado';
 
                 // Mostrar el modal después de llenar los datos
                 var modal = new bootstrap.Modal(modalElement);
@@ -1291,5 +2232,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </script>
 
     <script src="../js/students.js"></script>
+
+    <!-- Script duplicado eliminado para evitar conflictos de variables -->
+    <!-- El script de boletas está implementado arriba -->
 </body>
 </html>
