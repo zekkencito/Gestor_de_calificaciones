@@ -1,16 +1,4 @@
-
-<div align="center">
-	<img src="img/logo.webp" alt="Logo Gregorio Torres" width="120"/>
-  
-	<h1>📚 Gestor de Calificaciones</h1>
-	<a href="https://github.com/zekkencito/Gestor_de_calificaciones" target="_blank">
-		<img src="https://img.shields.io/github/stars/zekkencito/Gestor_de_calificaciones?style=social" alt="GitHub Repo stars">
-	</a>
-	<br>
-	<a href="https://github.com/zekkencito/Gestor_de_calificaciones">Repositorio en GitHub</a>
-</div>
-
----
+# 📚 Gestor de Calificaciones
 
 Sistema web para la gestión escolar, enfocado en la administración de estudiantes, docentes, materias y calificaciones. Permite a administradores y profesores gestionar la información académica de manera segura y eficiente.
 
