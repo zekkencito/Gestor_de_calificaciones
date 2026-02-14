@@ -81,3 +81,52 @@ option{
     font-weight: bold;
 }
 
+/* Estilos para botones de acciones en la tabla */
+.botonVer, #botonVer {
+    border: none;
+    background: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.botonVer:hover, #botonVer:hover {
+    transform: scale(1.1);
+}
+
+/* Estilos para el botón de reporte */
+.botonReporte {
+    border: none !important;
+    background: none !important;
+    background-color: transparent !important;
+    cursor: pointer !important;
+    font-size: 2rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    color: #17a2b8 !important;
+    transition: all 0.3s ease !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.botonReporte:hover {
+    color: #138496 !important;
+    transform: scale(1.1) !important;
+}
+
+.botonReporte i {
+    font-size: 2rem !important;
+    display: block !important;
+}
+
+/* Asegurar que las celdas de la tabla estén visibles */
+table#tabla td {
+    display: table-cell !important;
+    visibility: visible !important;
+}

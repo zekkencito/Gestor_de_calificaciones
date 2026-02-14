@@ -1,4 +1,7 @@
 <?php
+// Última actualización: 2026-02-13 - Agregado sistema de reportes
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 require_once "check_session.php";
 require_once "../force_password_check.php";
 require_once "../conection.php";
@@ -129,6 +132,7 @@ if ($selectedGroup) {
     <title>Lista de Alumnos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../css/stylesBoot.css">
     <link rel="stylesheet" href="../css/styles.css">
@@ -269,8 +273,10 @@ if ($selectedGroup) {
                                                 <th class="fw-semibold">Estado</th>
                                                 <th class="fw-semibold">Boleta</th>
                                                 <th class="fw-semibold">Ver</th>
+                                                <th class="fw-semibold">Reporte</th>
                         </tr>
                     </thead>
+                    <!-- DEBUG: Archivo actualizado 2026-02-13 19:00 - Columna Reporte agregada -->
                     <tbody id="alumnos-tbody">
                         <?php if ($selectedGroup && count($students) > 0): ?>
                             <?php foreach ($students as $i => $student): ?>
@@ -345,17 +351,23 @@ if ($selectedGroup) {
                                             <i class="bi bi-person-fill"></i>
                                         </button>
                                     </td>
+                                    <td class="text-center">
+                                        <!-- DEBUG: Celda de Reporte para estudiante ID: <?php echo $student['idStudent']; ?> -->
+                                        <button type="button" class="botonReporte" data-bs-toggle="modal" data-bs-target="#reportModal" data-id="<?php echo $student['idStudent']; ?>" data-nombres="<?php echo htmlspecialchars($student['names']); ?>" data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>" data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>">
+                                            <i class="bi bi-file-earmark-text-fill"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php elseif($selectedGroup): ?>
-                            <tr><td colspan="17" class="text-center py-4">
+                            <tr><td colspan="11" class="text-center py-4">
                                 <div class="empty-state">
                                     <i class="bi bi-people text-muted display-4"></i>
                                     <p class="text-muted mt-2 mb-0">No hay alumnos en este grupo.</p>
                                 </div>
                             </td></tr>
                         <?php else: ?>
-                            <tr><td colspan="17" class="text-center py-4">
+                            <tr><td colspan="11" class="text-center py-4">
                                 <div class="empty-state">
                                     <i class="bi bi-search text-muted display-4"></i>
                                     <p class="text-muted mt-2 mb-0">Seleccione un grupo para ver los alumnos.</p>
@@ -625,12 +637,145 @@ if ($selectedGroup) {
             </div>
         </div>
     </div>
+
+    <!-- MODAL VERIFICAR REPORTE -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white border-0">
+                    <h5 class="modal-title" id="reportModalLabel">
+                        <i class="bi bi-file-earmark-text me-2"></i>Reporte del Estudiante
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="student-info mb-4">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3">Información del Estudiante</h6>
+                        <p><strong>Nombre:</strong> <span id="report-student-name"></span></p>
+                    </div>
+                    
+                    <div id="reportLoadingIndicator" class="text-center my-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Verificando reporte...</p>
+                    </div>
+                    
+                    <div id="reportExistsContent" class="d-none">
+                        <div class="alert alert-success" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>Este estudiante tiene <strong><span id="reportCount">0</span></strong> reporte(s) registrado(s).
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Docente</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsList">
+                                    <!-- Los reportes se cargarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-success" id="btnAddAnotherReport">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar Nuevo Reporte
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="reportNotExistsContent" class="d-none">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Este estudiante no tiene reportes registrados.
+                        </div>
+                        <p class="text-center">¿Desea crear un nuevo reporte para este estudiante?</p>
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-primary" id="btnCreateReport">
+                                <i class="bi bi-file-earmark-plus me-2"></i>Crear Nuevo Reporte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR NUEVO REPORTE -->
+    <div class="modal fade" id="createReportModal" tabindex="-1" aria-labelledby="createReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="createReportModalLabel">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Crear Nuevo Reporte
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="reportForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="reportStudentId" name="studentId">
+                        
+                        <div class="mb-4">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3">Información del Estudiante</h6>
+                            <p><strong>Nombre:</strong> <span id="create-report-student-name"></span></p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="reportFecha" class="form-label fw-bold">Fecha: <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="reportFecha" name="fecha" placeholder="Seleccione una fecha" readonly required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="reportTipo" class="form-label fw-bold">Tipo de Reporte: <span class="text-danger">*</span></label>
+                                <select class="form-select" id="reportTipo" name="tipo" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="Disciplinario">Disciplinario</option>
+                                    <option value="Académico">Académico</option>
+                                    <option value="Conductual">Conductual</option>
+                                    <option value="Asistencia">Asistencia</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reportDescripcion" class="form-label fw-bold">Descripción: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="reportDescripcion" name="descripcion" rows="4" 
+                                      placeholder="Describa detalladamente la situación..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reportObservaciones" class="form-label fw-bold">Observaciones:</label>
+                            <textarea class="form-control" id="reportObservaciones" name="observaciones" rows="3" 
+                                      placeholder="Agregue observaciones adicionales (opcional)..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Guardar Reporte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SHOW-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/chartScript.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
         <!-- Scripts para manejar la carga dinámica de boletas -->
     <script>
         // Variables para los elementos del DOM
@@ -1226,7 +1371,7 @@ if ($selectedGroup) {
             // Función para cargar alumnos
             function cargarAlumnos(groupId, schoolYearId) {
                 if (!groupId || !schoolYearId) {
-                    alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">Seleccione un grupo para ver los alumnos.</td></tr>';
+                    alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">Seleccione un grupo para ver los alumnos.</td></tr>';
                     return;
                 }
 
@@ -1234,7 +1379,7 @@ if ($selectedGroup) {
                     .then(response => response.json())
                     .then(data => {
                         if (!data || !data.students || data.students.length === 0) {
-                            alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">No hay alumnos en este grupo.</td></tr>';
+                            alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">No hay alumnos en este grupo.</td></tr>';
                             return;
                         }
 
@@ -1286,13 +1431,24 @@ if ($selectedGroup) {
                                         <i class="bi bi-eye-fill"></i>
                                     </button>
                                 </td>
+                                <td class="text-center">
+                                    <button type="button" class="botonReporte"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#reportModal"
+                                        data-id="${student.idStudent}"
+                                        data-nombres="${student.names}"
+                                        data-paterno="${student.lastnamePa}"
+                                        data-materno="${student.lastnameMa}">
+                                        <i class="bi bi-file-earmark-text-fill"></i>
+                                    </button>
+                                </td>
                             `;
                             alumnosBody.appendChild(row);
                         });
                     })
                     .catch(error => {
                         console.error('Error loading students:', error);
-                        alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">Error al cargar los alumnos.</td></tr>';
+                        alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">Error al cargar los alumnos.</td></tr>';
                     });
             }
 
@@ -1436,6 +1592,249 @@ if ($selectedGroup) {
                     });
                 });
             }
+        });
+
+        // REPORTES DE CONDUCTA
+        let currentStudentId = null;
+        let currentStudentName = '';
+
+        // Event listener para los botones de reporte
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.botonReporte')) {
+                const button = e.target.closest('.botonReporte');
+                currentStudentId = button.getAttribute('data-id');
+                const nombres = button.getAttribute('data-nombres');
+                const paterno = button.getAttribute('data-paterno');
+                const materno = button.getAttribute('data-materno');
+                currentStudentName = `${nombres} ${paterno} ${materno}`;
+                
+                // Actualizar nombre en el modal
+                document.getElementById('report-student-name').textContent = currentStudentName;
+                
+                // Mostrar loading y ocultar contenido
+                document.getElementById('reportLoadingIndicator').classList.remove('d-none');
+                document.getElementById('reportExistsContent').classList.add('d-none');
+                document.getElementById('reportNotExistsContent').classList.add('d-none');
+                
+                // Verificar si el estudiante tiene reporte
+                checkStudentReport(currentStudentId);
+            }
+        });
+
+        // Función para verificar si el estudiante tiene reporte
+        function checkStudentReport(studentId) {
+            fetch(`get_student_report.php?studentId=${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Ocultar loading
+                    document.getElementById('reportLoadingIndicator').classList.add('d-none');
+                    
+                    if (data.success && data.hasReport) {
+                        // Mostrar contenido de reportes existentes
+                        document.getElementById('reportCount').textContent = data.count;
+                        
+                        const reportsList = document.getElementById('reportsList');
+                        reportsList.innerHTML = '';
+                        
+                        data.reports.forEach((report, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${report.fecha}</td>
+                                <td><span class="badge bg-info">${report.tipo}</span></td>
+                                <td>${report.teacherFullName || 'N/A'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
+                                        <i class="bi bi-file-pdf"></i> Ver PDF
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewReportDetails(${report.idConductReport})" title="Ver detalles">
+                                        <i class="bi bi-eye"></i> Detalles
+                                    </button>
+                                </td>
+                            `;
+                            reportsList.appendChild(row);
+                        });
+                        
+                        // Guardar los reportes en memoria para acceder después
+                        window.currentReports = data.reports;
+                        
+                        document.getElementById('reportExistsContent').classList.remove('d-none');
+                    } else {
+                        // Mostrar opción para crear nuevo reporte
+                        document.getElementById('reportNotExistsContent').classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking report:', error);
+                    document.getElementById('reportLoadingIndicator').classList.add('d-none');
+                    document.getElementById('reportNotExistsContent').classList.remove('d-none');
+                });
+        }
+        
+        // Función para ver el PDF del reporte
+        window.viewReportPDF = function(idConductReport) {
+            window.open(`generate_report_pdf.php?id=${idConductReport}`, '_blank');
+        };
+        
+        // Función para ver los detalles del reporte
+        window.viewReportDetails = function(idConductReport) {
+            const report = window.currentReports.find(r => r.idConductReport == idConductReport);
+            if (report) {
+                Swal.fire({
+                    title: 'Detalles del Reporte',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>Fecha:</strong> ${report.fecha}</p>
+                            <p><strong>Tipo:</strong> ${report.tipo}</p>
+                            <p><strong>Docente:</strong> ${report.teacherFullName || 'N/A'}</p>
+                            <hr>
+                            <p><strong>Descripción:</strong></p>
+                            <p>${report.descripcion}</p>
+                            ${report.observaciones ? `<hr><p><strong>Observaciones:</strong></p><p>${report.observaciones}</p>` : ''}
+                            <hr>
+                            <p class="text-muted"><small>Creado: ${report.createdAt}</small></p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    width: '600px',
+                    showCloseButton: true,
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        };
+
+        // Función para abrir el modal de creación de reporte
+        function openCreateReportModal() {
+            // Cerrar el modal de verificación
+            const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+            if (reportModal) {
+                reportModal.hide();
+            }
+            
+            // Abrir el modal de creación
+            const createReportModal = new bootstrap.Modal(document.getElementById('createReportModal'));
+            createReportModal.show();
+            
+            // Actualizar información del estudiante
+            document.getElementById('create-report-student-name').textContent = currentStudentName;
+            document.getElementById('reportStudentId').value = currentStudentId;
+        }
+
+        // Inicializar Flatpickr para el campo de fecha en español
+        let flatpickrInstance = null;
+        
+        function initializeDatePicker() {
+            if (flatpickrInstance) {
+                flatpickrInstance.destroy();
+            }
+            
+            flatpickrInstance = flatpickr("#reportFecha", {
+                locale: "es",
+                dateFormat: "d/m/Y",
+                defaultDate: new Date(),
+                allowInput: false,
+                disableMobile: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Convertir a formato yyyy-mm-dd para enviar al servidor
+                    if (selectedDates.length > 0) {
+                        const date = selectedDates[0];
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        // Guardar en formato yyyy-mm-dd en un campo oculto o en el mismo campo
+                        instance.input.dataset.isoDate = `${year}-${month}-${day}`;
+                    }
+                }
+            });
+        }
+
+        // Event listener para el botón de crear primer reporte
+        document.getElementById('btnCreateReport').addEventListener('click', function() {
+            openCreateReportModal();
+            initializeDatePicker();
+        });
+        
+        // Event listener para el botón de agregar otro reporte
+        document.getElementById('btnAddAnotherReport').addEventListener('click', function() {
+            openCreateReportModal();
+            initializeDatePicker();
+        });
+
+        // Event listener para el formulario de reporte
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Convertir la fecha del formato dd/mm/yyyy a yyyy-mm-dd para el servidor
+            const fechaInput = document.getElementById('reportFecha');
+            if (fechaInput.dataset.isoDate) {
+                formData.set('fecha', fechaInput.dataset.isoDate);
+            }
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Guardando reporte...',
+                text: 'Por favor espera',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar datos al servidor
+            fetch('save_student_report.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Reporte guardado!',
+                        text: 'El reporte se ha guardado exitosamente.',
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        // Cerrar el modal de creación
+                        const createModal = bootstrap.Modal.getInstance(document.getElementById('createReportModal'));
+                        if (createModal) {
+                            createModal.hide();
+                        }
+                        
+                        // Limpiar el formulario
+                        document.getElementById('reportForm').reset();
+                        
+                        // Destruir y limpiar flatpickr
+                        if (flatpickrInstance) {
+                            flatpickrInstance.destroy();
+                            flatpickrInstance = null;
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'No se pudo guardar el reporte. Por favor intenta nuevamente.'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error saving report:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al guardar el reporte. Por favor intenta nuevamente.'
+                });
+            });
+        });
+        
+        // Limpiar flatpickr cuando se cierre el modal de crear reporte
+        document.getElementById('createReportModal').addEventListener('hidden.bs.modal', function() {
+            if (flatpickrInstance) {
+                flatpickrInstance.destroy();
+                flatpickrInstance = null;
+            }
+            document.getElementById('reportForm').reset();
         });
     </script>
 </body>
