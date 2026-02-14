@@ -90,7 +90,7 @@ function generateReportPDF($idConductReport, $conexion) {
     // Crear PDF
     $pdf = new FPDF('P', 'mm', 'Letter');
     $pdf->AddPage();
-    $pdf->SetMargins(20, 20, 20);
+    $pdf->SetMargins(20, 15, 20);
     
     // Logo y encabezado (FPDF solo soporta JPG, PNG, GIF)
     $logoPaths = [
@@ -119,15 +119,20 @@ function generateReportPDF($idConductReport, $conexion) {
     // Subtítulo
     $pdf->SetFont('Times', 'I', 12);
     $pdf->Cell(0, 8, utf8_decode_safe('Escuela Primaria Gregorio Torres Quintero NO.2308'), 0, 1, 'C');
-    $pdf->Ln(10);
+    $pdf->Ln(15);
     
+    $pdf->SetFont('Times', 'I', 6);
+    $pdf->Cell(0, 5, utf8_decode_safe('Generado el ' . date('d/m/Y H:i')), 0, 0, 'C');
+    $pdf->Ln(15);
+
+
     // Datos del estudiante
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetFont('Times', 'B', 12);
     $pdf->Cell(0, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 0, 1, 'L', true);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(2);
+    $pdf->Ln(3);
     
     // Nombre completo del estudiante
     $pdf->SetFont('Times', 'B', 11);
@@ -148,7 +153,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', '', 11);
     $pdf->Cell(0, 7, $data['schoolNum'], 0, 1, 'L');
     
-    $pdf->Ln(8);
+    $pdf->Ln(6);
     
     // Información del reporte
     $pdf->SetFillColor(25, 46, 78);
@@ -156,7 +161,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', 'B', 12);
     $pdf->Cell(0, 8, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 0, 1, 'L', true);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(2);
+    $pdf->Ln(3);
     
     // Fecha del reporte
     $pdf->SetFont('Times', 'B', 11);
@@ -171,7 +176,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', '', 11);
     $pdf->Cell(0, 7, utf8_decode_safe($data['tipo']), 0, 1, 'L');
     
-    $pdf->Ln(5);
+    $pdf->Ln(3);
     
     // Descripción del incidente
     $pdf->SetFont('Times', 'B', 11);
@@ -179,7 +184,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', '', 10);
     $pdf->MultiCell(0, 5, utf8_decode_safe($data['descripcion']), 0, 'J');
     
-    $pdf->Ln(5);
+    $pdf->Ln(3);
     
     // Observaciones (si existen)
     if (!empty($data['observaciones'])) {
@@ -187,10 +192,10 @@ function generateReportPDF($idConductReport, $conexion) {
         $pdf->Cell(0, 7, 'Observaciones:', 0, 1, 'L');
         $pdf->SetFont('Times', '', 10);
         $pdf->MultiCell(0, 5, utf8_decode_safe($data['observaciones']), 0, 'J');
-        $pdf->Ln(5);
+        $pdf->Ln(3);
     }
     
-    $pdf->Ln(8);
+    $pdf->Ln(6);
     
     // Información del docente
     $pdf->SetFillColor(25, 46, 78);
@@ -198,7 +203,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', 'B', 12);
     $pdf->Cell(0, 8, utf8_decode_safe('DOCENTE QUE REPORTA'), 0, 1, 'L', true);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(2);
+    $pdf->Ln(3);
     
     // Nombre del docente
     $pdf->SetFont('Times', 'B', 11);
@@ -222,7 +227,7 @@ function generateReportPDF($idConductReport, $conexion) {
     }
     $pdf->Cell(0, 7, $fechaCreacion, 0, 1, 'L');
     
-    $pdf->Ln(15);
+    $pdf->Ln(10);
     
     // Espacio para firmas
     $pdf->SetDrawColor(0, 0, 0);
@@ -236,14 +241,7 @@ function generateReportPDF($idConductReport, $conexion) {
     // Firma del director
     $pdf->Line(120, $pdf->GetY(), 180, $pdf->GetY());
     $pdf->SetX(110);
-    $pdf->Cell(70, 5, utf8_decode_safe('Dirección'), 0, 1, 'C');
-    
-    // Pie de página
-    $pdf->SetY(-20);
-    $pdf->SetFont('Times', 'I', 8);
-    $pdf->SetTextColor(128, 128, 128);
-    $pdf->Cell(0, 5, utf8_decode_safe('Este documento es un reporte oficial del centro educativo'), 0, 1, 'C');
-    $pdf->Cell(0, 5, utf8_decode_safe('Generado el ' . date('d/m/Y H:i')), 0, 0, 'C');
+    $pdf->Cell(70, 5, utf8_decode_safe('Dirección'), 0, 1, 'C');    
     
     // Generar nombre del archivo para descarga
     $nombreEstudiante = trim($data['studentNames'] . '_' . $data['studentLastnamePa']);
