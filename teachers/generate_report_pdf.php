@@ -147,11 +147,6 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', '', 11);
     $pdf->Cell(50, 7, utf8_decode_safe($data['grade'] . '° ' . $data['group_']), 0, 0, 'L');
     
-    // Matrícula
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(35, 7, utf8_decode_safe('Matrícula:'), 0, 0, 'L');
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(0, 7, $data['schoolNum'], 0, 1, 'L');
     
     $pdf->Ln(6);
     
