@@ -216,7 +216,7 @@ if ($selectedGroup) {
                                         </select>
                                     </div>
                                     
-                                    <div class="col-md-4" id="contenedorGrupo" style="display:none;">
+                                    <div class="col-md-4 d-none" id="contenedorGrupo">
                                         <label id="labelGrupo" for="grupo" class="form-label fw-semibold">
                                             <i class="bi bi-collection me-1"></i>
                                             Grupo:
@@ -231,10 +231,21 @@ if ($selectedGroup) {
                                         </select>
                                     </div>
                                     
-                                    <div class="col-md-4" style="display: flex; align-items: end;">
+                                    <div class="col-md-4 d-none" id="contenedorTrimestre">
+                                        <label id="labelTrimestre" for="trimestre" class="form-label fw-semibold">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            Trimestre:
+                                        </label>
+                                        <select class="form-select border-secondary" id="trimestre" disabled>
+                                            <option value="" selected>Seleccionar trimestre</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-4 d-none" id="contenedorBotonDescargar">
                                         <button type="button" id="descargarGrupoBtn" 
                                                 class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> w-100" 
-                                                style="display: none;" 
                                                 <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                                             <i class="fas fa-download me-2"></i> 
                                             <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
@@ -386,7 +397,7 @@ if ($selectedGroup) {
 
         <!-- Estilos CSS personalizados -->
         <style>
-            /* Estilos para el header */
+            /* Estilos para el header */        
             .page-header {
                 text-align: center;
                 padding: 1.5rem 0 1rem 0;
@@ -585,33 +596,7 @@ if ($selectedGroup) {
                 </div>
 
                 <div class="modal-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="cicloFormativo" class="form-label fw-bold">Año Escolar:</label>
-                                <select class="form-select" id="cicloFormativo">
-                                    <option value="" selected>Seleccionar año escolar</option>
-                                    <?php 
-                                    $years = $conexion->query("SELECT idSchoolYear, startDate, endDate FROM schoolYear ORDER BY startDate DESC");
-                                    while ($year = $years->fetch_assoc()):
-                                        $label = substr($year['startDate'], 0, 4);
-                                    ?>
-                                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
-                                    <?php endwhile; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3 d-none" id="divTrimestreFormativo">
-                                <label for="trimestreFormativo" class="form-label fw-bold">Trimestre:</label>
-                                <select class="form-select" id="trimestreFormativo" disabled>
-                                    <option value="">Seleccionar trimestre</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4 d-none" id="divCamposFormativos">
+                    <div class="mb-4" id="divCamposFormativos">
                         <h6 class="fw-bold border-bottom pb-2 mb-3">Campos Formativos</h6>
                         
                         <div id="loadingGrades" class="text-center my-4">
@@ -779,9 +764,11 @@ if ($selectedGroup) {
         <!-- Scripts para manejar la carga dinámica de boletas -->
     <script>
         // Variables para los elementos del DOM
-        const yearSelect = document.getElementById('cicloFormativo');
-        const quarterSelect = document.getElementById('trimestreFormativo');
-        const divTrimestreFormativo = document.getElementById('divTrimestreFormativo');
+        const yearSelect = document.getElementById('schoolYear');
+        const grupoSelect = document.getElementById('grupo');
+        const quarterSelect = document.getElementById('trimestre');
+        const divGrupoFormativo = document.getElementById('contenedorGrupo');
+        const divTrimestreFormativo = document.getElementById('contenedorTrimestre');
         const divCamposFormativos = document.getElementById('divCamposFormativos');
         let selectedStudentId = '';
         let studentName = '';
@@ -791,20 +778,44 @@ if ($selectedGroup) {
             // Debug function disabled for production
         }
 
-                // Event listener para el año escolar
+        // Event listener para el año escolar
         yearSelect.addEventListener('change', function() {
             const idSchoolYear = this.value;
             
+            // Resetear grupo y trimestre
+            grupoSelect.selectedIndex = 0;
             quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
             
             if (!idSchoolYear) {
+                divGrupoFormativo.classList.add('d-none');
                 divTrimestreFormativo.classList.add('d-none');
                 divCamposFormativos.classList.add('d-none');
                 return;
             }
             
-            // Mostrar el div de trimestres antes de hacer la petición
+            // Mostrar el div de grupo
+            divGrupoFormativo.classList.remove('d-none');
+            divTrimestreFormativo.classList.add('d-none');
+        });
+
+        // Event listener para el grupo
+        grupoSelect.addEventListener('change', function() {
+            const idSchoolYear = yearSelect.value;
+            const idGroup = this.value;
+            
+            quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
+            
+            if (!idSchoolYear || !idGroup) {
+                divTrimestreFormativo.classList.add('d-none');
+                divCamposFormativos.classList.add('d-none');
+                document.getElementById('contenedorBotonDescargar').classList.add('d-none');
+                return;
+            }
+            
+            // Mostrar el div de trimestres
             divTrimestreFormativo.classList.remove('d-none');
+            // Ocultar el botón de descargar hasta que seleccione trimestre
+            document.getElementById('contenedorBotonDescargar').classList.add('d-none');
             
             fetch(`get_quarters.php?idSchoolYear=${idSchoolYear}`)
                 .then(response => {
@@ -1170,6 +1181,8 @@ if ($selectedGroup) {
         quarterSelect.addEventListener('change', function() {
             
             if (this.value && yearSelect.value) {
+                // Mostrar el botón de descargar PDF cuando selecciona trimestre
+                document.getElementById('contenedorBotonDescargar').classList.remove('d-none');
                 divCamposFormativos.classList.remove('d-none');
                 const gradesList = document.getElementById('gradesList');
                 const loadingIndicator = document.getElementById('loadingGrades');
@@ -1187,6 +1200,7 @@ if ($selectedGroup) {
                     gradesList.innerHTML = '<div class="alert alert-warning">No se ha seleccionado ningún estudiante. Por favor cierre este modal y vuelva a intentarlo.</div>';
                 }
             } else {
+                document.getElementById('contenedorBotonDescargar').classList.add('d-none');
                 divCamposFormativos.classList.add('d-none');
             }
         });
@@ -1206,8 +1220,8 @@ if ($selectedGroup) {
             return;
             <?php endif; ?>
 
-            const schoolYearId = document.getElementById('cicloFormativo').value;
-            const quarterId = document.getElementById('trimestreFormativo').value;
+            const schoolYearId = document.getElementById('schoolYear').value;
+            const quarterId = document.getElementById('trimestre').value;
             
             if (schoolYearId && quarterId && selectedStudentId) {
                 // Construir la URL para generar el PDF
@@ -1283,21 +1297,24 @@ if ($selectedGroup) {
                     </div>
                 </div>
             `;
+            
+            // Cargar automáticamente los campos formativos si ya hay año escolar y trimestre seleccionados
+            if (yearSelect.value && quarterSelect.value) {
+                divCamposFormativos.classList.remove('d-none');
+                const loadingIndicator = document.getElementById('loadingGrades');
+                loadingIndicator.classList.remove('d-none');
+                const gradesList = document.getElementById('gradesList');
+                gradesList.innerHTML = '';
+                loadStudentGrades(selectedStudentId, yearSelect.value, quarterSelect.value);
+            } else {
+                divCamposFormativos.classList.add('d-none');
+            }
         });
         
         // Reiniciar el modal cuando se cierre
         modalCamposFormativos.addEventListener('hidden.bs.modal', function() {
             debug("Modal de boleta cerrado - reseteo");
             
-            // Restablecer los selectores
-            document.getElementById('cicloFormativo').selectedIndex = 0;
-            
-            const trimesterSelect = document.getElementById('trimestreFormativo');
-            trimesterSelect.selectedIndex = 0;
-            trimesterSelect.innerHTML = '<option value="">Seleccionar trimestre</option>';
-            trimesterSelect.disabled = true;
-            
-            document.getElementById('divTrimestreFormativo').classList.add('d-none');
             document.getElementById('divCamposFormativos').classList.add('d-none');
             document.getElementById('gradesList').innerHTML = '';
             

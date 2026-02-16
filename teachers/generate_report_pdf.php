@@ -103,75 +103,81 @@ function generateReportPDF($idConductReport, $conexion) {
     foreach ($logoPaths as $logoPath) {
         if (file_exists($logoPath)) {
             try {
-                $pdf->Image($logoPath, 15, 15, 25);
+                $pdf->Image($logoPath, 15, 15, 25, 25);
                 break;
             } catch (Exception $e) {
                 error_log("Error al cargar logo: " . $e->getMessage());
             }
         }
     }
+
+    // Título del documento - posicionado al lado derecho del logo
+    $pdf->SetXY(45, 18);
+    $pdf->SetFont('Times', 'B', 12);
+    $pdf->Cell(0, 8, utf8_decode_safe('ESCUELA PRIMARIA'), 0, 1, 'L');
+    $pdf->SetXY(45, 26);
+    $pdf->Cell(0, 8, utf8_decode_safe('GREGORIO TORRES QUINTERO NO.2308'), 0, 1, 'L');
+    $pdf->Ln(10);
     
-    // Título principal
-    $pdf->SetFont('Times', 'B', 18);
-    $pdf->SetY(18);
+    // Título de reporte centrado
+    $pdf->SetFont('Times', 'B', 19);
     $pdf->Cell(0, 10, utf8_decode_safe('REPORTE DE CONDUCTA'), 0, 1, 'C');
-    
-    // Subtítulo
-    $pdf->SetFont('Times', 'I', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('Escuela Primaria Gregorio Torres Quintero NO.2308'), 0, 1, 'C');
-    $pdf->Ln(15);
-    
-    $pdf->SetFont('Times', 'I', 6);
-    $pdf->Cell(0, 5, utf8_decode_safe('Generado el ' . date('d/m/Y H:i')), 0, 0, 'C');
-    $pdf->Ln(15);
+
+    // Línea separadora
+    $pdf->Ln(5);
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(5);
 
 
     // Datos del estudiante
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 0, 1, 'L', true);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(3);
+    $pdf->SetFont('Times', 'B', 14);
+    $pdf->Cell(0, 10, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
     
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFillColor(250, 250, 250);
+
     // Nombre completo del estudiante
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(50, 7, utf8_decode_safe('Nombre completo:'), 0, 0, 'L');
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(50, 8, utf8_decode_safe('Nombre completo:'), 1, 0, 'L', true);
     $pdf->SetFont('Times', '', 11);
     $nombreCompleto = $data['studentNames'] . ' ' . $data['studentLastnamePa'] . ' ' . $data['studentLastnameMa'];
-    $pdf->Cell(0, 7, utf8_decode_safe($nombreCompleto), 0, 1, 'L');
+    $pdf->Cell(0, 8, utf8_decode_safe($nombreCompleto), 1, 1, 'L');
     
     // Grado y grupo
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(50, 7, utf8_decode_safe('Grado y Grupo:'), 0, 0, 'L');
     $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 7, utf8_decode_safe($data['grade'] . '° ' . $data['group_']), 0, 0, 'L');
+    $pdf->Cell(50, 8, utf8_decode_safe('Grado y Grupo:'), 1, 0, 'L', true);
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(0, 8, utf8_decode_safe($data['grade'] . '° ' . $data['group_']), 1, 1, 'L');
     
-    
-    $pdf->Ln(6);
+    $pdf->Ln(8);
     
     // Información del reporte
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 0, 1, 'L', true);
+    $pdf->SetFont('Times', 'B', 14);
+    $pdf->Cell(0, 10, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 1, 1, 'C', true);
+    
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(3);
+    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFillColor(250, 250, 250);
     
     // Fecha del reporte
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(40, 7, 'Fecha:', 0, 0, 'L');
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(50, 8, 'Fecha:', 1, 0, 'L', true);
     $pdf->SetFont('Times', '', 11);
     $fechaFormateada = date('d/m/Y', strtotime($data['fecha']));
-    $pdf->Cell(0, 7, $fechaFormateada, 0, 1, 'L');
+    $pdf->Cell(0, 8, $fechaFormateada, 1, 1, 'L');
     
     // Tipo de reporte
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(40, 7, 'Tipo de reporte:', 0, 0, 'L');
     $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(0, 7, utf8_decode_safe($data['tipo']), 0, 1, 'L');
+    $pdf->Cell(50, 8, 'Tipo de reporte:', 1, 0, 'L', true);
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(0, 8, utf8_decode_safe($data['tipo']), 1, 1, 'L');
     
-    $pdf->Ln(3);
+    $pdf->Ln(8);
     
     // Descripción del incidente
     $pdf->SetFont('Times', 'B', 11);
@@ -179,7 +185,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFont('Times', '', 10);
     $pdf->MultiCell(0, 5, utf8_decode_safe($data['descripcion']), 0, 'J');
     
-    $pdf->Ln(3);
+    $pdf->Ln(5);
     
     // Observaciones (si existen)
     if (!empty($data['observaciones'])) {
@@ -187,29 +193,31 @@ function generateReportPDF($idConductReport, $conexion) {
         $pdf->Cell(0, 7, 'Observaciones:', 0, 1, 'L');
         $pdf->SetFont('Times', '', 10);
         $pdf->MultiCell(0, 5, utf8_decode_safe($data['observaciones']), 0, 'J');
-        $pdf->Ln(3);
+        $pdf->Ln(5);
     }
     
-    $pdf->Ln(6);
+    $pdf->Ln(10);
     
     // Información del docente
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('DOCENTE QUE REPORTA'), 0, 1, 'L', true);
+    $pdf->SetFont('Times', 'B', 14);
+    $pdf->Cell(0, 10, utf8_decode_safe('DOCENTE QUE REPORTA'), 1, 1, 'C', true);
+    
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(3);
+    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFillColor(250, 250, 250);
     
     // Nombre del docente
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(50, 7, utf8_decode_safe('Docente:'), 0, 0, 'L');
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(50, 8, utf8_decode_safe('Docente:'), 1, 0, 'L', true);
     $pdf->SetFont('Times', '', 11);
     $nombreDocente = ($data['teacherNames'] ?? '') . ' ' . ($data['teacherLastnamePa'] ?? '') . ' ' . ($data['teacherLastnameMa'] ?? '');
-    $pdf->Cell(0, 7, utf8_decode_safe(trim($nombreDocente)), 0, 1, 'L');
+    $pdf->Cell(0, 8, utf8_decode_safe(trim($nombreDocente)), 1, 1, 'L');
     
     // Fecha de creación del reporte
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(50, 7, utf8_decode_safe('Fecha de creación:'), 0, 0, 'L');
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(50, 8, utf8_decode_safe('Fecha de creación:'), 1, 0, 'L', true);
     $pdf->SetFont('Times', '', 11);
     
     // Si createdAt existe y es válido, usarlo; sino usar la fecha del reporte
@@ -220,13 +228,14 @@ function generateReportPDF($idConductReport, $conexion) {
     } else {
         $fechaCreacion = date('d/m/Y');
     }
-    $pdf->Cell(0, 7, $fechaCreacion, 0, 1, 'L');
+    $pdf->Cell(0, 8, $fechaCreacion, 1, 1, 'L');
     
-    $pdf->Ln(10);
+    $pdf->Ln(20);
     
     // Espacio para firmas
     $pdf->SetDrawColor(0, 0, 0);
     $pdf->SetLineWidth(0.3);
+    
     
     // Firma del docente
     $pdf->Line(30, $pdf->GetY(), 90, $pdf->GetY());
@@ -237,6 +246,18 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->Line(120, $pdf->GetY(), 180, $pdf->GetY());
     $pdf->SetX(110);
     $pdf->Cell(70, 5, utf8_decode_safe('Dirección'), 0, 1, 'C');    
+    
+    $pdf->Ln(10);
+    
+    // Pie de página con información de generación del documento
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(5);
+    
+    $pdf->SetFont('Times', 'I', 8);
+    // Obtener hora actual y restar 1 hora (diferencia de zona horaria)
+    $mexicoTime = time() - 3600; // 3600 segundos = 1 hora
+    $pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s', $mexicoTime)), 0, 1, 'R');
+    $pdf->Cell(0, 4, utf8_decode_safe('Sistema de Gestión de Calificaciones - Versión 1.0'), 0, 1, 'R');
     
     // Generar nombre del archivo para descarga
     $nombreEstudiante = trim($data['studentNames'] . '_' . $data['studentLastnamePa']);
