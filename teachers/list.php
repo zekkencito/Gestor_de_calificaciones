@@ -28,26 +28,44 @@ $stmtTeacher = $conexion->prepare($sqlTeacher);
 $stmtTeacher->bind_param("i", $idUser);
 $stmtTeacher->execute();
 
-// Obtener los ciclos escolares disponibles
-$schoolYears = [];
-$sqlSchoolYears = "SELECT idSchoolYear, startDate as year, description FROM schoolYear ORDER BY startDate DESC";
-$resultSchoolYears = $conexion->query($sqlSchoolYears);
-if ($resultSchoolYears) {
-    while ($row = $resultSchoolYears->fetch_assoc()) {
-        $schoolYears[] = $row;
+// Obtener el ciclo escolar del año actual basado en la fecha del servidor
+$currentYear = date('Y');
+$currentSchoolYear = null;
+$sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate FROM schoolYear 
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   LIMIT 1";
+$stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+if ($stmtCurrentYear) {
+    $stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+    $stmtCurrentYear->execute();
+    $resultCurrentYear = $stmtCurrentYear->get_result();
+    if ($rowCurrentYear = $resultCurrentYear->fetch_assoc()) {
+        $currentSchoolYear = $rowCurrentYear;
     }
-    $resultSchoolYears->close();
+    $stmtCurrentYear->close();
+} else {
+    error_log("Error al preparar consulta de ciclo escolar: " . $conexion->error);
 }
 
-// Obtener los trimestres/periodos disponibles
+// Obtener los trimestres del año escolar actual
 $quarters = [];
-$sqlQuarters = "SELECT idSchoolQuarter, name FROM schoolQuarter";
-$resultQuarters = $conexion->query($sqlQuarters);
-if ($resultQuarters) {
-    while ($row = $resultQuarters->fetch_assoc()) {
-        $quarters[] = $row;
+if ($currentSchoolYear) {
+    $sqlQuarters = "SELECT idSchoolQuarter, name, startDate, endDate 
+                    FROM schoolQuarter 
+                    WHERE idSchoolYear = ? 
+                    ORDER BY idSchoolQuarter ASC";
+    $stmtQuarters = $conexion->prepare($sqlQuarters);
+    if ($stmtQuarters) {
+        $stmtQuarters->bind_param('i', $currentSchoolYear['idSchoolYear']);
+        $stmtQuarters->execute();
+        $resultQuarters = $stmtQuarters->get_result();
+        while ($row = $resultQuarters->fetch_assoc()) {
+            $quarters[] = $row;
+        }
+        $stmtQuarters->close();
+    } else {
+        error_log("Error al preparar consulta de trimestres: " . $conexion->error);
     }
-    $resultQuarters->close();
 }
 
 $resTeacher = $stmtTeacher->get_result();
@@ -59,45 +77,42 @@ if (!$rowTeacher) {
 $idTeacher = $rowTeacher['idTeacher'];
 $stmtTeacher->close();
 
-// Obtener solo los grupos asignados al docente autenticado para el año escolar seleccionado
+// Obtener solo los grupos asignados al docente autenticado para el año escolar actual
 $groups = [];
-$selectedSchoolYear = isset($_GET['schoolYear']) ? intval($_GET['schoolYear']) : null;
 
-$sqlGroups = "SELECT DISTINCT g.idGroup, g.grade, g.group_
-              FROM teacherGroupsSubjects tgs
-              JOIN groups g ON tgs.idGroup = g.idGroup
-              WHERE tgs.idTeacher = ?";
-
-if ($selectedSchoolYear) {
-    $sqlGroups .= " AND EXISTS (
-        SELECT 1 FROM students s 
-        WHERE s.idGroup = g.idGroup 
-        AND s.idSchoolYear = ?
-    )";
+if ($currentSchoolYear) {
+    $sqlGroups = "SELECT DISTINCT g.idGroup, g.grade, g.group_
+                  FROM teacherGroupsSubjects tgs
+                  JOIN groups g ON tgs.idGroup = g.idGroup
+                  WHERE tgs.idTeacher = ?
+                  AND EXISTS (
+                      SELECT 1 FROM students s 
+                      WHERE s.idGroup = g.idGroup 
+                      AND s.idSchoolYear = ?
+                  )
+                  GROUP BY g.idGroup, g.grade, g.group_
+                  ORDER BY g.grade, g.group_";
+    
+    $stmtGroups = $conexion->prepare($sqlGroups);
+    if ($stmtGroups) {
+        $stmtGroups->bind_param("ii", $idTeacher, $currentSchoolYear['idSchoolYear']);
+        $stmtGroups->execute();
+        $resGroups = $stmtGroups->get_result();
+        while ($row = $resGroups->fetch_assoc()) {
+            $groups[] = $row;
+        }
+        $stmtGroups->close();
+    } else {
+        error_log("Error al preparar consulta de grupos: " . $conexion->error);
+    }
 }
-
-$sqlGroups .= " GROUP BY g.idGroup, g.grade, g.group_
-                ORDER BY g.grade, g.group_";
-
-$stmtGroups = $conexion->prepare($sqlGroups);
-if ($selectedSchoolYear) {
-    $stmtGroups->bind_param("ii", $idTeacher, $selectedSchoolYear);
-} else {
-    $stmtGroups->bind_param("i", $idTeacher);
-}
-$stmtGroups->execute();
-$resGroups = $stmtGroups->get_result();
-while ($row = $resGroups->fetch_assoc()) {
-    $groups[] = $row;
-}
-$stmtGroups->close();
 
 // Determinar el grupo seleccionado
 $selectedGroup = isset($_GET['grupo']) ? intval($_GET['grupo']) : "";
 
 // Obtener alumnos del grupo seleccionado
 $students = [];
-if ($selectedGroup) {
+if ($selectedGroup && $currentSchoolYear) {
     $sqlStudents = "SELECT s.idStudent, s.schoolNum, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_, s.idStudentStatus, s.curp,
         t.tutorName, t.tutorLastnamePa, t.tutorLastnameMa, t.tutorPhone, t.tutorAddress, t.tutorEmail, t.ine as tutorIne,
         st.nomenclature, st.description
@@ -110,18 +125,22 @@ if ($selectedGroup) {
         ORDER BY ui.lastnamePa, ui.lastnameMa, ui.names";
     
     $stmt = $conexion->prepare($sqlStudents);
-    $stmt->bind_param("ii", $selectedGroup, $selectedSchoolYear);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        // Debug temporal: log del primer estudiante
-        if (empty($students)) {
-            error_log("DEBUG: Primer estudiante obtenido: " . json_encode($row));
-            error_log("DEBUG: idStudent value: " . var_export($row['idStudent'], true));
+    if ($stmt) {
+        $stmt->bind_param("ii", $selectedGroup, $currentSchoolYear['idSchoolYear']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            // Debug temporal: log del primer estudiante
+            if (empty($students)) {
+                error_log("DEBUG: Primer estudiante obtenido: " . json_encode($row));
+                error_log("DEBUG: idStudent value: " . var_export($row['idStudent'], true));
+            }
+            $students[] = $row;
         }
-        $students[] = $row;
+        $stmt->close();
+    } else {
+        error_log("Error al preparar consulta de estudiantes: " . $conexion->error);
     }
-    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -199,24 +218,29 @@ if ($selectedGroup) {
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label id="labelAnio" for="schoolYear" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-date me-1"></i>
-                                            Año Escolar:
-                                        </label>
-                                        <select class="form-select border-secondary" id="schoolYear">
-                                            <option value="" selected>Seleccionar año escolar</option>
-                                            <?php 
-                                            $years = $conexion->query("SELECT idSchoolYear, startDate FROM schoolYear ORDER BY startDate DESC");
-                                            while ($year = $years->fetch_assoc()):
-                                                $label = substr($year['startDate'], 0, 4);
-                                            ?>
-                                                <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
-                                            <?php endwhile; ?>
-                                        </select>
+                                    <?php if ($currentSchoolYear): ?>
+                                    <div class="col-md-12 mb-3">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Año Escolar Actual:</strong> <?php echo $currentYear; ?>
+                                            <span class="text-muted ms-2">(<?php echo date('d/m/Y', strtotime($currentSchoolYear['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentSchoolYear['endDate'])); ?>)</span>
+                                        </div>
                                     </div>
+                                    <?php else: ?>
+                                    <div class="col-md-12 mb-3">
+                                        <div class="alert alert-warning mb-0">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <strong>No hay ciclo escolar configurado para el año <?php echo $currentYear; ?></strong>
+                                            <br><small>Contacte al administrador para configurar el ciclo escolar actual.</small>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                     
+<<<<<<< Updated upstream
                                     <div class="col-md-4 d-none" id="contenedorGrupo">
+=======
+                                    <div class="col-md-6" id="contenedorGrupo" <?php if (!$currentSchoolYear): ?>style="display:none;"<?php endif; ?>>
+>>>>>>> Stashed changes
                                         <label id="labelGrupo" for="grupo" class="form-label fw-semibold">
                                             <i class="bi bi-collection me-1"></i>
                                             Grupo:
@@ -231,6 +255,7 @@ if ($selectedGroup) {
                                         </select>
                                     </div>
                                     
+<<<<<<< Updated upstream
                                     <div class="col-md-4 d-none" id="contenedorTrimestre">
                                         <label id="labelTrimestre" for="trimestre" class="form-label fw-semibold">
                                             <i class="bi bi-calendar3 me-1"></i>
@@ -244,6 +269,9 @@ if ($selectedGroup) {
                                 
                                 <div class="row g-3 mt-2">
                                     <div class="col-md-4 d-none" id="contenedorBotonDescargar">
+=======
+                                    <div class="col-md-6" style="display: flex; align-items: end;">
+>>>>>>> Stashed changes
                                         <button type="button" id="descargarGrupoBtn" 
                                                 class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> w-100" 
                                                 <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
@@ -596,7 +624,43 @@ if ($selectedGroup) {
                 </div>
 
                 <div class="modal-body">
+<<<<<<< Updated upstream
                     <div class="mb-4" id="divCamposFormativos">
+=======
+                    <?php if ($currentSchoolYear): ?>
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Año Escolar:</strong> <?php echo $currentYear; ?>
+                        <span class="text-muted ms-2">(<?php echo date('d/m/Y', strtotime($currentSchoolYear['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentSchoolYear['endDate'])); ?>)</span>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="trimestreFormativo" class="form-label fw-bold">Trimestre:</label>
+                                <select class="form-select" id="trimestreFormativo">
+                                    <option value="">Seleccionar trimestre</option>
+                                    <?php foreach ($quarters as $quarter): ?>
+                                        <option value="<?php echo $quarter['idSchoolQuarter']; ?>">
+                                            <?php echo htmlspecialchars($quarter['name']); ?>
+                                            <?php if ($quarter['startDate'] && $quarter['endDate']): ?>
+                                                (<?php echo date('d/m/Y', strtotime($quarter['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($quarter['endDate'])); ?>)
+                                            <?php endif; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No hay ciclo escolar configurado para el año actual.
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="mb-4 d-none" id="divCamposFormativos">
+>>>>>>> Stashed changes
                         <h6 class="fw-bold border-bottom pb-2 mb-3">Campos Formativos</h6>
                         
                         <div id="loadingGrades" class="text-center my-4">
@@ -764,20 +828,28 @@ if ($selectedGroup) {
         <!-- Scripts para manejar la carga dinámica de boletas -->
     <script>
         // Variables para los elementos del DOM
+<<<<<<< Updated upstream
         const yearSelect = document.getElementById('schoolYear');
         const grupoSelect = document.getElementById('grupo');
         const quarterSelect = document.getElementById('trimestre');
         const divGrupoFormativo = document.getElementById('contenedorGrupo');
         const divTrimestreFormativo = document.getElementById('contenedorTrimestre');
+=======
+        const quarterSelect = document.getElementById('trimestreFormativo');
+>>>>>>> Stashed changes
         const divCamposFormativos = document.getElementById('divCamposFormativos');
         let selectedStudentId = '';
         let studentName = '';
+        
+        // Año escolar actual del servidor
+        const currentSchoolYearId = <?php echo $currentSchoolYear ? $currentSchoolYear['idSchoolYear'] : 'null'; ?>;
         
         // Función para mostrar un mensaje en la consola para depuración
         function debug(msg) {
             // Debug function disabled for production
         }
 
+<<<<<<< Updated upstream
         // Event listener para el año escolar
         yearSelect.addEventListener('change', function() {
             const idSchoolYear = this.value;
@@ -857,6 +929,8 @@ if ($selectedGroup) {
             }
         });
 
+=======
+>>>>>>> Stashed changes
         // Función para obtener las calificaciones del estudiante
         function loadStudentGrades(studentId, schoolYearId, quarterId) {
             const gradesList = document.getElementById('gradesList');
@@ -1180,9 +1254,13 @@ if ($selectedGroup) {
         // Event listener para el trimestre
         quarterSelect.addEventListener('change', function() {
             
+<<<<<<< Updated upstream
             if (this.value && yearSelect.value) {
                 // Mostrar el botón de descargar PDF cuando selecciona trimestre
                 document.getElementById('contenedorBotonDescargar').classList.remove('d-none');
+=======
+            if (this.value && currentSchoolYearId) {
+>>>>>>> Stashed changes
                 divCamposFormativos.classList.remove('d-none');
                 const gradesList = document.getElementById('gradesList');
                 const loadingIndicator = document.getElementById('loadingGrades');
@@ -1194,7 +1272,7 @@ if ($selectedGroup) {
                     gradesList.innerHTML = '';
                     
                     // Usar la función loadStudentGrades que ya filtra por estudiante
-                    loadStudentGrades(selectedStudentId, yearSelect.value, this.value);
+                    loadStudentGrades(selectedStudentId, currentSchoolYearId, this.value);
                 } else {
                     loadingIndicator.classList.add('d-none');
                     gradesList.innerHTML = '<div class="alert alert-warning">No se ha seleccionado ningún estudiante. Por favor cierre este modal y vuelva a intentarlo.</div>';
@@ -1220,17 +1298,21 @@ if ($selectedGroup) {
             return;
             <?php endif; ?>
 
+<<<<<<< Updated upstream
             const schoolYearId = document.getElementById('schoolYear').value;
             const quarterId = document.getElementById('trimestre').value;
+=======
+            const quarterId = document.getElementById('trimestreFormativo').value;
+>>>>>>> Stashed changes
             
-            if (schoolYearId && quarterId && selectedStudentId) {
+            if (currentSchoolYearId && quarterId && selectedStudentId) {
                 // Construir la URL para generar el PDF
-                const pdfUrl = `generate_boleta_pdf.php?idStudent=${selectedStudentId}&idSchoolYear=${schoolYearId}&idSchoolQuarter=${quarterId}`;
+                const pdfUrl = `generate_boleta_pdf.php?idStudent=${selectedStudentId}&idSchoolYear=${currentSchoolYearId}&idSchoolQuarter=${quarterId}`;
                 
                 // Abrir el PDF en una nueva ventana
                 window.open(pdfUrl, '_blank');
             } else {
-                alert('Por favor, seleccione un ciclo escolar y un trimestre para generar la boleta.');
+                alert('Por favor, seleccione un trimestre para generar la boleta.');
             }
         });
     </script>
@@ -1315,6 +1397,13 @@ if ($selectedGroup) {
         modalCamposFormativos.addEventListener('hidden.bs.modal', function() {
             debug("Modal de boleta cerrado - reseteo");
             
+<<<<<<< Updated upstream
+=======
+            // Restablecer el selector de trimestre
+            const trimesterSelect = document.getElementById('trimestreFormativo');
+            trimesterSelect.selectedIndex = 0;
+            
+>>>>>>> Stashed changes
             document.getElementById('divCamposFormativos').classList.add('d-none');
             document.getElementById('gradesList').innerHTML = '';
             
@@ -1348,51 +1437,18 @@ if ($selectedGroup) {
     <!-- Script para manejo dinámico de filtros -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const schoolYearSelect = document.getElementById('schoolYear');
             const grupoSelect = document.getElementById('grupo');
             const contenedorGrupo = document.getElementById('contenedorGrupo');
             const alumnosBody = document.getElementById('alumnos-tbody');
 
-            // Función para cargar grupos
-            function cargarGrupos(schoolYearId) {
-                if (!schoolYearId) {
-                    contenedorGrupo.style.display = 'none';
-                    return;
-                }
-
-                fetch(`ajax_students_by_group.php?schoolYear=${schoolYearId}&teacher=<?php echo $idTeacher; ?>`)
-                    .then(response => {
-                        return response.json();
-                    })
-                    .then(data => {
-                        grupoSelect.innerHTML = '<option value="" selected>Seleccionar grupo</option>';
-                        if (data.success && data.groups && data.groups.length > 0) {
-                            data.groups.forEach(grupo => {
-                                const option = document.createElement('option');
-                                option.value = grupo.idGroup;
-                                option.textContent = `${grupo.grade}° ${grupo.group_}`;
-                                grupoSelect.appendChild(option);
-                            });
-                            contenedorGrupo.style.display = 'block';
-                        } else {
-                            contenedorGrupo.style.display = 'none';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading groups:', error);
-                        contenedorGrupo.style.display = 'none';
-                        alert('Error al cargar los grupos. Por favor, intente de nuevo.');
-                    });
-            }
-
             // Función para cargar alumnos
-            function cargarAlumnos(groupId, schoolYearId) {
-                if (!groupId || !schoolYearId) {
+            function cargarAlumnos(groupId) {
+                if (!groupId || !currentSchoolYearId) {
                     alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">Seleccione un grupo para ver los alumnos.</td></tr>';
                     return;
                 }
 
-                fetch(`get_students.php?grupo=${groupId}&schoolYear=${schoolYearId}`)
+                fetch(`get_students.php?grupo=${groupId}&schoolYear=${currentSchoolYearId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (!data || !data.students || data.students.length === 0) {
@@ -1489,24 +1545,17 @@ if ($selectedGroup) {
             }
 
             // Event Listeners
-            schoolYearSelect.addEventListener('change', function() {
-                cargarGrupos(this.value);
-                cargarAlumnos('', '');
-                checkDownloadButton(); // Verificar si mostrar botón de descarga
-            });
-
             grupoSelect.addEventListener('change', function() {
-                cargarAlumnos(this.value, schoolYearSelect.value);
+                cargarAlumnos(this.value);
                 checkDownloadButton(); // Verificar si mostrar botón de descarga
             });
 
             // Función para verificar si mostrar el botón de descarga
             function checkDownloadButton() {
                 const descargarBtn = document.getElementById('descargarGrupoBtn');
-                const schoolYearValue = schoolYearSelect.value;
                 const grupoValue = grupoSelect.value;
                 
-                if (schoolYearValue && grupoValue) {
+                if (currentSchoolYearId && grupoValue) {
                     descargarBtn.style.display = 'block';
                 } else {
                     descargarBtn.style.display = 'none';
@@ -1526,14 +1575,13 @@ if ($selectedGroup) {
                 return;
                 <?php endif; ?>
 
-                const schoolYearValue = schoolYearSelect.value;
                 const grupoValue = grupoSelect.value;
                 
-                if (!schoolYearValue || !grupoValue) {
+                if (!currentSchoolYearId || !grupoValue) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Selección incompleta',
-                        text: 'Por favor selecciona el año escolar y el grupo antes de descargar.'
+                        text: 'Por favor selecciona un grupo antes de descargar.'
                     });
                     return;
                 }
@@ -1550,7 +1598,7 @@ if ($selectedGroup) {
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        descargarPDFsGrupo(schoolYearValue, grupoValue);
+                        descargarPDFsGrupo(currentSchoolYearId, grupoValue);
                     }
                 });
             });
@@ -1746,21 +1794,12 @@ if ($selectedGroup) {
             
             flatpickrInstance = flatpickr("#reportFecha", {
                 locale: "es",
-                dateFormat: "d/m/Y",
+                dateFormat: "Y-m-d",        // Formato interno para la base de datos
+                altInput: true,              // Usar input alternativo para mostrar
+                altFormat: "d/m/Y",          // Formato visual en español: día/mes/año
                 defaultDate: new Date(),
                 allowInput: false,
-                disableMobile: true,
-                onChange: function(selectedDates, dateStr, instance) {
-                    // Convertir a formato yyyy-mm-dd para enviar al servidor
-                    if (selectedDates.length > 0) {
-                        const date = selectedDates[0];
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        // Guardar en formato yyyy-mm-dd en un campo oculto o en el mismo campo
-                        instance.input.dataset.isoDate = `${year}-${month}-${day}`;
-                    }
-                }
+                disableMobile: true
             });
         }
 
@@ -1782,11 +1821,8 @@ if ($selectedGroup) {
             
             const formData = new FormData(this);
             
-            // Convertir la fecha del formato dd/mm/yyyy a yyyy-mm-dd para el servidor
-            const fechaInput = document.getElementById('reportFecha');
-            if (fechaInput.dataset.isoDate) {
-                formData.set('fecha', fechaInput.dataset.isoDate);
-            }
+            // Con altInput, el input original ya tiene el formato Y-m-d correcto para el servidor
+            // No necesitamos conversión adicional
             
             // Mostrar loading
             Swal.fire({
