@@ -1,10 +1,16 @@
 <?php
-// Última actualización: 2026-02-13 - Agregado sistema de reportes
+// Última actualización: 2026-02-16
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 require_once "check_session.php";
 require_once "../force_password_check.php";
 require_once "../conection.php";
+
+// Verificar conexión
+if (!$conexion || $conexion->connect_error) {
+    die("Error de conexión a la base de datos: " . ($conexion ? $conexion->connect_error : "conexion es null"));
+}
 
 // --- FECHA LIMITE GLOBAL PARA DESCARGAS ---
 $fechaLimite = null;
@@ -25,6 +31,10 @@ if (!isset($_SESSION['user_id'])) {
 $idUser = $_SESSION['user_id'];
 $sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
 $stmtTeacher = $conexion->prepare($sqlTeacher);
+if (!$stmtTeacher) {
+    error_log("Error preparando consulta teacher: " . $conexion->error);
+    die("Error al cargar información del docente: " . $conexion->error);
+}
 $stmtTeacher->bind_param("i", $idUser);
 $stmtTeacher->execute();
 
@@ -154,7 +164,7 @@ if ($selectedGroup) {
     
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="row d-flex" style="min-height: 100vh; width: 100%; margin: 0; padding: 0; overflow-x: hidden;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -162,7 +172,7 @@ if ($selectedGroup) {
     <?php
         include "../layouts/asideTeacher.php"; 
     ?>
-    <main class="flex-grow-1 col-9 p-0 ">
+    <main class="flex-grow-1 col-9 p-0" style="overflow-y: auto; max-height: 100vh;">
         <?php
             include "../layouts/headerTeacher.php"; 
         ?> 
@@ -259,7 +269,7 @@ if ($selectedGroup) {
             </div>
 
             <!-- Tabla de estudiantes -->
-            <div class="row">
+            <div class="row d-none" id="contenedorTabla">
                 <div class="col-12">
                     <div class="table-card">
                         <div class="card border-0 shadow-sm">
@@ -283,8 +293,8 @@ if ($selectedGroup) {
                                                 <th class="fw-semibold">Grupo</th>
                                                 <th class="fw-semibold">Estado</th>
                                                 <th class="fw-semibold">Boleta</th>
-                                                <th class="fw-semibold">Ver</th>
-                                                <th class="fw-semibold">Reporte</th>
+                                                <th class="fw-semibold">Ver Información</th>
+                                                <th class="fw-semibold">Bitácora Incidencias</th>
                         </tr>
                     </thead>
                     <!-- DEBUG: Archivo actualizado 2026-02-13 19:00 - Columna Reporte agregada -->
@@ -324,7 +334,7 @@ if ($selectedGroup) {
                                         ?>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="botonVer"
+                                        <button type="button" class="botonVer "
                                             data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
                                             data-id="<?php echo $student['idStudent']; ?>"
                                             data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
@@ -340,7 +350,7 @@ if ($selectedGroup) {
                                             <i class="bi bi-file-earmark-text-fill"></i>
                                         </button>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         <button type="button" id="botonVer"
                                             data-id="<?php echo $student['idStudent']; ?>"
                                             data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
@@ -363,9 +373,9 @@ if ($selectedGroup) {
                                         </button>
                                     </td>
                                     <td class="text-center">
-                                        <!-- DEBUG: Celda de Reporte para estudiante ID: <?php echo $student['idStudent']; ?> -->
+                                        <!-- DEBUG: Celda de Bitácora de Incidencias para estudiante ID: <?php echo $student['idStudent']; ?> -->
                                         <button type="button" class="botonReporte" data-bs-toggle="modal" data-bs-target="#reportModal" data-id="<?php echo $student['idStudent']; ?>" data-nombres="<?php echo htmlspecialchars($student['names']); ?>" data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>" data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>">
-                                            <i class="bi bi-file-earmark-text-fill"></i>
+                                            <i class="bi bi-file-earmark-person-fill"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -590,8 +600,9 @@ if ($selectedGroup) {
     <div class="modal fade" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="modalCamposFormativosLabel">Boleta</h5>
+                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                    <i class="bi bi-file-earmark-text-fill me-2"></i>
+                    <h5 class="modal-title" id="modalCamposFormativosLabel">Boleta del Estudiante</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
@@ -623,13 +634,13 @@ if ($selectedGroup) {
         </div>
     </div>
 
-    <!-- MODAL VERIFICAR REPORTE -->
+    <!-- MODAL VERIFICAR BITÁCORA -->
     <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-info text-white border-0">
+                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
                     <h5 class="modal-title" id="reportModalLabel">
-                        <i class="bi bi-file-earmark-text me-2"></i>Reporte del Estudiante
+                        <i class="bi bi-file-earmark-person-fill me-2"></i>Bitácora de Incidencias del Estudiante
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
@@ -643,12 +654,12 @@ if ($selectedGroup) {
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
-                        <p class="mt-2">Verificando reporte...</p>
+                        <p class="mt-2">Verificando bitácora...</p>
                     </div>
                     
                     <div id="reportExistsContent" class="d-none">
-                        <div class="alert alert-success" role="alert">
-                            <i class="bi bi-check-circle-fill me-2"></i>Este estudiante tiene <strong><span id="reportCount">0</span></strong> reporte(s) registrado(s).
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>Este estudiante tiene <strong><span id="reportCount">0</span></strong> bitácoras registrado(s).
                         </div>
                         
                         <div class="table-responsive">
@@ -656,32 +667,31 @@ if ($selectedGroup) {
                                 <thead class="table-light">
                                     <tr>
                                         <th>Fecha</th>
-                                        <th>Tipo</th>
                                         <th>Docente</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="reportsList">
+                                <tbody id="reportsList">    
                                     <!-- Los reportes se cargarán aquí dinámicamente -->
                                 </tbody>
                             </table>
                         </div>
                         
                         <div class="text-center mt-3">
-                            <button type="button" class="btn btn-success" id="btnAddAnotherReport">
-                                <i class="bi bi-plus-circle me-2"></i>Agregar Nuevo Reporte
+                            <button type="button" class="btn" style="background-color: #192E4E; color: white;" id="btnAddAnotherReport">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar Nueva Bitácora
                             </button>
                         </div>
                     </div>
                     
                     <div id="reportNotExistsContent" class="d-none">
                         <div class="alert alert-warning" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Este estudiante no tiene reportes registrados.
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Este estudiante no tiene bitácoras registradas.
                         </div>
-                        <p class="text-center">¿Desea crear un nuevo reporte para este estudiante?</p>
+                        <p class="text-center">¿Desea crear una nueva bitácora para este estudiante?</p>
                         <div class="text-center mt-3">
-                            <button type="button" class="btn btn-primary" id="btnCreateReport">
-                                <i class="bi bi-file-earmark-plus me-2"></i>Crear Nuevo Reporte
+                            <button type="button" class="btn" style="background-color: #192E4E; color: white;" id="btnCreateReport">
+                                <i class="bi bi-file-earmark-plus me-2"></i>Crear Nueva Bitácora
                             </button>
                         </div>
                     </div>
@@ -697,9 +707,9 @@ if ($selectedGroup) {
     <div class="modal fade" id="createReportModal" tabindex="-1" aria-labelledby="createReportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white border-0">
+                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
                     <h5 class="modal-title" id="createReportModalLabel">
-                        <i class="bi bi-file-earmark-plus me-2"></i>Crear Nuevo Reporte
+                        <i class="bi bi-file-earmark-plus me-2"></i>Crear Nueva Bitácora
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
@@ -716,17 +726,6 @@ if ($selectedGroup) {
                             <div class="col-md-6 mb-3">
                                 <label for="reportFecha" class="form-label fw-bold">Fecha: <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="reportFecha" name="fecha" placeholder="Seleccione una fecha" readonly required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="reportTipo" class="form-label fw-bold">Tipo de Reporte: <span class="text-danger">*</span></label>
-                                <select class="form-select" id="reportTipo" name="tipo" required>
-                                    <option value="">Seleccionar tipo...</option>
-                                    <option value="Disciplinario">Disciplinario</option>
-                                    <option value="Académico">Académico</option>
-                                    <option value="Conductual">Conductual</option>
-                                    <option value="Asistencia">Asistencia</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
                             </div>
                         </div>
 
@@ -745,7 +744,7 @@ if ($selectedGroup) {
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save me-2"></i>Guardar Reporte
+                            <i class="bi bi-save me-2"></i>Guardar Bitácora
                         </button>
                     </div>
                 </form>
@@ -1456,7 +1455,7 @@ if ($selectedGroup) {
                                         data-nombres="${student.names}"
                                         data-paterno="${student.lastnamePa}"
                                         data-materno="${student.lastnameMa}">
-                                        <i class="bi bi-file-earmark-text-fill"></i>
+                                        <i class="bi bi-file-earmark-person-fill"></i>
                                     </button>
                                 </td>
                             `;
@@ -1492,12 +1491,29 @@ if ($selectedGroup) {
             schoolYearSelect.addEventListener('change', function() {
                 cargarGrupos(this.value);
                 cargarAlumnos('', '');
+                // Ocultar tabla al cambiar de año
+                document.getElementById('contenedorTabla').classList.add('d-none');
                 checkDownloadButton(); // Verificar si mostrar botón de descarga
             });
 
             grupoSelect.addEventListener('change', function() {
-                cargarAlumnos(this.value, schoolYearSelect.value);
+                // No cargamos alumnos aquí, esperamos al trimestre
+                // Ocultar tabla al cambiar de grupo
+                document.getElementById('contenedorTabla').classList.add('d-none');
                 checkDownloadButton(); // Verificar si mostrar botón de descarga
+            });
+
+            // Event listener para el trimestre - mostrar tabla cuando se seleccione
+            document.getElementById('trimestre').addEventListener('change', function() {
+                const contenedorTabla = document.getElementById('contenedorTabla');
+                if (this.value && grupoSelect.value && schoolYearSelect.value) {
+                    // Mostrar tabla y cargar alumnos
+                    contenedorTabla.classList.remove('d-none');
+                    cargarAlumnos(grupoSelect.value, schoolYearSelect.value);
+                } else {
+                    // Ocultar tabla si no hay trimestre seleccionado
+                    contenedorTabla.classList.add('d-none');
+                }
             });
 
             // Función para verificar si mostrar el botón de descarga
@@ -1611,7 +1627,7 @@ if ($selectedGroup) {
             }
         });
 
-        // REPORTES DE CONDUCTA
+        // BITÁCORAS DE INCIDENCIAS
         let currentStudentId = null;
         let currentStudentName = '';
 
@@ -1657,10 +1673,9 @@ if ($selectedGroup) {
                             const row = document.createElement('tr');
                             row.innerHTML = `
                                 <td>${report.fecha}</td>
-                                <td><span class="badge bg-info">${report.tipo}</span></td>
                                 <td>${report.teacherFullName || 'N/A'}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary me-2" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
+                                    <button class="btn btn-sm btn-danger me-2" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
                                         <i class="bi bi-file-pdf"></i> Ver PDF
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary" onclick="viewReportDetails(${report.idConductReport})" title="Ver detalles">
@@ -1701,7 +1716,6 @@ if ($selectedGroup) {
                     html: `
                         <div class="text-start">
                             <p><strong>Fecha:</strong> ${report.fecha}</p>
-                            <p><strong>Tipo:</strong> ${report.tipo}</p>
                             <p><strong>Docente:</strong> ${report.teacherFullName || 'N/A'}</p>
                             <hr>
                             <p><strong>Descripción:</strong></p>

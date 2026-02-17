@@ -108,15 +108,15 @@ option{
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    color: #17a2b8 !important;
     transition: all 0.3s ease !important;
     padding: 0 !important;
-    width: auto !important;
+    padding-left: 5% !important;
+    width: 100% !important;
     height: auto !important;
+    margin: 0 auto !important;
 }
 
 .botonReporte:hover {
-    color: #138496 !important;
     transform: scale(1.1) !important;
 }
 

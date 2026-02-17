@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Validar que se reciban todos los datos necesarios
-if (!isset($_POST['studentId']) || !isset($_POST['fecha']) || !isset($_POST['tipo']) || !isset($_POST['descripcion'])) {
+if (!isset($_POST['studentId']) || !isset($_POST['fecha']) || !isset($_POST['descripcion'])) {
     echo json_encode([
         'success' => false,
         'message' => 'Datos incompletos'
@@ -27,10 +27,16 @@ if (!isset($_POST['studentId']) || !isset($_POST['fecha']) || !isset($_POST['tip
 }
 
 $studentId = intval($_POST['studentId']);
-$fecha = $_POST['fecha'];
-$tipo = trim($_POST['tipo']);
+$fechaRaw = $_POST['fecha'];
 $descripcion = trim($_POST['descripcion']);
 $observaciones = isset($_POST['observaciones']) ? trim($_POST['observaciones']) : '';
+
+// Convertir fecha de dd/mm/yyyy a yyyy-mm-dd si es necesario
+if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $fechaRaw, $matches)) {
+    $fecha = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+} else {
+    $fecha = $fechaRaw; // Asumir que ya está en formato correcto
+}
 
 // Obtener el ID del docente desde la sesión
 $idUser = $_SESSION['user_id'];
@@ -61,7 +67,6 @@ try {
     
     $columnMapping = [
         'fecha' => ['date_', 'fecha', 'date', 'reportDate'],
-        'tipo' => ['actionTaken', 'tipo', 'type', 'reportType'],
         'descripcion' => ['description', 'descripcion'],
         'observaciones' => ['feedback', 'observaciones', 'observations', 'comments']
     ];
@@ -74,15 +79,6 @@ try {
         if (in_array($colName, $availableColumns)) {
             $columnsToInsert[] = $colName;
             $valuesToInsert[] = $fecha;
-            $types .= "s";
-            break;
-        }
-    }
-    
-    foreach ($columnMapping['tipo'] as $colName) {
-        if (in_array($colName, $availableColumns)) {
-            $columnsToInsert[] = $colName;
-            $valuesToInsert[] = $tipo;
             $types .= "s";
             break;
         }
@@ -101,6 +97,17 @@ try {
         if (in_array($colName, $availableColumns)) {
             $columnsToInsert[] = $colName;
             $valuesToInsert[] = $observaciones;
+            $types .= "s";
+            break;
+        }
+    }
+    
+    // Agregar columna de tipo con valor por defecto si existe en la tabla
+    $tipoColumns = ['actionTaken', 'tipo', 'type', 'reportType'];
+    foreach ($tipoColumns as $colName) {
+        if (in_array($colName, $availableColumns)) {
+            $columnsToInsert[] = $colName;
+            $valuesToInsert[] = 'Bitácora';
             $types .= "s";
             break;
         }
@@ -153,7 +160,7 @@ try {
             'reportId' => $reportId
         ]);
     } else {
-        throw new Exception("Error al ejecutar la consulta");
+        throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
     }
     
     $stmt->close();
