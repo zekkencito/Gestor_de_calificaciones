@@ -14,6 +14,57 @@ $rowTeacher = $resTeacher->fetch_assoc();
 $teacher_id = $rowTeacher ? $rowTeacher['idTeacher'] : null;
 $typeTeacher = $rowTeacher ? $rowTeacher['typeTeacher'] : null;
 
+// Obtener automáticamente el ciclo escolar del año actual
+$currentYear = date('Y');
+$sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
+                   FROM schoolYear 
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   ORDER BY startDate DESC LIMIT 1";
+$stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+if (!$stmtCurrentYear) {
+    die("Error al preparar consulta del año escolar: " . $conexion->error);
+}
+$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+$stmtCurrentYear->execute();
+$resultCurrentYear = $stmtCurrentYear->get_result();
+$currentSchoolYear = $resultCurrentYear->fetch_assoc();
+$stmtCurrentYear->close();
+
+if (!$currentSchoolYear) {
+    die("No se encontró un ciclo escolar para el año actual (" . $currentYear . "). Por favor, crea uno primero.");
+}
+
+// Obtener los trimestres del ciclo escolar actual
+$sqlQuarters = "SELECT idSchoolQuarter, name, description, startDate, endDate 
+                FROM schoolQuarter 
+                WHERE idSchoolYear = ? 
+                ORDER BY idSchoolQuarter ASC";
+$stmtQuarters = $conexion->prepare($sqlQuarters);
+if (!$stmtQuarters) {
+    die("Error al preparar consulta de trimestres: " . $conexion->error);
+}
+$stmtQuarters->bind_param('i', $currentSchoolYear['idSchoolYear']);
+$stmtQuarters->execute();
+$resultQuarters = $stmtQuarters->get_result();
+$quarters = [];
+$currentQuarter = null;
+$currentDate = date('Y-m-d');
+while ($quarter = $resultQuarters->fetch_assoc()) {
+    $quarters[] = $quarter;
+    // Detectar el trimestre actual basado en la fecha
+    if ($quarter['startDate'] && $quarter['endDate']) {
+        if ($currentDate >= $quarter['startDate'] && $currentDate <= $quarter['endDate']) {
+            $currentQuarter = $quarter;
+        }
+    }
+}
+$stmtQuarters->close();
+
+// Si no se encontró trimestre actual por fecha, usar el primero disponible
+if (!$currentQuarter && count($quarters) > 0) {
+    $currentQuarter = $quarters[0];
+}
+
 $subjects = [];
 if ($teacher_id) {
     $query = "SELECT s.idSubject, s.name
@@ -106,42 +157,34 @@ if ($teacher_id) {
                                 </h5>
                             </div>
                             <div class="card-body">
+                                <!-- Alerta informativa del año actual -->
+                                <div class="alert alert-info alert-dismissible fade show mb-2" role="alert">
+                                    <i class="bi bi-calendar-check-fill me-2"></i>
+                                    <strong>Año Escolar:</strong> <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
+                                    <span class="text-muted ms-2">(<?php echo date('d/m/Y', strtotime($currentSchoolYear['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentSchoolYear['endDate'])); ?>)</span>
+                                </div>
+                                
+                                <!-- Alerta informativa del trimestre actual -->
+                                <?php if ($currentQuarter): ?>
+                                <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                                    <i class="bi bi-calendar3-fill me-2"></i>
+                                    <strong>Trimestre Actual:</strong> <?php echo $currentQuarter['name']; ?>
+                                    <?php if ($currentQuarter['startDate'] && $currentQuarter['endDate']): ?>
+                                    <span class="text-muted ms-2">(<?php echo date('d/m/Y', strtotime($currentQuarter['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentQuarter['endDate'])); ?>)</span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php else: ?>
+                                <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>Advertencia:</strong> No se pudo determinar el trimestre actual. Por favor, verifica las fechas de los trimestres.
+                                </div>
+                                <?php endif; ?>
+                                
                                 <div class="row g-3">
-                                    <div class="col-md-3" id="contenedorYear">
-                                        <label id="labelDocente" for="schoolYearSelect" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-date me-1"></i>
-                                            Año escolar:
-                                        </label>
-                                        <div class="form-select-container">
-                                            <select class="form-select border-secondary" id="schoolYearSelect">
-                                                <option value="" selected>Seleccionar año</option>
-                                                <?php 
-                                                $years = $conexion->query("SELECT idSchoolYear, startDate, endDate FROM schoolYear ORDER BY startDate DESC");
-                                                while ($year = $years->fetch_assoc()):
-                                                    $label = substr($year['startDate'], 0, 4);
-                                                ?>
-                                                    <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
-                                                <?php endwhile; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-3" id="contenedorQuarter" style="display:none;">
-                                        <label id="labelQuarter" for="schoolQuarterSelect" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            Trimestre:
-                                        </label>
-                                        <div class="form-select-container">
-                                            <select class="form-select border-secondary" id="schoolQuarterSelect">
-                                                <option value="" selected>Seleccionar trimestre</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-3" id="contenedorMateria" style="display:none;">
+                                    <div class="col-md-6">
                                         <label id="labelMatter" for="materia" class="form-label fw-semibold">
                                             <i class="bi bi-book me-1"></i>
-                                            Materia:
+                                            Seleccionar Materia:
                                         </label>
                                         <div class="form-select-container">
                                             <select class="form-select border-secondary" id="materia">
@@ -185,7 +228,7 @@ if ($teacher_id) {
                                         </thead>
                                         <tbody>
                         <tr>
-                            <td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Seleccione una materia, un año escolar y un trimestre.</td>
+                            <td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Seleccione una materia para ver los estudiantes.</td>
                         </tr>
                                         </tbody>
                                     </table>
@@ -197,7 +240,7 @@ if ($teacher_id) {
                                         <i class="bi bi-inbox display-4 text-muted"></i>
                                     </div>
                                     <h5 class="text-muted">No hay estudiantes registrados</h5>
-                                    <p class="text-muted">Selecciona un año, trimestre y materia para ver los estudiantes</p>
+                                    <p class="text-muted">Selecciona una materia para ver los estudiantes del trimestre actual</p>
                                 </div>
                             </div>
                         </div>
@@ -218,54 +261,23 @@ if ($teacher_id) {
                 }, 500);
             }
         });
-    const contQuarter = document.getElementById('contenedorQuarter');
-    const contMateria = document.getElementById('contenedorMateria');
-    const yearSelect = document.getElementById('schoolYearSelect');
-    const quarterSelect = document.getElementById('schoolQuarterSelect');
+    
+    // Año escolar y trimestre actual obtenidos desde PHP
+    const currentSchoolYearId = <?php echo $currentSchoolYear['idSchoolYear']; ?>;
+    const currentSchoolQuarterId = <?php echo $currentQuarter ? $currentQuarter['idSchoolQuarter'] : 'null'; ?>;
+    
     const materiaSelect = document.getElementById('materia');
 
-    yearSelect.addEventListener('change', function() {
-        const idSchoolYear = this.value;
-        quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
-        contQuarter.style.display = idSchoolYear ? '' : 'none';
-        contMateria.style.display = 'none';
-        materiaSelect.innerHTML = '<option value="" selected>Seleccionar Materia</option>';
-        
-        // Actualizar indicadores visuales
-        updateSelectIndicator(this);
-        updateSelectIndicator(quarterSelect);
-        updateSelectIndicator(materiaSelect);
-        
-        if (!idSchoolYear) return;
-        fetch(`get_quarters.php?idSchoolYear=${idSchoolYear}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    data.quarters.forEach(q => {
-                        const option = document.createElement('option');
-                        option.value = q.idSchoolQuarter;
-                        option.textContent = q.name;
-                        quarterSelect.appendChild(option);
-                    });
-                }
-            });
-    });
+    // Cargar materias automáticamente al cargar la página
+    if (currentSchoolQuarterId) {
+        cargarMaterias();
+    }
 
-    // Mostrar materias al seleccionar trimestre
-    quarterSelect.addEventListener('change', function() {
-        const idSchoolYear = yearSelect.value;
-        const idSchoolQuarter = this.value;
-        materiaSelect.innerHTML = '<option value="" selected>Seleccionar Materia</option>';
-        contMateria.style.display = idSchoolQuarter ? '' : 'none';
-        
-        // Actualizar indicadores visuales
-        updateSelectIndicator(this);
-        updateSelectIndicator(materiaSelect);
-        
-        if (!idSchoolQuarter) return;
-        fetch(`get_subjects.php?idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
+    function cargarMaterias() {
+        fetch(`get_subjects.php?idSchoolYear=${currentSchoolYearId}&idSchoolQuarter=${currentSchoolQuarterId}`)
             .then(response => response.json())
             .then(data => {
+                materiaSelect.innerHTML = '<option value="" selected>Seleccionar Materia</option>';
                 if (data.success) {
                     data.subjects.forEach(s => {
                         const option = document.createElement('option');
@@ -274,13 +286,18 @@ if ($teacher_id) {
                         materiaSelect.appendChild(option);
                     });
                 }
+            })
+            .catch(error => {
+                console.error('Error al cargar materias:', error);
             });
-    });
+    }
 
-    // Mostrar alumnos solo cuando los 3 selects tienen valor
+    // Cargar estudiantes cuando se seleccione una materia
     materiaSelect.addEventListener('change', function() {
         updateSelectIndicator(this);
-        cargarEstudiantesConPromedio();
+        if (this.value) {
+            cargarEstudiantesConPromedio();
+        }
     });
 
     // Función para actualizar indicadores visuales
@@ -295,15 +312,20 @@ if ($teacher_id) {
 
     function cargarEstudiantesConPromedio() {
         const idSubject = materiaSelect.value;
-        const idSchoolYear = yearSelect.value;
-        const idSchoolQuarter = quarterSelect.value;
         const tbody = document.querySelector('#dataTable tbody');
-        if (!idSubject || !idSchoolYear || !idSchoolQuarter) {
-            tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Seleccione año, trimestre y materia.</td></tr>`;
+        
+        if (!idSubject) {
+            tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Seleccione una materia.</td></tr>`;
             return;
         }
+        
+        if (!currentSchoolQuarterId) {
+            tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">No se pudo determinar el trimestre actual.</td></tr>`;
+            return;
+        }
+        
         tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Cargando...</td></tr>`;
-        fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
+        fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${currentSchoolYearId}&idSchoolQuarter=${currentSchoolQuarterId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.students.length > 0) {
@@ -324,7 +346,7 @@ if ($teacher_id) {
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">No hay estudiantes inscritos en esta materia, año escolar o trimestre.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">No hay estudiantes inscritos en esta materia para el trimestre actual.</td></tr>`;
                 }
             })
             .catch(() => {

@@ -7,12 +7,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $idTeacher = isset($_POST['docente']) ? intval($_POST['docente']) : null;
     $idGroup = isset($_POST['grupo']) ? intval($_POST['grupo']) : null;
     $idSubject = isset($_POST['materia']) ? intval($_POST['materia']) : null;
-    $idSchoolYear = isset($_POST['ciclo']) ? intval($_POST['ciclo']) : null;
     $oldTeacher = isset($_POST['old_docente']) ? intval($_POST['old_docente']) : null;
     $oldGroup = isset($_POST['old_grupo']) ? intval($_POST['old_grupo']) : null;
     $oldSubject = isset($_POST['old_materia']) ? intval($_POST['old_materia']) : null;
     
-    if (!$idTeacher || !$idGroup || !$idSubject || !$idSchoolYear || !$oldTeacher || !$oldGroup || !$oldSubject) {
+    // Obtener automáticamente el ciclo escolar del año actual
+    $currentYear = date('Y');
+    $sqlGetYear = "SELECT idSchoolYear FROM schoolYear WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? LIMIT 1";
+    $stmtGetYear = $conexion->prepare($sqlGetYear);
+    if (!$stmtGetYear) {
+        echo json_encode(['success' => false, 'message' => 'Error al preparar consulta: ' . $conexion->error]);
+        exit;
+    }
+    $stmtGetYear->bind_param('ii', $currentYear, $currentYear);
+    $stmtGetYear->execute();
+    $resultYear = $stmtGetYear->get_result();
+    
+    if ($resultYear->num_rows === 0) {
+        echo json_encode(['success' => false, 'message' => 'No existe un ciclo escolar para el año actual.']);
+        exit;
+    }
+    
+    $idSchoolYear = $resultYear->fetch_assoc()['idSchoolYear'];
+    
+    if (!$idTeacher || !$idGroup || !$idSubject || !$oldTeacher || !$oldGroup || !$oldSubject) {
         echo json_encode(['success' => false, 'message' => 'Faltan datos para actualizar la asignación.']);
         exit;
     }

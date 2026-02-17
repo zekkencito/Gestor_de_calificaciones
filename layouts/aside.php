@@ -1,5 +1,6 @@
 <head>
     <link rel="stylesheet" href="../css/admin/time.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <aside class="sidebar-modern">
@@ -46,6 +47,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#modalPeriodos">
+                        <i class="bi bi-calendar3-range me-2"></i> Períodos Escolares
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#modalGrupos">
                         <i class="bi bi-diagram-3-fill me-2"></i> Grupos
                     </a>
@@ -76,8 +82,8 @@
                                         <i class="bi bi-calendar-check me-1"></i>
                                         Fecha límite de calificaciones:
                                     </label>
-                                    <input type="date" class="form-control border-secondary" id="inputFechaLimite"
-                                        value="<?php echo $fechaLimite; ?>">
+                                    <input type="text" class="form-control border-secondary flatpickr-date" id="inputFechaLimite"
+                                        value="<?php echo $fechaLimite; ?>" placeholder="Seleccionar fecha" readonly>
                                     <div id="fechaFormateada" class="mt-2 p-2 bg-light rounded border">
                                         <small class="text-muted">
                                             <i class="bi bi-calendar3 me-1"></i>
@@ -123,54 +129,79 @@
                             <div class="modal-header bg-primary text-white border-0">
                                 <h5 id="tituloModal" class="modal-title">
                                     <i class="bi bi-calendar-event-fill me-2"></i>
-                                    Administrar Años Escolares
+                                    Ciclo Escolar <span id="añoActualDisplay"></span>
                                 </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                     aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle text-center mb-0">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><i class="bi bi-calendar-check me-1"></i>Inicio</th>
-                                                <th><i class="bi bi-calendar-x me-1"></i>Fin</th>
-                                                <th><i class="bi bi-gear me-1"></i>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tablaAniosEscolares"></tbody>
-                                    </table>
-                                </div>
-                                <hr class="my-4">
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Agregar Nuevo Año Escolar
-                                </h6>
-                                <div class="row g-3">
-                                    <div class="col-md-5">
-                                        <label for="nuevoInicio" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-check me-1"></i>
-                                            Fecha de Inicio:
-                                        </label>
-                                        <input type="date" class="form-control border-secondary" id="nuevoInicio"
-                                            placeholder="Inicio">
+                                <!-- Vista cuando NO existe ciclo escolar -->
+                                <div id="noCicloEscolar" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        No existe un ciclo escolar para el año <strong id="añoActual"></strong>. 
+                                        <br>Define las fechas de inicio y fin para crear el ciclo escolar de este año.
                                     </div>
-                                    <div class="col-md-5">
-                                        <label for="nuevoFin" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-x me-1"></i>
-                                            Fecha de Fin:
-                                        </label>
-                                        <input type="date" class="form-control border-secondary" id="nuevoFin"
-                                            placeholder="Fin">
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button class="btn btn-primary w-100" id="btnAgregarAnio">
-                                            <i class="bi bi-plus-circle me-1"></i>
-                                            Añadir
-                                        </button>
+                                    <div class="row g-3">
+                                        <div class="col-md-5">
+                                            <label for="nuevoInicio" class="form-label fw-semibold">
+                                                <i class="bi bi-calendar-check me-1"></i>
+                                                Fecha de Inicio:
+                                            </label>
+                                            <input type="text" class="form-control border-secondary flatpickr-date" id="nuevoInicio" placeholder="Seleccionar fecha" readonly>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label for="nuevoFin" class="form-label fw-semibold">
+                                                <i class="bi bi-calendar-x me-1"></i>
+                                                Fecha de Fin:
+                                            </label>
+                                            <input type="text" class="form-control border-secondary flatpickr-date" id="nuevoFin" placeholder="Seleccionar fecha" readonly>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button class="btn btn-primary w-100" id="btnCrearCiclo">
+                                                <i class="bi bi-plus-circle me-1"></i>
+                                                Crear
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div id="anioEscolarInfo" class="form-text text-success mt-2"></div>
+
+                                <!-- Vista cuando SÍ existe ciclo escolar -->
+                                <div id="siCicloEscolar" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        Ciclo escolar del año <strong id="añoActual2"></strong> configurado.
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Fechas del Ciclo Escolar</h6>
+                                            <div class="row g-3" id="editarCicloForm">
+                                                <div class="col-md-6">
+                                                    <label for="editInicio" class="form-label fw-semibold">
+                                                        <i class="bi bi-calendar-check me-1"></i>
+                                                        Fecha de Inicio:
+                                                    </label>
+                                                    <input type="text" class="form-control border-secondary flatpickr-date" id="editInicio" placeholder="Seleccionar fecha" readonly>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="editFin" class="form-label fw-semibold">
+                                                        <i class="bi bi-calendar-x me-1"></i>
+                                                        Fecha de Fin:
+                                                    </label>
+                                                    <input type="text" class="form-control border-secondary flatpickr-date" id="editFin" placeholder="Seleccionar fecha" readonly>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button class="btn btn-success" id="btnGuardarCiclo">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        Guardar Cambios
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="anioEscolarInfo" class="form-text text-success mt-3"></div>
                             </div>
                         </div>
                     </div>
@@ -235,15 +266,79 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Modal Administrar Períodos Escolares -->
+                <div class="modal fade" id="modalPeriodos" tabindex="-1" aria-labelledby="modalPeriodosLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white border-0">
+                                <h5 id="tituloModal" class="modal-title">
+                                    <i class="bi bi-calendar3-range me-2"></i>
+                                    Trimestres del Ciclo Escolar <span id="añoPeriodosDisplay"></span>
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Define las fechas de inicio y fin para cada uno de los 3 trimestres del ciclo escolar actual.
+                                </div>
+                                
+                                <!-- Contenedor de trimestres -->
+                                <div id="trimestresContainer"></div>
+                                
+                                <div id="periodoInfo" class="form-text text-success mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </ul>
         </nav>
     </div>
 </aside>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // ============================================
+        // INICIALIZACIÓN DE FLATPICKR EN ESPAÑOL
+        // ============================================
+        function initializeFlatpickr(selector, options = {}) {
+            const defaultOptions = {
+                locale: "es",
+                dateFormat: "Y-m-d",        // Formato interno para la base de datos
+                altInput: true,              // Usar input alternativo para mostrar
+                altFormat: "d/m/Y",          // Formato visual en español: día/mes/año
+                allowInput: false,
+                disableMobile: true,
+                ...options
+            };
+            return flatpickr(selector, defaultOptions);
+        }
+
+        // Inicializar todos los campos de fecha existentes
+        initializeFlatpickr("#inputFechaLimite");
+        initializeFlatpickr("#nuevoInicio");
+        initializeFlatpickr("#nuevoFin");
+        initializeFlatpickr("#editInicio");
+        initializeFlatpickr("#editFin");
+
+        // Función para inicializar Flatpickr en campos dinámicos de trimestres
+        window.initializeTrimesterDates = function() {
+            const trimestreInputs = document.querySelectorAll('[id^="trimestre_inicio_"], [id^="trimestre_fin_"]');
+            trimestreInputs.forEach(input => {
+                if (!input._flatpickr) {
+                    initializeFlatpickr(input);
+                }
+            });
+        };
+        // ============================================
+        
         const inputFecha = document.getElementById('inputFechaLimite');
         const btnGuardar = document.getElementById('btnGuardarFecha');
         const btnQuitar = document.getElementById('btnQuitarFecha');
@@ -322,6 +417,9 @@
 </script>
 
 <script>
+    // ==================== NUEVO SISTEMA DE CICLO ESCOLAR ====================
+    let currentSchoolYearId = null;
+
     function formatearFechaEspanol(fechaISO) {
         if (!fechaISO) return '';
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -329,90 +427,88 @@
         return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${anio}`;
     }
 
-    function cargarAniosEscolares() {
+    function cargarCicloEscolarActual() {
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'action=list'
+            body: 'action=getCurrentYear'
         })
-            .then(r => r.json())
-            .then(data => {
-                const tbody = document.getElementById('tablaAniosEscolares');
-                tbody.innerHTML = '';
-                if (data.success && data.years.length) {
-                    data.years.forEach(y => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `<td><span id='start_${y.idSchoolYear}'>${formatearFechaEspanol(y.startDate)}</span></td><td><span id='end_${y.idSchoolYear}'>${formatearFechaEspanol(y.endDate)}</span></td><td>
-                        <button class='buttonEdit' onclick='mostrarEditarAnio(${y.idSchoolYear}, "${y.startDate}", "${y.endDate}")'>Editar</button>
-                        <button style="height: 5vh;" class='buttonDelete1' onclick='eliminarAnioEscolar(${y.idSchoolYear})'>Borrar</button></td>`;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan='3'>Sin registros</td></tr>`;
-                }
-            });
-    }
-
-    function mostrarEditarAnio(id, start, end) {
-        const fila = document.getElementById('start_' + id).parentElement.parentElement;
-        fila.innerHTML = `<td><input type='date' class='form-control form-control-sm' id='editStart_${id}' value='${start}'></td>
-        <td><input type='date' class='form-control form-control-sm' id='editEnd_${id}' value='${end}'></td>
-        <td>
-            <button class='btn btn-success btn-sm' onclick='guardarEdicionAnio(${id})'>Guardar</button>
-            <button class='btn btn-secondary btn-sm mt-1' onclick='cargarAniosEscolares()'>Cancelar</button>
-        </td>`;
-    }
-
-    function guardarEdicionAnio(id) {
-        const start = document.getElementById('editStart_' + id).value;
-        const end = document.getElementById('editEnd_' + id).value;
-        if (!start || !end) {
-            document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
-            return;
-        }
-        fetch('../admin/manage_school_years.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=edit&idSchoolYear=${id}&startDate=${start}&endDate=${end}`
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                document.getElementById('anioEscolarInfo').textContent = 'Año escolar actualizado correctamente.';
-                cargarAniosEscolares();
+        .then(r => r.json())
+        .then(data => {
+            const añoActual = data.currentServerYear;
+            document.getElementById('añoActual').textContent = añoActual;
+            document.getElementById('añoActual2').textContent = añoActual;
+            document.getElementById('añoActualDisplay').textContent = añoActual;
+            
+            if (data.exists && data.year) {
+                // Ya existe un ciclo escolar para este año
+                currentSchoolYearId = data.year.idSchoolYear;
+                document.getElementById('noCicloEscolar').style.display = 'none';
+                document.getElementById('siCicloEscolar').style.display = 'block';
+                document.getElementById('editInicio').value = data.year.startDate;
+                document.getElementById('editFin').value = data.year.endDate;
             } else {
-                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al editar.';
+                // No existe ciclo escolar, mostrar formulario de creación
+                document.getElementById('noCicloEscolar').style.display = 'block';
+                document.getElementById('siCicloEscolar').style.display = 'none';
             }
         });
     }
 
-    function agregarAnioEscolar() {
+    function crearCicloEscolar() {
         const inicio = document.getElementById('nuevoInicio').value;
         const fin = document.getElementById('nuevoFin').value;
+        
         if (!inicio || !fin) {
             document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
+            document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
             return;
         }
+        
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `action=add&startDate=${inicio}&endDate=${fin}`
-        }).then(r => r.json()).then(data => {
+        })
+        .then(r => r.json())
+        .then(data => {
             if (data.success) {
-                document.getElementById('anioEscolarInfo').textContent = 'Año escolar añadido correctamente.';
-                cargarAniosEscolares();
+                document.getElementById('anioEscolarInfo').textContent = 'Ciclo escolar creado con 3 trimestres automáticamente.';
+                document.getElementById('anioEscolarInfo').className = 'form-text text-success mt-3';
+                setTimeout(() => {
+                    cargarCicloEscolarActual();
+                }, 1500);
             } else {
-                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al añadir.';
+                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al crear el ciclo escolar.';
+                document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
             }
         });
     }
 
-    function eliminarAnioEscolar(id) {
-        if (!confirm('¿Seguro de borrar este año escolar?')) return;
+    function guardarCicloEscolar() {
+        const inicio = document.getElementById('editInicio').value;
+        const fin = document.getElementById('editFin').value;
+        
+        if (!inicio || !fin) {
+            document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
+            document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+            return;
+        }
+        
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=delete&idSchoolYear=${id}`
-        }).then(r => r.json()).then(data => {
-            if (data.success) cargarAniosEscolares();
+            body: `action=edit&idSchoolYear=${currentSchoolYearId}&startDate=${inicio}&endDate=${fin}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('anioEscolarInfo').textContent = 'Fechas actualizadas correctamente.';
+                document.getElementById('anioEscolarInfo').className = 'form-text text-success mt-3';
+            } else {
+                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al actualizar.';
+                document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+            }
         });
     }
 
@@ -471,16 +567,144 @@
         });
     }
 
+    // ==================== FUNCIONES PARA LOS 3 TRIMESTRES ====================
+    function formatearFechaTabla(fechaISO) {
+        if (!fechaISO || fechaISO === 'null') return 'Sin definir';
+        const [anio, mes, dia] = fechaISO.split('-');
+        return `${dia}/${mes}/${anio}`;
+    }
+
+    function cargarTrimestres() {
+        fetch('../admin/manage_school_quarters.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'action=list'
+        })
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('trimestresContainer');
+            const añoDisplay = document.getElementById('añoPeriodosDisplay');
+            
+            if (data.currentYear) {
+                añoDisplay.textContent = data.currentYear;
+            }
+            
+            if (!data.success) {
+                container.innerHTML = `<div class="alert alert-warning">${data.error || 'Error al cargar trimestres'}</div>`;
+                return;
+            }
+            
+            if (data.quarters.length === 0) {
+                container.innerHTML = `<div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Primero debes crear el ciclo escolar del año actual.
+                </div>`;
+                return;
+            }
+            
+            // Generar tarjetas para los 3 trimestres
+            container.innerHTML = '';
+            data.quarters.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'card mb-3';
+                card.innerHTML = `
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar3 me-2"></i>${q.name}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">${q.description || 'Sin descripción'}</p>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label for="trimestre_inicio_${q.idSchoolQuarter}" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-check me-1"></i>Fecha de Inicio:
+                                </label>
+                                <input type="text" class="form-control border-secondary flatpickr-date" 
+                                       id="trimestre_inicio_${q.idSchoolQuarter}" 
+                                       value="${q.startDate || ''}" placeholder="Seleccionar fecha" readonly>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="trimestre_fin_${q.idSchoolQuarter}" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-x me-1"></i>Fecha de Fin:
+                                </label>
+                                <input type="text" class="form-control border-secondary flatpickr-date" 
+                                       id="trimestre_fin_${q.idSchoolQuarter}" 
+                                       value="${q.endDate || ''}" placeholder="Seleccionar fecha" readonly>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button class="btn btn-success w-100" 
+                                        onclick="guardarFechasTrimestre(${q.idSchoolQuarter})">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // Inicializar Flatpickr en los campos de fecha de trimestres recién creados
+            if (typeof window.initializeTrimesterDates === 'function') {
+                window.initializeTrimesterDates();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('trimestresContainer').innerHTML = `
+                <div class="alert alert-danger">Error de conexión</div>
+            `;
+        });
+    }
+
+    function guardarFechasTrimestre(id) {
+        const inicio = document.getElementById(`trimestre_inicio_${id}`).value;
+        const fin = document.getElementById(`trimestre_fin_${id}`).value;
+        
+        if (!inicio || !fin) {
+            document.getElementById('periodoInfo').textContent = 'Debes ingresar ambas fechas.';
+            document.getElementById('periodoInfo').className = 'form-text text-danger mt-3';
+            return;
+        }
+        
+        fetch('../admin/manage_school_quarters.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=edit&idSchoolQuarter=${id}&startDate=${inicio}&endDate=${fin}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('periodoInfo').textContent = 'Fechas del trimestre actualizadas correctamente.';
+                document.getElementById('periodoInfo').className = 'form-text text-success mt-3';
+            } else {
+                document.getElementById('periodoInfo').textContent = data.error || 'Error al actualizar.';
+                document.getElementById('periodoInfo').className = 'form-text text-danger mt-3';
+            }
+        });
+    }
+
+    // ==================== INICIALIZACIÓN ====================
     document.addEventListener('DOMContentLoaded', function () {
         const modalAnioEscolar = document.getElementById('modalAñoEscolar');
         if (modalAnioEscolar) {
-            modalAnioEscolar.addEventListener('show.bs.modal', cargarAniosEscolares);
-            document.getElementById('btnAgregarAnio').onclick = agregarAnioEscolar;
+            modalAnioEscolar.addEventListener('show.bs.modal', cargarCicloEscolarActual);
+            const btnCrear = document.getElementById('btnCrearCiclo');
+            if (btnCrear) btnCrear.onclick = crearCicloEscolar;
+            const btnGuardar = document.getElementById('btnGuardarCiclo');
+            if (btnGuardar) btnGuardar.onclick = guardarCicloEscolar;
         }
+        
         const modalGrupos = document.getElementById('modalGrupos');
         if (modalGrupos) {
             modalGrupos.addEventListener('show.bs.modal', cargarGrupos);
             document.getElementById('btnAgregarGrupo').onclick = agregarGrupo;
+        }
+        
+        const modalPeriodos = document.getElementById('modalPeriodos');
+        if (modalPeriodos) {
+            modalPeriodos.addEventListener('show.bs.modal', cargarTrimestres);
         }
     });
 </script>
