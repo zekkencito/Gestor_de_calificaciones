@@ -326,22 +326,10 @@ $resultYears2 = $conexion->query($sqlYears1);
                                         <?php } ?>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="ciclo" class="form-label fw-semibold">
-                                        <i class="bi bi-calendar-date me-1"></i>
-                                        Ciclo Escolar:
-                                    </label>
-                                    <?php
-                                    $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
-                                    $resultYears = $conexion->query($sqlYears);
-                                    ?>
-                                    <select class="form-select border-secondary" name="ciclo">
-                                        <option value="">Seleccionar Ciclo Escolar</option>
-                                        <?php while($year = $resultYears->fetch_assoc()) { ?>
-                                            <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Ciclo Escolar:</strong> Esta asignación se creará para el ciclo escolar del año actual (<?php echo date('Y'); ?>)
                             </div>
                         </div>
                         <div class="modal-footer border-0 bg-light">
@@ -461,13 +449,11 @@ $resultYears2 = $conexion->query($sqlYears1);
                         const txtGrupo = this.getAttribute('data-txtgrupo');
                         const txtMateria = this.getAttribute('data-txtmateria');
                         const txtDocente = this.getAttribute('data-txtdocente');
-                        const txtCiclo = this.getAttribute('data-txtciclo');
 
                         // Rellenar selects del modal
                         const selectGrupo = document.querySelector('#editModal select[name="grupo"]');
                         const selectMateria = document.querySelector('#editModal select[name="materia"]');
                         const selectDocente = document.querySelector('#editModal select[name="docente"]');
-                        const selectCiclo = document.querySelector('#editModal select[name="ciclo"]');
 
                         // Función helper para seleccionar la opción correcta
                         const setSelectedOption = (select, value, text) => {
@@ -483,14 +469,12 @@ $resultYears2 = $conexion->query($sqlYears1);
                         setSelectedOption(selectGrupo, idGrupo, txtGrupo);
                         setSelectedOption(selectMateria, idSubject, txtMateria);
                         setSelectedOption(selectDocente, idTeacher, txtDocente);
-                        setSelectedOption(selectCiclo, idYear, txtCiclo);
 
                         // Guardar valores originales para update
                         const modal = document.querySelector('#editModal');
                         modal.setAttribute('data-old-grupo', idGrupo);
                         modal.setAttribute('data-old-materia', idSubject);
                         modal.setAttribute('data-old-docente', idTeacher);
-                        modal.setAttribute('data-old-year', idYear);
                     });
                 });
 
@@ -725,25 +709,10 @@ $resultYears2 = $conexion->query($sqlYears1);
                                     Por favor seleccione un docente.
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="ciclo" class="form-label fw-semibold">
-                                    <i class="bi bi-calendar-date me-1"></i>
-                                    Ciclo Escolar:
-                                </label>
-                                <?php
-                                $sqlYears = "SELECT idSchoolYear, LEFT(startDate, 4) as year FROM schoolYear ORDER BY startDate DESC";
-                                $resultYears = $conexion->query($sqlYears);
-                                ?>
-                                <select class="form-select border-secondary" id="ciclo" name="ciclo" required>
-                                    <option value="" selected>Seleccionar ciclo escolar</option>
-                                    <?php while($year = $resultYears->fetch_assoc()) { ?>
-                                        <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo htmlspecialchars($year['year']); ?></option>
-                                    <?php } ?>
-                                </select>
-                                <div class="invalid-feedback">
-                                    Por favor seleccione un ciclo escolar.
-                                </div>
-                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Ciclo Escolar:</strong> Esta asignación se creará para el ciclo escolar del año actual (<?php echo date('Y'); ?>)
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

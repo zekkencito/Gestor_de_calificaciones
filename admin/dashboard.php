@@ -244,39 +244,43 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
                 });
         });
     </script>
-    <script>
-        // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos)
+<script>
+        // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos, en español)
         function mostrarFechaLimiteDashboard(fechaLimite = null) {
             const el = document.getElementById('fechaLimiteDashboard');
+            if (!el) return;
+
             if (fechaLimite) {
-            let fecha = new Date(fechaLimite);
-            fecha.setHours(fecha.getHours() + 12);
-            const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
-            el.textContent = fecha.toLocaleDateString('es-ES', opciones);
+                // Si recibe fecha como parámetro (desde el modal)
+                const partes = fechaLimite.split('-');
+                const fecha = new Date(
+                    parseInt(partes[0], 10),
+                    parseInt(partes[1], 10) - 1,
+                    parseInt(partes[2], 10)
+                );
+                const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+                el.textContent = fecha.toLocaleDateString('es-ES', opciones);
             } else {
-            fetch('get_fecha_limite.php')
+                // Cargar desde la base de datos
+                fetch('get_fecha_limite.php')
                 .then(response => response.json())
                 .then(data => {
-                if (data.success && data.fechaLimite) {
-                    let fecha = new Date(data.fechaLimite);
-                    fecha.setHours(fecha.getHours() + 12);
-                    const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
-                    el.textContent = fecha.toLocaleDateString('es-ES', opciones);
-                } else {
-                    el.textContent = 'No definida';
-                }
+                    if (data.success && data.fechaLimite) {
+                        const partes = data.fechaLimite.split('-');
+                        const fecha = new Date(
+                            parseInt(partes[0], 10),
+                            parseInt(partes[1], 10) - 1,
+                            parseInt(partes[2], 10)
+                        );
+                        const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+                        el.textContent = fecha.toLocaleDateString('es-ES', opciones);
+                    } else {
+                        el.textContent = 'No definida';
+                    }
                 });
             }
         }
         document.addEventListener('DOMContentLoaded', () => mostrarFechaLimiteDashboard());
-
-        // Si tienes un input para seleccionar la fecha límite, actualiza el dashboard al seleccionar
-        const inputFechaLimite = document.getElementById('inputFechaLimite');
-        if (inputFechaLimite) {
-            inputFechaLimite.addEventListener('change', function() {
-            mostrarFechaLimiteDashboard(this.value);
-            });
-        }
     </script>
 </body>
 </html>

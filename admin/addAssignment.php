@@ -1,18 +1,36 @@
 <?php
 require_once "check_session.php";
 include '../conection.php';
-header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $idGroup = isset($_POST['grupo']) ? intval($_POST['grupo']) : null;
-    $idSubject = isset($_POST['materia']) ? intval($_POST['materia']) : null;
-    $idTeacher = isset($_POST['docente']) ? intval($_POST['docente']) : null;
-    $idSchoolYear = isset($_POST['ciclo']) ? intval($_POST['ciclo']) : null;
-
-    if (!$idGroup || !$idSubject || !$idTeacher || !$idSchoolYear) {
-        header("Location: assignments.php?status=error&message=" . urlencode('Faltan datos para la asignación.'));
+    $idGroup = isset($_POST['grupo']) ? intval($_POST['grupo']) : 0;
+    $idSubject = isset($_POST['materia']) ? intval($_POST['materia']) : 0;
+    $idTeacher = isset($_POST['docente']) ? intval($_POST['docente']) : 0;
+    
+    // Validar que los campos requeridos tengan valores válidos (mayores que 0)
+    if ($idGroup <= 0 || $idSubject <= 0 || $idTeacher <= 0) {
+        header("Location: assignments.php?status=error&message=" . urlencode('Faltan datos para la asignación. Por favor complete todos los campos.'));
         exit;
     }
+    
+    // Obtener automáticamente el ciclo escolar del año actual
+    $currentYear = date('Y');
+    $sqlGetYear = "SELECT idSchoolYear FROM schoolYear WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? LIMIT 1";
+    $stmtGetYear = $conexion->prepare($sqlGetYear);
+    if (!$stmtGetYear) {
+        header("Location: assignments.php?status=error&message=" . urlencode('Error al preparar consulta: ' . $conexion->error));
+        exit;
+    }
+    $stmtGetYear->bind_param('ii', $currentYear, $currentYear);
+    $stmtGetYear->execute();
+    $resultYear = $stmtGetYear->get_result();
+    
+    if ($resultYear->num_rows === 0) {
+        header("Location: assignments.php?status=error&message=" . urlencode('No existe un ciclo escolar para el año actual. Por favor, crea uno primero.'));
+        exit;
+    }
+    
+    $idSchoolYear = $resultYear->fetch_assoc()['idSchoolYear'];
     
     // Verificar si ya existe una asignación para este grupo, materia y ciclo escolar
     $checkSql = "SELECT tgs.idTeacher, tgs.idGroup, tgs.idSubject, ts.idSchoolYear,

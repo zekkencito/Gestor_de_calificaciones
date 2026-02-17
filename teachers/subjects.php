@@ -22,35 +22,83 @@ $resTeacher = $stmtTeacher->get_result();
 $rowTeacher = $resTeacher->fetch_assoc();
 $teacher_id = $rowTeacher ? $rowTeacher['idTeacher'] : null;
 
+// Obtener automáticamente el ciclo escolar del año actual
+$currentYear = date('Y');
+$sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
+                   FROM schoolYear 
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   ORDER BY startDate DESC LIMIT 1";
+$stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+if (!$stmtCurrentYear) {
+    die("Error al preparar consulta del año escolar: " . $conexion->error);
+}
+$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+$stmtCurrentYear->execute();
+$resultCurrentYear = $stmtCurrentYear->get_result();
+$currentSchoolYear = $resultCurrentYear->fetch_assoc();
+$stmtCurrentYear->close();
+
+if (!$currentSchoolYear) {
+    die("No se encontró un ciclo escolar para el año actual (" . $currentYear . "). Por favor, contacta al administrador.");
+}
+
+// Obtener los trimestres del ciclo escolar actual
+$sqlQuarters = "SELECT idSchoolQuarter, name, description, startDate, endDate 
+                FROM schoolQuarter 
+                WHERE idSchoolYear = ? 
+                ORDER BY idSchoolQuarter ASC";
+$stmtQuarters = $conexion->prepare($sqlQuarters);
+if (!$stmtQuarters) {
+    die("Error al preparar consulta de trimestres: " . $conexion->error);
+}
+$stmtQuarters->bind_param('i', $currentSchoolYear['idSchoolYear']);
+$stmtQuarters->execute();
+$resultQuarters = $stmtQuarters->get_result();
+$quarters = [];
+$currentQuarter = null;
+$currentDate = date('Y-m-d');
+while ($quarter = $resultQuarters->fetch_assoc()) {
+    $quarters[] = $quarter;
+    // Detectar el trimestre actual basado en la fecha
+    if ($quarter['startDate'] && $quarter['endDate']) {
+        if ($currentDate >= $quarter['startDate'] && $currentDate <= $quarter['endDate']) {
+            $currentQuarter = $quarter;
+        }
+    }
+}
+$stmtQuarters->close();
+
+// Si no se encontró trimestre actual por fecha, usar el primero disponible
+if (!$currentQuarter && count($quarters) > 0) {
+    $currentQuarter = $quarters[0];
+}
+
 $subjects = [];
-if ($teacher_id) {
-    // Paso 2: Obtener las materias asignadas a este docente (sin repetir por idSubject)
-    $query = "SELECT 
+if ($teacher_id && $currentSchoolYear && $currentQuarter) {
+    // Paso 2: Obtener las materias asignadas a este docente para el año y trimestre actual
+    $query = "SELECT DISTINCT
                 s.idSubject, 
                 s.name, 
                 s.specialSubject, 
                 s.description, 
-                la.name AS learningAreaName,
-                sy.startDate,
-                sy.endDate,
-                ts.idTeacherSubject
+                la.name AS learningAreaName
               FROM teacherSubject ts
               JOIN subjects s ON ts.idSubject = s.idSubject
               JOIN learningArea la ON s.idLearningArea = la.idLearningArea
-              JOIN schoolYear sy ON ts.idSchoolYear = sy.idSchoolYear
-              WHERE ts.idTeacher = ?
-              GROUP BY s.idSubject, sy.startDate, sy.endDate
-              ORDER BY sy.startDate DESC, s.name ASC";
+              WHERE ts.idTeacher = ? 
+                AND ts.idSchoolYear = ?
+              ORDER BY s.name ASC";
     $stmt = $conexion->prepare($query);
-    $stmt->bind_param("i", $teacher_id);
+    if (!$stmt) {
+        die("Error al preparar consulta: " . $conexion->error);
+    }
+    $stmt->bind_param("ii", $teacher_id, $currentSchoolYear['idSchoolYear']);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        // Formatear ciclo escolar como 'YYYY-YYYY'
-        
-        $row['schoolYearFormatted'] = $row['startDate'] . '   -   ' . $row['endDate'];
         $subjects[] = $row;
     }
+    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -136,9 +184,16 @@ if ($teacher_id) {
                                             </div>
                                             <div class="col-12">
                                                 <div class="detail-item">
+                                                    <i class="bi bi-calendar3 text-warning me-2"></i>
+                                                    <span class="fw-semibold">Trimestre:</span>
+                                                    <span class="ms-1"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="detail-item">
                                                     <i class="bi bi-calendar-range text-success me-2"></i>
                                                     <span class="fw-semibold">Ciclo Escolar:</span>
-                                                    <span class="ms-1"><?php echo htmlspecialchars($subject['schoolYearFormatted']); ?></span>
+                                                    <span class="ms-1"><?php echo substr($currentSchoolYear['startDate'], 0, 4)  ?></span>
                                                 </div>
                                             </div>
                                         </div>
