@@ -37,64 +37,88 @@ if (!$stmtTeacher) {
 }
 $stmtTeacher->bind_param("i", $idUser);
 $stmtTeacher->execute();
-
-// Obtener los ciclos escolares disponibles
-$schoolYears = [];
-$sqlSchoolYears = "SELECT idSchoolYear, startDate as year, description FROM schoolYear ORDER BY startDate DESC";
-$resultSchoolYears = $conexion->query($sqlSchoolYears);
-if ($resultSchoolYears) {
-    while ($row = $resultSchoolYears->fetch_assoc()) {
-        $schoolYears[] = $row;
-    }
-    $resultSchoolYears->close();
-}
-
-// Obtener los trimestres/periodos disponibles
-$quarters = [];
-$sqlQuarters = "SELECT idSchoolQuarter, name FROM schoolQuarter";
-$resultQuarters = $conexion->query($sqlQuarters);
-if ($resultQuarters) {
-    while ($row = $resultQuarters->fetch_assoc()) {
-        $quarters[] = $row;
-    }
-    $resultQuarters->close();
-}
-
 $resTeacher = $stmtTeacher->get_result();
 $rowTeacher = $resTeacher->fetch_assoc();
+$stmtTeacher->close();
+
 if (!$rowTeacher) {
     error_log("Error: No se encontró el docente para el usuario ID: " . $_SESSION['user_id']);
     die("No se pudo cargar la información del docente. Por favor, contacte al administrador.");
 }
 $idTeacher = $rowTeacher['idTeacher'];
-$stmtTeacher->close();
 
-// Obtener solo los grupos asignados al docente autenticado para el año escolar seleccionado
+// Obtener automáticamente el ciclo escolar del año actual
+$currentYear = date('Y');
+$sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
+                   FROM schoolYear 
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   ORDER BY startDate DESC LIMIT 1";
+$stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+if (!$stmtCurrentYear) {
+    die("Error al preparar consulta del año escolar: " . $conexion->error);
+}
+$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+$stmtCurrentYear->execute();
+$resultCurrentYear = $stmtCurrentYear->get_result();
+$currentSchoolYear = $resultCurrentYear->fetch_assoc();
+$stmtCurrentYear->close();
+
+if (!$currentSchoolYear) {
+    die("No se encontró un ciclo escolar para el año actual (" . $currentYear . "). Por favor, contacta al administrador.");
+}
+
+$selectedSchoolYear = $currentSchoolYear['idSchoolYear'];
+
+// Obtener los trimestres del ciclo escolar actual y detectar el trimestre actual
+$sqlQuarters = "SELECT idSchoolQuarter, name, description, startDate, endDate 
+                FROM schoolQuarter 
+                WHERE idSchoolYear = ? 
+                ORDER BY idSchoolQuarter ASC";
+$stmtQuarters = $conexion->prepare($sqlQuarters);
+if (!$stmtQuarters) {
+    die("Error al preparar consulta de trimestres: " . $conexion->error);
+}
+$stmtQuarters->bind_param('i', $currentSchoolYear['idSchoolYear']);
+$stmtQuarters->execute();
+$resultQuarters = $stmtQuarters->get_result();
+$quarters = [];
+$currentQuarter = null;
+$currentDate = date('Y-m-d');
+while ($quarter = $resultQuarters->fetch_assoc()) {
+    $quarters[] = $quarter;
+    // Detectar el trimestre actual basado en la fecha
+    if ($quarter['startDate'] && $quarter['endDate']) {
+        if ($currentDate >= $quarter['startDate'] && $currentDate <= $quarter['endDate']) {
+            $currentQuarter = $quarter;
+        }
+    }
+}
+$stmtQuarters->close();
+
+// Si no se encontró trimestre actual por fecha, usar el primero disponible
+if (!$currentQuarter && count($quarters) > 0) {
+    $currentQuarter = $quarters[0];
+}
+
+$selectedQuarter = $currentQuarter ? $currentQuarter['idSchoolQuarter'] : null;
+
+// Obtener solo los grupos asignados al docente autenticado para el año escolar actual
 $groups = [];
-$selectedSchoolYear = isset($_GET['schoolYear']) ? intval($_GET['schoolYear']) : null;
 
 $sqlGroups = "SELECT DISTINCT g.idGroup, g.grade, g.group_
               FROM teacherGroupsSubjects tgs
               JOIN groups g ON tgs.idGroup = g.idGroup
-              WHERE tgs.idTeacher = ?";
-
-if ($selectedSchoolYear) {
-    $sqlGroups .= " AND EXISTS (
-        SELECT 1 FROM students s 
-        WHERE s.idGroup = g.idGroup 
-        AND s.idSchoolYear = ?
-    )";
-}
-
-$sqlGroups .= " GROUP BY g.idGroup, g.grade, g.group_
-                ORDER BY g.grade, g.group_";
+              WHERE tgs.idTeacher = ?
+              AND EXISTS (
+                SELECT 1 FROM students s 
+                WHERE s.idGroup = g.idGroup 
+                AND s.idSchoolYear = ?
+              )
+              GROUP BY g.idGroup, g.grade, g.group_
+              ORDER BY g.grade, g.group_";
 
 $stmtGroups = $conexion->prepare($sqlGroups);
-if ($selectedSchoolYear) {
-    $stmtGroups->bind_param("ii", $idTeacher, $selectedSchoolYear);
-} else {
-    $stmtGroups->bind_param("i", $idTeacher);
-}
+$stmtGroups->bind_param("ii", $idTeacher, $selectedSchoolYear);
 $stmtGroups->execute();
 $resGroups = $stmtGroups->get_result();
 while ($row = $resGroups->fetch_assoc()) {
@@ -144,7 +168,6 @@ if ($selectedGroup) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/stylesBoot.css">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/teacher/list.css">
     <link rel="stylesheet" href="../css/admin/student.css">
@@ -209,24 +232,20 @@ if ($selectedGroup) {
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label id="labelAnio" for="schoolYear" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-date me-1"></i>
-                                            Año Escolar:
-                                        </label>
-                                        <select class="form-select border-secondary" id="schoolYear">
-                                            <option value="" selected>Seleccionar año escolar</option>
-                                            <?php 
-                                            $years = $conexion->query("SELECT idSchoolYear, startDate FROM schoolYear ORDER BY startDate DESC");
-                                            while ($year = $years->fetch_assoc()):
-                                                $label = substr($year['startDate'], 0, 4);
-                                            ?>
-                                                <option value="<?php echo $year['idSchoolYear']; ?>"><?php echo $label; ?></option>
-                                            <?php endwhile; ?>
-                                        </select>
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong><i class="bi bi-calendar-date me-2"></i>Año Escolar:</strong> 
+                                                <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
+                                            </div>
+                                            <div>
+                                                <strong><i class="bi bi-calendar3 me-2"></i>Trimestre:</strong> 
+                                                <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="col-md-4 d-none" id="contenedorGrupo">
+                                    <div class="col-md-12">
                                         <label id="labelGrupo" for="grupo" class="form-label fw-semibold">
                                             <i class="bi bi-collection me-1"></i>
                                             Grupo:
@@ -240,20 +259,10 @@ if ($selectedGroup) {
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    
-                                    <div class="col-md-4 d-none" id="contenedorTrimestre">
-                                        <label id="labelTrimestre" for="trimestre" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            Trimestre:
-                                        </label>
-                                        <select class="form-select border-secondary" id="trimestre" disabled>
-                                            <option value="" selected>Seleccionar trimestre</option>
-                                        </select>
-                                    </div>
                                 </div>
                                 
                                 <div class="row g-3 mt-2">
-                                    <div class="col-md-4 d-none" id="contenedorBotonDescargar">
+                                    <div class="col-md-12" id="contenedorBotonDescargar">
                                         <button type="button" id="descargarGrupoBtn" 
                                                 class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> w-100" 
                                                 <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
@@ -269,7 +278,7 @@ if ($selectedGroup) {
             </div>
 
             <!-- Tabla de estudiantes -->
-            <div class="row d-none" id="contenedorTabla">
+            <div class="row <?php echo !$selectedGroup ? 'd-none' : ''; ?>" id="contenedorTabla">
                 <div class="col-12">
                     <div class="table-card">
                         <div class="card border-0 shadow-sm">
@@ -288,13 +297,12 @@ if ($selectedGroup) {
                                                 <th class="fw-semibold">Apellido Paterno</th>
                                                 <th class="fw-semibold">Apellido Materno</th>
                                                 <th class="fw-semibold">Nombres</th>
-                                                <th class="fw-semibold">CURP</th>
                                                 <th class="fw-semibold">Grado</th>
                                                 <th class="fw-semibold">Grupo</th>
                                                 <th class="fw-semibold">Estado</th>
-                                                <th class="fw-semibold">Boleta</th>
-                                                <th class="fw-semibold">Ver Información</th>
-                                                <th class="fw-semibold">Bitácora Incidencias</th>
+                                                <th class="fw-semibold text-center">Boleta</th>
+                                                <th class="fw-semibold text-center">Ver Información</th>
+                                                <th class="fw-semibold text-center">Bitácora Incidencias</th>
                         </tr>
                     </thead>
                     <!-- DEBUG: Archivo actualizado 2026-02-13 19:00 - Columna Reporte agregada -->
@@ -307,7 +315,6 @@ if ($selectedGroup) {
                                     <td><?php echo htmlspecialchars($student['lastnamePa']); ?></td>
                                     <td><?php echo htmlspecialchars($student['lastnameMa']); ?></td>
                                     <td><?php echo htmlspecialchars($student['names']); ?></td>
-                                    <td><?php echo htmlspecialchars($student['curp'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($student['grade']); ?>°</td>
                                     <td><?php echo htmlspecialchars($student['group_']); ?></td>
                                     <td>
@@ -381,14 +388,14 @@ if ($selectedGroup) {
                                 </tr>
                             <?php endforeach; ?>
                         <?php elseif($selectedGroup): ?>
-                            <tr><td colspan="11" class="text-center py-4">
+                            <tr><td colspan="10" class="text-center py-4">
                                 <div class="empty-state">
                                     <i class="bi bi-people text-muted display-4"></i>
                                     <p class="text-muted mt-2 mb-0">No hay alumnos en este grupo.</p>
                                 </div>
                             </td></tr>
                         <?php else: ?>
-                            <tr><td colspan="11" class="text-center py-4">
+                            <tr><td colspan="10" class="text-center py-4">
                                 <div class="empty-state">
                                     <i class="bi bi-search text-muted display-4"></i>
                                     <p class="text-muted mt-2 mb-0">Seleccione un grupo para ver los alumnos.</p>
@@ -762,13 +769,12 @@ if ($selectedGroup) {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
         <!-- Scripts para manejar la carga dinámica de boletas -->
     <script>
+        // Constantes PHP para año y trimestre actual
+        const currentSchoolYearId = <?php echo $selectedSchoolYear; ?>;
+        const currentSchoolQuarterId = <?php echo $selectedQuarter ? $selectedQuarter : 'null'; ?>;
+        
         // Variables para los elementos del DOM
-        const yearSelect = document.getElementById('schoolYear');
         const grupoSelect = document.getElementById('grupo');
-        const quarterSelect = document.getElementById('trimestre');
-        const divGrupoFormativo = document.getElementById('contenedorGrupo');
-        const divTrimestreFormativo = document.getElementById('contenedorTrimestre');
-        const divCamposFormativos = document.getElementById('divCamposFormativos');
         let selectedStudentId = '';
         let studentName = '';
         
@@ -777,84 +783,154 @@ if ($selectedGroup) {
             // Debug function disabled for production
         }
 
-        // Event listener para el año escolar
-        yearSelect.addEventListener('change', function() {
-            const idSchoolYear = this.value;
-            
-            // Resetear grupo y trimestre
-            grupoSelect.selectedIndex = 0;
-            quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
-            
-            if (!idSchoolYear) {
-                divGrupoFormativo.classList.add('d-none');
-                divTrimestreFormativo.classList.add('d-none');
-                divCamposFormativos.classList.add('d-none');
-                return;
-            }
-            
-            // Mostrar el div de grupo
-            divGrupoFormativo.classList.remove('d-none');
-            divTrimestreFormativo.classList.add('d-none');
-        });
-
-        // Event listener para el grupo
+        // Event listener para el grupo - carga dinámica sin recargar página
         grupoSelect.addEventListener('change', function() {
-            const idSchoolYear = yearSelect.value;
             const idGroup = this.value;
+            const contenedorTabla = document.getElementById('contenedorTabla');
+            const tbody = document.getElementById('alumnos-tbody');
             
-            quarterSelect.innerHTML = '<option value="" selected>Seleccionar trimestre</option>';
-            
-            if (!idSchoolYear || !idGroup) {
-                divTrimestreFormativo.classList.add('d-none');
-                divCamposFormativos.classList.add('d-none');
-                document.getElementById('contenedorBotonDescargar').classList.add('d-none');
+            if (!idGroup) {
+                // Si no hay grupo seleccionado, ocultar tabla
+                contenedorTabla.classList.add('d-none');
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
+                    <div class="empty-state">
+                        <i class="bi bi-search text-muted display-4"></i>
+                        <p class="text-muted mt-2 mb-0">Seleccione un grupo para ver los alumnos.</p>
+                    </div>
+                </td></tr>`;
                 return;
             }
             
-            // Mostrar el div de trimestres
-            divTrimestreFormativo.classList.remove('d-none');
-            // Ocultar el botón de descargar hasta que seleccione trimestre
-            document.getElementById('contenedorBotonDescargar').classList.add('d-none');
+            // Mostrar spinner de carga
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-muted mt-2">Cargando estudiantes...</p>
+            </td></tr>`;
             
-            fetch(`get_quarters.php?idSchoolYear=${idSchoolYear}`)
-                .then(response => {
-                    return response.json();
-                })
+            // Mostrar la tabla
+            contenedorTabla.classList.remove('d-none');
+            
+            // Cargar estudiantes mediante AJAX
+            fetch(`get_students.php?grupo=${idGroup}&schoolYear=${currentSchoolYearId}`)
+                .then(response => response.json())
                 .then(data => {
-                    
-                    if (data.success && data.quarters && data.quarters.length > 0) {
-                        
-                        // Limpiar las opciones anteriores y habilitar el select
-                        quarterSelect.innerHTML = '<option value="">Seleccionar trimestre</option>';
-                        quarterSelect.disabled = false;
-                        
-                        // Agregar los nuevos trimestres
-                        data.quarters.forEach(q => {
-                            const option = document.createElement('option');
-                            option.value = q.idSchoolQuarter;
-                            option.textContent = q.name;
-                            quarterSelect.appendChild(option);
+                    if (data.success && data.students && data.students.length > 0) {
+                        // Renderizar estudiantes
+                        tbody.innerHTML = '';
+                        data.students.forEach((student, index) => {
+                            const row = createStudentRow(student, index + 1);
+                            tbody.appendChild(row);
                         });
+                    } else if (data.success && data.students.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="bi bi-people text-muted display-4"></i>
+                                <p class="text-muted mt-2 mb-0">No hay alumnos en este grupo.</p>
+                            </div>
+                        </td></tr>`;
                     } else {
-                        quarterSelect.innerHTML = '<option value="">No hay trimestres disponibles</option>';
-                        quarterSelect.disabled = true;
+                        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
+                            <div class="alert alert-danger">Error al cargar estudiantes</div>
+                        </td></tr>`;
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading quarters:', error);
-                    quarterSelect.innerHTML = '<option value="">Error al cargar trimestres</option>';
-                    quarterSelect.disabled = true;
+                    console.error('Error:', error);
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
+                        <div class="alert alert-danger">Error de conexión</div>
+                    </td></tr>`;
                 });
         });
-
-        // Debugging: Verificar estado del select de trimestre
-        quarterSelect.addEventListener('focus', function() {
-            console.log('Quarter select focused, disabled:', this.disabled);
-            console.log('Options count:', this.options.length);
-            for (let i = 0; i < this.options.length; i++) {
-                console.log(`Option ${i}: value="${this.options[i].value}", text="${this.options[i].text}", disabled=${this.options[i].disabled}`);
+        
+        // Función para crear una fila de estudiante
+        function createStudentRow(student, number) {
+            const tr = document.createElement('tr');
+            
+            // Determinar badge de estado
+            let statusBadge = '<span class="badge bg-secondary">-</span>';
+            const statusMap = {
+                'AC': 'success',
+                'BA': 'danger',
+                'RE': 'warning',
+                'EG': 'primary',
+                'IN': 'secondary',
+                'TR': 'info',
+                'RC': 'dark',
+                'EX': 'light'
+            };
+            if (student.nomenclature && statusMap[student.nomenclature]) {
+                statusBadge = `<span class="badge bg-${statusMap[student.nomenclature]}">${student.description || student.nomenclature}</span>`;
             }
-        });
+            
+            tr.innerHTML = `
+                <td>${number}</td>
+                <td>${escapeHtml(student.lastnamePa)}</td>
+                <td>${escapeHtml(student.lastnameMa)}</td>
+                <td>${escapeHtml(student.names)}</td>
+                <td>${escapeHtml(student.grade)}°</td>
+                <td>${escapeHtml(student.group_)}</td>
+                <td>${statusBadge}</td>
+                <td class="text-center">
+                    <button type="button" class="botonVer"
+                        data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
+                        data-id="${student.idStudent}"
+                        data-nombres="${escapeHtml(student.names)}"
+                        data-paterno="${escapeHtml(student.lastnamePa)}"
+                        data-materno="${escapeHtml(student.lastnameMa)}"
+                        data-grade="${escapeHtml(student.grade)}"
+                        data-grupo="${escapeHtml(student.group_)}"
+                        data-curp="${escapeHtml(student.curp || '')}"
+                        data-tutornombres="${escapeHtml(student.tutorName || '')}"
+                        data-tutorpaterno="${escapeHtml(student.tutorLastnamePa || '')}"
+                        data-tutormaterno="${escapeHtml(student.tutorLastnameMa || '')}">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                    </button>
+                </td>
+                <td class="text-center">
+                    <button type="button" id="botonVer"
+                        data-id="${student.idStudent}"
+                        data-nombres="${escapeHtml(student.names)}"
+                        data-paterno="${escapeHtml(student.lastnamePa)}"
+                        data-materno="${escapeHtml(student.lastnameMa)}"
+                        data-status="${student.idStudentStatus}"
+                        data-grupo="${escapeHtml(student.group_)}"
+                        data-grade="${escapeHtml(student.grade)}"
+                        data-curp="${escapeHtml(student.curp || '')}"
+                        data-bs-toggle="modal" data-bs-target="#showModal"
+                        data-tutornombres="${escapeHtml(student.tutorName || '')}"
+                        data-tutorpaterno="${escapeHtml(student.tutorLastnamePa || '')}"
+                        data-tutormaterno="${escapeHtml(student.tutorLastnameMa || '')}"
+                        data-tutoremail="${escapeHtml(student.tutorEmail || '')}"
+                        data-tutortelefono="${escapeHtml(student.tutorPhone || '')}"
+                        data-tutordireccion="${escapeHtml(student.tutorAddress || '')}"
+                        data-tutorine="${escapeHtml(student.tutorIne || '')}">
+                        <i class="bi bi-person-fill"></i>
+                    </button>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="botonReporte" 
+                        data-bs-toggle="modal" data-bs-target="#reportModal" 
+                        data-id="${student.idStudent}" 
+                        data-nombres="${escapeHtml(student.names)}" 
+                        data-paterno="${escapeHtml(student.lastnamePa)}" 
+                        data-materno="${escapeHtml(student.lastnameMa)}">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                    </button>
+                </td>
+            `;
+            
+            return tr;
+        }
+        
+        // Función auxiliar para escapar HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // Función para obtener las calificaciones del estudiante
         function loadStudentGrades(studentId, schoolYearId, quarterId) {
@@ -1176,37 +1252,7 @@ if ($selectedGroup) {
                 });
         }
 
-        // Event listener para el trimestre
-        quarterSelect.addEventListener('change', function() {
-            
-            if (this.value && yearSelect.value) {
-                // Mostrar el botón de descargar PDF cuando selecciona trimestre
-                document.getElementById('contenedorBotonDescargar').classList.remove('d-none');
-                divCamposFormativos.classList.remove('d-none');
-                const gradesList = document.getElementById('gradesList');
-                const loadingIndicator = document.getElementById('loadingGrades');
-                
-                // Verificar si tenemos ID de estudiante
-                if (selectedStudentId) {
-                    // Mostrar indicador de carga
-                    loadingIndicator.classList.remove('d-none');
-                    gradesList.innerHTML = '';
-                    
-                    // Usar la función loadStudentGrades que ya filtra por estudiante
-                    loadStudentGrades(selectedStudentId, yearSelect.value, this.value);
-                } else {
-                    loadingIndicator.classList.add('d-none');
-                    gradesList.innerHTML = '<div class="alert alert-warning">No se ha seleccionado ningún estudiante. Por favor cierre este modal y vuelva a intentarlo.</div>';
-                }
-            } else {
-                document.getElementById('contenedorBotonDescargar').classList.add('d-none');
-                divCamposFormativos.classList.add('d-none');
-            }
-        });
-
-
-        
-        // Evento: Botón Ver detalles
+        // Evento: Botón Ver detalles (Imprimir boleta) (Imprimir boleta)
         document.getElementById('btnVerDetalles').addEventListener('click', function() {
             // Verificar si las descargas están habilitadas
             <?php if(!$descargasHabilitadas): ?>
@@ -1219,8 +1265,9 @@ if ($selectedGroup) {
             return;
             <?php endif; ?>
 
-            const schoolYearId = document.getElementById('schoolYear').value;
-            const quarterId = document.getElementById('trimestre').value;
+            // Usar las constantes auto-detectadas
+            const schoolYearId = currentSchoolYearId;
+            const quarterId = currentSchoolQuarterId;
             
             if (schoolYearId && quarterId && selectedStudentId) {
                 // Construir la URL para generar el PDF
@@ -1229,7 +1276,7 @@ if ($selectedGroup) {
                 // Abrir el PDF en una nueva ventana
                 window.open(pdfUrl, '_blank');
             } else {
-                alert('Por favor, seleccione un ciclo escolar y un trimestre para generar la boleta.');
+                alert('Error: No se pudo obtener la información del período actual.');
             }
         });
     </script>
@@ -1297,16 +1344,16 @@ if ($selectedGroup) {
                 </div>
             `;
             
-            // Cargar automáticamente los campos formativos si ya hay año escolar y trimestre seleccionados
-            if (yearSelect.value && quarterSelect.value) {
-                divCamposFormativos.classList.remove('d-none');
+            // Cargar automáticamente los campos formativos con el año y trimestre auto-detectados
+            if (currentSchoolYearId && currentSchoolQuarterId) {
+                document.getElementById('divCamposFormativos').classList.remove('d-none');
                 const loadingIndicator = document.getElementById('loadingGrades');
                 loadingIndicator.classList.remove('d-none');
                 const gradesList = document.getElementById('gradesList');
                 gradesList.innerHTML = '';
-                loadStudentGrades(selectedStudentId, yearSelect.value, quarterSelect.value);
+                loadStudentGrades(selectedStudentId, currentSchoolYearId, currentSchoolQuarterId);
             } else {
-                divCamposFormativos.classList.add('d-none');
+                document.getElementById('divCamposFormativos').classList.add('d-none');
             }
         });
         
@@ -1347,15 +1394,15 @@ if ($selectedGroup) {
     <!-- Script para manejo dinámico de filtros -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const schoolYearSelect = document.getElementById('schoolYear');
             const grupoSelect = document.getElementById('grupo');
-            const contenedorGrupo = document.getElementById('contenedorGrupo');
             const alumnosBody = document.getElementById('alumnos-tbody');
+
+            // Cargar grupos automáticamente para el año actual
+            cargarGrupos(currentSchoolYearId);
 
             // Función para cargar grupos
             function cargarGrupos(schoolYearId) {
                 if (!schoolYearId) {
-                    contenedorGrupo.style.display = 'none';
                     return;
                 }
 
@@ -1372,14 +1419,10 @@ if ($selectedGroup) {
                                 option.textContent = `${grupo.grade}° ${grupo.group_}`;
                                 grupoSelect.appendChild(option);
                             });
-                            contenedorGrupo.style.display = 'block';
-                        } else {
-                            contenedorGrupo.style.display = 'none';
                         }
                     })
                     .catch(error => {
                         console.error('Error loading groups:', error);
-                        contenedorGrupo.style.display = 'none';
                         alert('Error al cargar los grupos. Por favor, intente de nuevo.');
                     });
             }
@@ -1387,7 +1430,7 @@ if ($selectedGroup) {
             // Función para cargar alumnos
             function cargarAlumnos(groupId, schoolYearId) {
                 if (!groupId || !schoolYearId) {
-                    alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">Seleccione un grupo para ver los alumnos.</td></tr>';
+                    alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">Seleccione un grupo para ver los alumnos.</td></tr>';
                     return;
                 }
 
@@ -1395,7 +1438,7 @@ if ($selectedGroup) {
                     .then(response => response.json())
                     .then(data => {
                         if (!data || !data.students || data.students.length === 0) {
-                            alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">No hay alumnos en este grupo.</td></tr>';
+                            alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">No hay alumnos en este grupo.</td></tr>';
                             return;
                         }
 
@@ -1408,7 +1451,6 @@ if ($selectedGroup) {
                                 <td>${student.lastnamePa}</td>
                                 <td>${student.lastnameMa}</td>
                                 <td>${student.names}</td>
-                                <td>${student.curp || ''}</td>
                                 <td>${student.grade}°</td>
                                 <td>${student.group_}</td>
                                 <td>${getStatusBadge(student.nomenclature, student.description)}</td>
@@ -1425,7 +1467,7 @@ if ($selectedGroup) {
                                         <i class="bi bi-file-earmark-text-fill"></i>
                                     </button>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <button type="button" id="botonVer" class="botonVer"
                                         data-bs-toggle="modal" 
                                         data-bs-target="#showModal"
@@ -1464,7 +1506,7 @@ if ($selectedGroup) {
                     })
                     .catch(error => {
                         console.error('Error loading students:', error);
-                        alumnosBody.innerHTML = '<tr><td colspan="11" class="text-center">Error al cargar los alumnos.</td></tr>';
+                        alumnosBody.innerHTML = '<tr><td colspan="10" class="text-center">Error al cargar los alumnos.</td></tr>';
                     });
             }
 
@@ -1487,48 +1529,6 @@ if ($selectedGroup) {
                 return '';
             }
 
-            // Event Listeners
-            schoolYearSelect.addEventListener('change', function() {
-                cargarGrupos(this.value);
-                cargarAlumnos('', '');
-                // Ocultar tabla al cambiar de año
-                document.getElementById('contenedorTabla').classList.add('d-none');
-                checkDownloadButton(); // Verificar si mostrar botón de descarga
-            });
-
-            grupoSelect.addEventListener('change', function() {
-                // No cargamos alumnos aquí, esperamos al trimestre
-                // Ocultar tabla al cambiar de grupo
-                document.getElementById('contenedorTabla').classList.add('d-none');
-                checkDownloadButton(); // Verificar si mostrar botón de descarga
-            });
-
-            // Event listener para el trimestre - mostrar tabla cuando se seleccione
-            document.getElementById('trimestre').addEventListener('change', function() {
-                const contenedorTabla = document.getElementById('contenedorTabla');
-                if (this.value && grupoSelect.value && schoolYearSelect.value) {
-                    // Mostrar tabla y cargar alumnos
-                    contenedorTabla.classList.remove('d-none');
-                    cargarAlumnos(grupoSelect.value, schoolYearSelect.value);
-                } else {
-                    // Ocultar tabla si no hay trimestre seleccionado
-                    contenedorTabla.classList.add('d-none');
-                }
-            });
-
-            // Función para verificar si mostrar el botón de descarga
-            function checkDownloadButton() {
-                const descargarBtn = document.getElementById('descargarGrupoBtn');
-                const schoolYearValue = schoolYearSelect.value;
-                const grupoValue = grupoSelect.value;
-                
-                if (schoolYearValue && grupoValue) {
-                    descargarBtn.style.display = 'block';
-                } else {
-                    descargarBtn.style.display = 'none';
-                }
-            }
-
             // Event listener para el botón de descarga
             document.getElementById('descargarGrupoBtn').addEventListener('click', function() {
                 // Verificar si las descargas están habilitadas
@@ -1542,7 +1542,7 @@ if ($selectedGroup) {
                 return;
                 <?php endif; ?>
 
-                const schoolYearValue = schoolYearSelect.value;
+                const schoolYearValue = currentSchoolYearId;
                 const grupoValue = grupoSelect.value;
                 
                 if (!schoolYearValue || !grupoValue) {

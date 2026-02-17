@@ -356,13 +356,19 @@
         // Actualizar fecha en español cuando cambia el input
         if (inputFecha && fechaEspanol) {
             inputFecha.addEventListener('change', function() {
-                fechaEspanol.textContent = formatearFechaEspanol(this.value);
+                // Obtener valor desde Flatpickr si existe
+                const flatpickrInstance = this._flatpickr;
+                const valor = flatpickrInstance ? flatpickrInstance.input.value : this.value;
+                fechaEspanol.textContent = formatearFechaEspanol(valor);
             });
         }
         
         if (btnGuardar) {
             btnGuardar.addEventListener('click', function () {
-                const fecha = inputFecha.value;
+                // Obtener valor desde Flatpickr si existe
+                const flatpickrInstance = inputFecha._flatpickr;
+                const fecha = flatpickrInstance ? flatpickrInstance.input.value : inputFecha.value;
+                
                 if (!fecha) {
                     Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Selecciona una fecha límite válida.' });
                     return;
@@ -445,8 +451,12 @@
                 currentSchoolYearId = data.year.idSchoolYear;
                 document.getElementById('noCicloEscolar').style.display = 'none';
                 document.getElementById('siCicloEscolar').style.display = 'block';
-                document.getElementById('editInicio').value = data.year.startDate;
-                document.getElementById('editFin').value = data.year.endDate;
+                
+                // Usar setDate() de Flatpickr para cargar fechas correctamente
+                const editInicioFp = document.getElementById('editInicio')._flatpickr;
+                const editFinFp = document.getElementById('editFin')._flatpickr;
+                if (editInicioFp) editInicioFp.setDate(data.year.startDate);
+                if (editFinFp) editFinFp.setDate(data.year.endDate);
             } else {
                 // No existe ciclo escolar, mostrar formulario de creación
                 document.getElementById('noCicloEscolar').style.display = 'block';
@@ -456,8 +466,12 @@
     }
 
     function crearCicloEscolar() {
-        const inicio = document.getElementById('nuevoInicio').value;
-        const fin = document.getElementById('nuevoFin').value;
+        // Obtener valores desde las instancias de Flatpickr en formato Y-m-d
+        const nuevoInicioFp = document.getElementById('nuevoInicio')._flatpickr;
+        const nuevoFinFp = document.getElementById('nuevoFin')._flatpickr;
+        
+        const inicio = nuevoInicioFp ? nuevoInicioFp.input.value : document.getElementById('nuevoInicio').value;
+        const fin = nuevoFinFp ? nuevoFinFp.input.value : document.getElementById('nuevoFin').value;
         
         if (!inicio || !fin) {
             document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
@@ -486,8 +500,12 @@
     }
 
     function guardarCicloEscolar() {
-        const inicio = document.getElementById('editInicio').value;
-        const fin = document.getElementById('editFin').value;
+        // Obtener valores desde las instancias de Flatpickr en formato Y-m-d
+        const inicioFp = document.getElementById('editInicio')._flatpickr;
+        const finFp = document.getElementById('editFin')._flatpickr;
+        
+        const inicio = inicioFp ? inicioFp.input.value : document.getElementById('editInicio').value;
+        const fin = finFp ? finFp.input.value : document.getElementById('editFin').value;
         
         if (!inicio || !fin) {
             document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
@@ -659,8 +677,15 @@
     }
 
     function guardarFechasTrimestre(id) {
-        const inicio = document.getElementById(`trimestre_inicio_${id}`).value;
-        const fin = document.getElementById(`trimestre_fin_${id}`).value;
+        // Obtener valores desde las instancias de Flatpickr en formato Y-m-d
+        const inicioEl = document.getElementById(`trimestre_inicio_${id}`);
+        const finEl = document.getElementById(`trimestre_fin_${id}`);
+        
+        const inicioFp = inicioEl._flatpickr;
+        const finFp = finEl._flatpickr;
+        
+        const inicio = inicioFp ? inicioFp.input.value : inicioEl.value;
+        const fin = finFp ? finFp.input.value : finEl.value;
         
         if (!inicio || !fin) {
             document.getElementById('periodoInfo').textContent = 'Debes ingresar ambas fechas.';

@@ -7,63 +7,84 @@ require_once "../conection.php";
 
 $idSubject = isset($_GET['idSubject']) ? intval($_GET['idSubject']) : 0;
 $subjectName = "";
-// Obtener las materias del profesor actual
+
+// Obtener el idTeacher del usuario actual
 $user_id = $_SESSION['user_id'];
+$stmtTeacher = $conexion->prepare("SELECT idTeacher FROM teachers WHERE idUser = ?");
+$stmtTeacher->bind_param("i", $user_id);
+$stmtTeacher->execute();
+$resultTeacher = $stmtTeacher->get_result();
+$teacherRow = $resultTeacher->fetch_assoc();
+$stmtTeacher->close();
+
+if (!$teacherRow) {
+    die("No se encontró el docente asociado a este usuario.");
+}
+$idTeacher = $teacherRow['idTeacher'];
+
+// Obtener las materias del profesor actual
 $query = "SELECT s.name, s.idSubject
           FROM teacherSubject ts
-          JOIN subjects s ON ts.idTeacherSubject = s.idSubject
+          JOIN subjects s ON ts.idSubject = s.idSubject
           WHERE ts.idTeacher = ?";
 
 $stmt = $conexion->prepare($query);
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $idTeacher);
 $stmt->execute();
 $result = $stmt->get_result();
 $subjects = [];
 while ($row = $result->fetch_assoc()) {
     $subjects[] = $row;
 }
+$stmt->close();
 
 if ($idSubject > 0) {
-    $stmt = $conexion->prepare("SELECT name FROM subjects WHERE idSubject = ?");
-    $stmt->bind_param("i", $idSubject);
-    $stmt->execute();
-    $stmt->bind_result($subjectName);
-    $stmt->fetch();
-    $stmt->close();
+    $stmtSubject = $conexion->prepare("SELECT name FROM subjects WHERE idSubject = ?");
+    $stmtSubject->bind_param("i", $idSubject);
+    $stmtSubject->execute();
+    $stmtSubject->bind_result($subjectName);
+    $stmtSubject->fetch();
+    $stmtSubject->close();
 }
 
-// Obtener los años escolares ANTES de cualquier consulta de alumnos
-$schoolYears = [];
-$query = "SELECT idSchoolYear, startDate FROM schoolYear ORDER BY startDate DESC";
-$result = $conexion->query($query);
-while ($row = $result->fetch_assoc()) {
-    $schoolYears[] = $row;
+// Obtener automáticamente el ciclo escolar del año actual
+$currentYear = date('Y');
+$sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
+                   FROM schoolYear 
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   ORDER BY startDate DESC LIMIT 1";
+$stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+if (!$stmtCurrentYear) {
+    die("Error al preparar consulta del año escolar: " . $conexion->error);
+}
+$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+$stmtCurrentYear->execute();
+$resultCurrentYear = $stmtCurrentYear->get_result();
+$currentSchoolYear = $resultCurrentYear->fetch_assoc();
+$stmtCurrentYear->close();
+
+if (!$currentSchoolYear) {
+    die("No se encontró un ciclo escolar para el año actual (" . $currentYear . "). Por favor, contacta al administrador.");
 }
 
-// Determinar el año escolar seleccionado correctamente
-$selectedYear = null;
-if (isset($_GET['idSchoolYear']) && is_numeric($_GET['idSchoolYear'])) {
-    $selectedYear = intval($_GET['idSchoolYear']);
-} elseif (!empty($schoolYears)) {
-    $selectedYear = $schoolYears[0]['idSchoolYear'];
-}
+$selectedYear = $currentSchoolYear['idSchoolYear'];
 
 // Obtener solo los grupos vinculados a la materia y al profesor actual
 $groupIds = [];
 if ($idSubject > 0) {
-    $stmt = $conexion->prepare("SELECT DISTINCT tgs.idGroup, g.grade, g.group_
+    $stmtGroups = $conexion->prepare("SELECT DISTINCT tgs.idGroup, g.grade, g.group_
                                FROM teacherGroupsSubjects tgs
                                JOIN groups g ON tgs.idGroup = g.idGroup
                                WHERE tgs.idSubject = ? 
                                AND tgs.idTeacher = ?
                                ORDER BY g.grade, g.group_");
-    $stmt->bind_param("ii", $idSubject, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
+    $stmtGroups->bind_param("ii", $idSubject, $idTeacher);
+    $stmtGroups->execute();
+    $resultGroups = $stmtGroups->get_result();
+    while ($row = $resultGroups->fetch_assoc()) {
         $groupIds[] = $row['idGroup'];
     }
-    $stmt->close();
+    $stmtGroups->close();
 }
 
 // DEBUG: imprime los grupos y el año escolar para verificar qué se consulta
@@ -89,53 +110,70 @@ if (!empty($groupIds) && $selectedYear !== null) {
                 AND idSubject = ?
             )
             ORDER BY g.grade, g.group_, ui.lastnamePa, ui.lastnameMa, ui.names";
-    $stmt = $conexion->prepare($sql);
-    $params = array_merge($groupIds, [$selectedYear, $user_id, $idSubject, $user_id, $idSubject]);
-    $stmt->bind_param(str_repeat('i', count($groupIds)) . 'iiiii', ...$params);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
+    $stmtStudents = $conexion->prepare($sql);
+    $params = array_merge($groupIds, [$selectedYear, $idTeacher, $idSubject, $idTeacher, $idSubject]);
+    $stmtStudents->bind_param(str_repeat('i', count($groupIds)) . 'iiiii', ...$params);
+    $stmtStudents->execute();
+    $resultStudents = $stmtStudents->get_result();
+    while ($row = $resultStudents->fetch_assoc()) {
         $students[] = $row;
     }
-    $stmt->close();
+    $stmtStudents->close();
 }
 
 // DEBUG: imprime los alumnos encontrados (forzando creación del archivo)
 file_put_contents(__DIR__.'/debug_alumnos.txt', var_export($students, true) . "\n", FILE_APPEND);
 
-// Obtener los trimestres escolares
-$schoolQuarters = [];
-if (isset($_GET['idSchoolYear'])) {
-    $idSchoolYear = intval($_GET['idSchoolYear']);
-    $query = "SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ?";
-    $stmt = $conexion->prepare($query);
-    $stmt->bind_param("i", $idSchoolYear);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $schoolQuarters[] = $row;
-    }
-    $stmt->close();
+// Obtener los trimestres del ciclo escolar actual y detectar el trimestre actual
+$sqlQuarters = "SELECT idSchoolQuarter, name, description, startDate, endDate 
+                FROM schoolQuarter 
+                WHERE idSchoolYear = ? 
+                ORDER BY idSchoolQuarter ASC";
+$stmtQuarters = $conexion->prepare($sqlQuarters);
+if (!$stmtQuarters) {
+    die("Error al preparar consulta de trimestres: " . $conexion->error);
 }
+$stmtQuarters->bind_param('i', $currentSchoolYear['idSchoolYear']);
+$stmtQuarters->execute();
+$resultQuarters = $stmtQuarters->get_result();
+$schoolQuarters = [];
+$currentQuarter = null;
+$currentDate = date('Y-m-d');
+while ($quarter = $resultQuarters->fetch_assoc()) {
+    $schoolQuarters[] = $quarter;
+    // Detectar el trimestre actual basado en la fecha
+    if ($quarter['startDate'] && $quarter['endDate']) {
+        if ($currentDate >= $quarter['startDate'] && $currentDate <= $quarter['endDate']) {
+            $currentQuarter = $quarter;
+        }
+    }
+}
+$stmtQuarters->close();
+
+// Si no se encontró trimestre actual por fecha, usar el primero disponible
+if (!$currentQuarter && count($schoolQuarters) > 0) {
+    $currentQuarter = $schoolQuarters[0];
+}
+
+$idSchoolQuarter = $currentQuarter ? $currentQuarter['idSchoolQuarter'] : null;
 
 // --- Obtener promedios guardados para los estudiantes en este trimestre y ciclo ---
 $studentAverages = [];
-if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
-    $idSchoolQuarter = intval($_GET['idSchoolQuarter']);
+if ($selectedYear && $idSchoolQuarter) {
     $ids = array_column($students, 'idStudent');
     if (count($ids) > 0) {
         $in = implode(',', array_fill(0, count($ids), '?'));
         $types = str_repeat('i', count($ids)) . 'ii';
         $query = "SELECT idStudent, average FROM average WHERE idStudent IN ($in) AND idSchoolYear = ? AND idSchoolQuarter = ?";
-        $stmt = $conexion->prepare($query);
+        $stmtAverages = $conexion->prepare($query);
         $params = array_merge($ids, [$selectedYear, $idSchoolQuarter]);
-        $stmt->bind_param($types, ...$params);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
+        $stmtAverages->bind_param($types, ...$params);
+        $stmtAverages->execute();
+        $resultAverages = $stmtAverages->get_result();
+        while ($row = $resultAverages->fetch_assoc()) {
             $studentAverages[$row['idStudent']] = $row['average'];
         }
-        $stmt->close();
+        $stmtAverages->close();
     }
 }
 ?>
@@ -207,42 +245,28 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                             <div class="card-header bg-light border-0">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-gear me-2 text-primary"></i>
-                                    Configuración de Período
+                                    Período Actual
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label for="schoolYearSelect" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-date me-1"></i>
-                                            Año Escolar:
-                                        </label>
-                                        <select id="schoolYearSelect" class="form-select border-secondary">
-                                            <option value="" disabled selected>Seleccione un año escolar</option>
-                                            <?php foreach ($schoolYears as $year): ?>
-                                                <option value="<?php echo $year['idSchoolYear']; ?>">
-                                                    <?php echo htmlspecialchars(substr($year['startDate'], 0, 4)); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-calendar-date me-2"></i>
+                                            <strong>Año Escolar:</strong> 
+                                            <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
+                                        </div>
                                     </div>
                                     
-                                    <div class="col-md-4" id="quarterSelectContainer" style="display: none;">
-                                        <label for="schoolQuarterSelect" class="form-label fw-semibold">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            Trimestre Escolar:
-                                        </label>
-                                        <select id="schoolQuarterSelect" class="form-select border-secondary">
-                                            <option value="" disabled selected>Seleccione un trimestre</option>
-                                            <?php foreach ($schoolQuarters as $quarter): ?>
-                                                <option value="<?php echo $quarter['idSchoolQuarter']; ?>">
-                                                    <?php echo htmlspecialchars($quarter['name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-calendar3 me-2"></i>
+                                            <strong>Trimestre:</strong> 
+                                            <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
+                                        </div>
                                     </div>
                                     
-                                    <div class="col-md-4 d-flex align-items-end">
+                                    <div class="col-md-12 d-flex align-items-end">
                                         <div class="d-flex gap-2 w-100">
                                             <button class="btn flex-fill" id="addColumnBtn">
                                                 <i class="bi bi-plus-lg me-2"></i>
@@ -390,6 +414,12 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
         });
     </script>
     <script>
+        // Constantes PHP para año y trimestre actual
+        const currentSchoolYearId = <?php echo $selectedYear; ?>;
+        const currentSchoolQuarterId = <?php echo $idSchoolQuarter ? $idSchoolQuarter : 'null'; ?>;
+        const currentSchoolYearName = "<?php echo substr($currentSchoolYear['startDate'], 0, 4) . ' - ' . substr($currentSchoolYear['endDate'], 0, 4); ?>";
+        const currentQuarterName = "<?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>";
+        
         // -- OPCIONES DE PORCENTAJE --
     const percentageOptions = [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
 
@@ -538,13 +568,15 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
     document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.querySelector('#dataTable tbody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Seleccione un año escolar y luego un trimestre para ver los estudiantes.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Cargando estudiantes del período actual...</td></tr>';
         }
     });
 
-    document.getElementById('schoolQuarterSelect').addEventListener('change', function() {
-        const selectedQuarter = this.value;
-        const selectedYear = document.getElementById('schoolYearSelect').value;
+    // Event listener removido - ahora se carga automáticamente
+    // document.getElementById('schoolQuarterSelect').addEventListener('change', function() {
+    function loadStudentsForCurrentPeriod() {
+        const selectedQuarter = currentSchoolQuarterId;
+        const selectedYear = currentSchoolYearId;
         const idSubject = <?php echo $idSubject; ?>;
         
         if (selectedQuarter && selectedYear) {
@@ -589,10 +621,10 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
         } else {
             const tbody = document.querySelector('#dataTable tbody');
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Seleccione un año escolar y luego un trimestre para ver los estudiantes.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center">No hay período escolar configurado.</td></tr>';
             }
         }
-    });
+    }
 
     // Función para resetear la estructura de la tabla a 3 columnas
     function resetTableStructure() {
@@ -723,13 +755,17 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
         */
     }
 
-    // Modificar el event listener del select de trimestre
-    document.getElementById('schoolQuarterSelect').addEventListener('change', function() {
-        const selectedQuarter = this.value;
-        const selectedYear = document.getElementById('schoolYearSelect').value;
+    // Función para cargar período actual - event listener removido
+    // document.getElementById('schoolQuarterSelect').addEventListener('change', function() {
+    function reloadCurrentPeriod() {
+        const selectedQuarter = currentSchoolQuarterId;
+        const selectedYear = currentSchoolYearId;
         const idSubject = <?php echo $idSubject; ?>;
         
         if (selectedQuarter && selectedYear) {
+            // Primero cargar los estudiantes
+            loadStudentsForCurrentPeriod();
+            // Luego cargar criterios y calificaciones
             loadEvaluationCriteria(idSubject, selectedYear, selectedQuarter, function() {
                 loadGrades(idSubject, selectedYear, selectedQuarter);
             });
@@ -739,7 +775,7 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                 input.value = '';
             });
         }
-    });
+    }
 
     // Asegura que el botón de guardar calificaciones siempre tenga el listener
     function asignarListenerGuardarCalificaciones(idSubject, idSchoolYear, idSchoolQuarter) {
@@ -749,8 +785,8 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
             btn.replaceWith(btn.cloneNode(true));
             const newBtn = document.getElementById('guardar');
             newBtn.addEventListener('click', function() {
-                const currentYear = document.getElementById('schoolYearSelect').value;
-                const currentQuarter = document.getElementById('schoolQuarterSelect').value;
+                const currentYear = currentSchoolYearId;
+                const currentQuarter = currentSchoolQuarterId;
                 guardarCalificaciones(idSubject, currentYear, currentQuarter);
             });
         }
@@ -758,7 +794,18 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
 
     document.addEventListener('DOMContentLoaded', function() {
         // Asigna el listener al cargar la página
-        asignarListenerGuardarCalificaciones(<?php echo $idSubject; ?>, document.getElementById('schoolYearSelect').value, document.getElementById('schoolQuarterSelect').value);
+        asignarListenerGuardarCalificaciones(<?php echo $idSubject; ?>, currentSchoolYearId, currentSchoolQuarterId);
+        
+        // Cargar automáticamente los estudiantes, criterios y calificaciones del período actual
+        const idSubject = <?php echo $idSubject; ?>;
+        if (idSubject > 0 && currentSchoolYearId && currentSchoolQuarterId) {
+            // Primero cargar los estudiantes
+            loadStudentsForCurrentPeriod();
+            // Luego cargar criterios y calificaciones
+            loadEvaluationCriteria(idSubject, currentSchoolYearId, currentSchoolQuarterId, function() {
+                loadGrades(idSubject, currentSchoolYearId, currentSchoolQuarterId);
+            });
+        }
     });
 
     // Llama a esta función después de cualquier recarga de tabla o criterios
@@ -945,10 +992,8 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
     // --- Cargar calificaciones automáticamente al seleccionar año y trimestre ---
     function checkAndLoadGrades() {
         const idSubject = <?php echo $idSubject; ?>;
-        const yearSelect = document.getElementById('schoolYearSelect');
-        const quarterSelect = document.getElementById('schoolQuarterSelect');
-        const idSchoolYear = yearSelect ? yearSelect.value : '';
-        const idSchoolQuarter = quarterSelect ? quarterSelect.value : '';
+        const idSchoolYear = currentSchoolYearId;
+        const idSchoolQuarter = currentSchoolQuarterId;
         if (idSubject && idSchoolYear && idSchoolQuarter) {
             loadGrades(idSubject, idSchoolYear, idSchoolQuarter);
         }
@@ -958,9 +1003,9 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
     document.addEventListener('DOMContentLoaded', function() {
         checkAndLoadGrades();
     });
-    // Ejecutar cada vez que cambie el año escolar o trimestre
-    document.getElementById('schoolYearSelect').addEventListener('change', checkAndLoadGrades);
-    document.getElementById('schoolQuarterSelect').addEventListener('change', checkAndLoadGrades);
+    // Event listeners removidos - ahora se usa auto-detección
+    // document.getElementById('schoolYearSelect').addEventListener('change', checkAndLoadGrades);
+    // document.getElementById('schoolQuarterSelect').addEventListener('change', checkAndLoadGrades);
 
     // Refuerza la asignación de data-criteria-id a los inputs después de cargar criterios y de que la tabla esté lista
     function asignarCriteriaIdInputs() {
@@ -982,11 +1027,16 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
 
     // NUEVA FUNCIÓN: Cargar todo
     function cargarTodo(idSubject, idSchoolYear, idSchoolQuarter) {
+        // Primero cargar los estudiantes
+        loadStudentsForCurrentPeriod();
+        // Luego cargar criterios y calificaciones
         loadEvaluationCriteria(idSubject, idSchoolYear, idSchoolQuarter, function() {
             loadGrades(idSubject, idSchoolYear, idSchoolQuarter);
         });
     }
 
+    // Event listeners removidos - ahora se carga automáticamente con valores auto-detectados
+    /*
     // Llama a cargarTodo cuando selecciones materia, ciclo y trimestre
     document.getElementById('schoolQuarterSelect').addEventListener('change', function() {
         const selectedQuarter = this.value;
@@ -1036,6 +1086,7 @@ if ($selectedYear !== null && isset($_GET['idSchoolQuarter'])) {
                 }
             });
     });
+    */
 
     // --- FUNCIÓN PARA CALCULAR Y MOSTRAR PROMEDIO DINÁMICO ---
     function calcularPromedioFila(row) {
