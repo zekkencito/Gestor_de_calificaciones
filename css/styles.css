@@ -49,20 +49,21 @@ body {
 }
 
 main {
+    margin-left: 190px;
+    flex-basis: auto;
+    width: calc(100% - 190px);
     box-sizing: border-box;
-    width: calc(100% - 250px); 
-    margin-left: 200px; 
     min-height: 100vh;
 }
 header {
     position: fixed;
-    top:0;
-    padding-right: 25vh;
-    left: 0vh;
+    top: 0;
+    left: 190px;
     margin-left: 0;
-    width: 100%;
-    z-index: 1000; 
-    right: 250vh;
+    width: calc(100% - 190px);
+    box-sizing: border-box;
+    z-index: 1000;
+    /* Spacing manejado por Bootstrap y el layout de row */
 }
 
 aside {
@@ -147,9 +148,8 @@ aside {
 .container-fluid {
     height: auto; 
     width: 100%;
-    padding-left: 25vh;
     max-width: 100%; 
-
+    /* padding-left removido ya que Bootstrap maneja el spacing */
 }
 .password-container {
     position: relative;

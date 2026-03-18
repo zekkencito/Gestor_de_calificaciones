@@ -1,25 +1,18 @@
-html, body{
-    width: 100%;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+/* Los estilos específicos para el contenido de asignaciones, NO afectar el sidebar */
+main {
     box-sizing: border-box;
     font-family: "League Spartan", sans-serif !important;
-    font-weight: 300 !important;
 }
 
 /* Header de página moderno */
 .page-header {
-    background: linear-gradient(135deg, #ffffff, #f0f4f8);
-    color: #192E4E;
-    padding: 1rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
     text-align: center;
-    border: 1px solid #e3e8ed;
-    margin-top: 4.5rem;
+    padding: 1.5rem 0 1rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    margin-top: 4rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .page-title {
@@ -35,6 +28,356 @@ html, body{
     opacity: 0.9;
     margin-bottom: 0;
 }
+
+/* Tarjeta de filtros moderna */
+.filter-card .card {
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.filter-card .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.filter-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+}
+
+.filter-card .card-body {
+    padding: 1.5rem;
+    background: white;
+}
+
+.filter-card .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.filter-card .form-select:focus {
+    border-color: #192E4E;
+    box-shadow: 0 0 0 0.2rem rgba(25, 46, 78, 0.25);
+}
+
+.filter-card .form-label {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Botones modernos */
+.btn {
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+}
+
+.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    border: none;
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #192E4E, #2C5695);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
+}
+
+/* Tarjeta de tabla moderna */
+.table-card .card {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.table-card .card:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+}
+
+.table-card .table {
+    margin-bottom: 0;
+}
+
+.table-card .table thead th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table-card .table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-card .table tbody tr:hover {
+    background-color: rgba(25, 46, 78, 0.05);
+    transform: scale(1.01);
+}
+
+.table-card .table tbody td {
+    padding: 1rem;
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+    font-weight: 500;
+}
+
+.table-card .card-footer {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    padding: 1.25rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+}
+
+.btn-outline-info:hover {
+    transform: scale(1.1);
+}
+
+#emptyState {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 15px;
+    margin: 2rem;
+}
+
+/* Botones de acción en tabla */
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+    transform: scale(1.1);
+}
+
+/* Estado vacío */
+#emptyState {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 15px;
+    margin: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .filter-card .row > div {
+        margin-bottom: 1rem;
+    }
+}
+
+/* ETIQUETAS LEGACY (mantener compatibilidad) */
+#labelAlumno, #labelCiclo {
+    font-size: 22px;
+    font-family: "League Spartan", sans-serif;
+    color: black;
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* BOTONES */
+.buttonInscribir {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #192E4E;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 20px;
+    width: auto; /* Ancho automático en lugar del 100% */
+    justify-content: center;
+}
+
+/* Contenedor del botón */
+.button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 28px; /* Ajuste para alinear con los inputs */
+}
+/* Asegurar que las columnas tengan el mismo espaciado */
+.col-md-6 {
+    padding: 0 15px; /* Espaciado estándar de Bootstrap */
+}
+.align-items-center {
+    align-items: center;
+}
+#button {
+    background-color: #192E4E;
+    color: white;
+    border: none;
+    outline: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-size: 20px;
+    height: 5.5vh;
+}
+
+.botonCancelar, .botonEnter {
+    background-color: #192E4E;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 15px;
+    font-size: 18px;
+    height: 6.5vh;
+}
+
+#botonVer {
+    border: none;
+    background: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ICONOS */
+#iBuscar {
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#iconoAdd {
+    color: white;
+    font-size: 1.5rem;
+}
+
+/* TABLA */
+#listaAlumnos {
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 30px;
+    margin-bottom: 25px;
+    margin-left: 35px;
+}
+
+.contenedorTabla {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+th {
+    font-size: 18px;
+    font-family: "League Spartan", sans-serif;
+    font-weight: bold;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+td {
+    font-size: 18px;
+    font-family: "League Spartan", sans-serif;
+    font-weight: 300;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* MODALES */
+#tituloModal {
+    font-family: "League Spartan", sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    margin: 0;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+.labelAgregar{
+    font-size: 17px;
+    font-family: "League Spartan", sans-serif;
+    font-weight: 600;
+    margin-top: 7px;
+}
+.botonCancelar:hover {
+    background-color:rgb(27, 84, 168);
+    color: white;
+    
+}
+.botonEnter:hover {
+    background-color:rgb(27, 84, 168);
+    color: white;
+    
+}
+#button:hover {
+    background-color:rgb(27, 84, 168);
+    color: white;
+    
+}
+.buttonInscribir:hover {
+    background-color:rgb(27, 84, 168);
+    color: white;
+    
+}
+.page-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+    opacity: 0.8;
+    color: #6c757d;
+}
+
+/* ========== ELEMENTOS ANTIGUOS (Removidos - Ya no se usan) ========== */
 #labelAlumno{
     font-size: 22px;
     font-family: "League Spartan", sans-serif;
@@ -59,30 +402,7 @@ option{
     font-family: "League Spartan", sans-serif;
     font-weight: bold;
 }
-#tabla{
-    font-size: 15px;
-}
-th{
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-td{
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-option{
-    font-size: 15px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-}
+
 #asignacion{
     font-size: 25px;
     font-family: "League Spartan", sans-serif;
@@ -154,35 +474,8 @@ option{
     color: white;
     font-size: 1.5rem;
 }
-#iBuscar{
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.page-header {
-    background: linear-gradient(135deg, #ffffff, #f0f4f8);
-    color: #192E4E;
-    border-radius: 15px;
-    padding: 1rem;
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-    text-align: center;
-    border: 1px solid #e3e8ed;
-    margin-top: 4.5rem;
-}
-.page-title {
-    font-size: 2.5rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    align-items: center;
-}
 
-.page-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 0;
-}
+
 /*MODALS*/
 .form-group {
     display: flex;
@@ -266,4 +559,159 @@ input, select{
 .btn-primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
+}
+
+/* ========== TARJETAS ========== */
+.filter-card, .table-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filter-card:hover, .table-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+}
+
+.filter-card .card, .table-card .card {
+    border-radius: 15px;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.filter-card .card-header, .table-card .card-header {
+    border-radius: 15px 15px 0 0;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+}
+
+.filter-card .card-title, .table-card .card-title {
+    color: #192E4E;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+/* ========== TABLA MEJORADA ========== */
+.table-responsive {
+    border-radius: 0 0 15px 15px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0 !important;
+    width: 100%;
+    table-layout: auto;
+}
+
+.table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    border: none !important;
+    padding: 1rem !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+    text-transform: uppercase !important;
+    font-size: 0.875rem !important;
+    letter-spacing: 0.5px !important;
+}
+
+.table td {
+    padding: 1rem !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f3f4 !important;
+    vertical-align: middle !important;
+    font-weight: 500 !important;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(25, 46, 78, 0.05);
+    transform: scale(1.01);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* ========== BOTONES ========== */
+.table .btn {
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    border: none !important;
+}
+
+.table .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+}
+
+.table .btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+    color: white !important;
+}
+
+.table .btn-info:hover {
+    background: linear-gradient(135deg, #138496 0%, #0d5860 100%) !important;
+}
+
+.table .btn-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.table .btn-warning:hover {
+    background-color: #ffb300 !important;
+}
+
+.table .btn-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.table .btn-danger:hover {
+    background-color: #c82333 !important;
+}
+
+.table .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+}
+
+.table .btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%) !important;
+}
+
+/* ========== BADGES ========== */
+.badge {
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 6px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .table th {
+        font-size: 0.75rem;
+        padding: 0.8rem 0.6rem !important;
+    }
+
+    .table td {
+        padding: 0.8rem 0.6rem !important;
+        font-size: 0.9rem;
+    }
+
+    .table .btn {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.75rem;
+    }
 }

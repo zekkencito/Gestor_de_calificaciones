@@ -131,7 +131,7 @@ if (!$resultado) {
     <link rel="icon" href="../img/logo.ico">
 
 </head>
-<body class="row d-flex" style="height: 100vh; width: 100%; margin: 0; padding: 0; overflow: hidden;">
+<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -142,7 +142,7 @@ if (!$resultado) {
 
     
     <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 col-9 p-0" style="height: 100vh; overflow-y: auto;">
+    <main class="flex-grow-1 col-9 p-0">
         <?php include "../layouts/header.php"; ?>
         
         <!-- Header de la página -->
@@ -420,18 +420,18 @@ if (!$resultado) {
     <div class="modal fade modal-lg" id="addStudentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h1 id="tituloModal" class="modal-title fs-5">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h1 id="tituloModal" class="modal-title fs-5 text-white fw-bold" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem !important;">
                         <i class="bi bi-person-plus me-2"></i>
                         Inscribir Alumno
                     </h1>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="addStudent.php" id="formInscribir" method="POST" class="needs-validation" novalidate>
                         <!-- Información Personal -->
                         <div class="mb-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-person me-2"></i>
                                 Información Personal
                             </h6>
@@ -490,7 +490,7 @@ if (!$resultado) {
 
                         <!-- Información de Contacto -->
                         <div class="mb-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-telephone me-2"></i>
                                 Información de Contacto
                             </h6>
@@ -527,7 +527,7 @@ if (!$resultado) {
 
                         <!-- Información Académica -->
                         <div class="mb-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-book me-2"></i>
                                 Información Académica
                             </h6>
@@ -573,7 +573,7 @@ if (!$resultado) {
 
                         <!-- Información del Tutor -->
                         <div class="mb-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-person-heart me-2"></i>
                                 Información del Tutor
                             </h6>
@@ -670,18 +670,18 @@ if (!$resultado) {
     <div class="modal fade modal-lg" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="showModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="showModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-person-circle me-2"></i>
                         Información del Estudiante
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <!-- Información Personal -->
                         <div class="col-12">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-person-badge me-2"></i>
                                 Datos Personales
                             </h6>
@@ -717,7 +717,7 @@ if (!$resultado) {
                         
                         <!-- Información Académica -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-book me-2"></i>
                                 Información Académica
                             </h6>
@@ -733,7 +733,7 @@ if (!$resultado) {
                         
                         <!-- Información de Contacto -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-telephone me-2"></i>
                                 Información de Contacto
                             </h6>
@@ -753,7 +753,7 @@ if (!$resultado) {
                         
                         <!-- Información del Tutor -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-person-hearts me-2"></i>
                                 Información del Tutor
                             </h6>
@@ -793,7 +793,7 @@ if (!$resultado) {
                         <i class="bi bi-x-circle me-1"></i>
                         Cerrar
                     </button>
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <button type="button" class="btn" style="background-color: #192E4E; color: white; border: none;" data-bs-toggle="modal" data-bs-target="#deleteModal">
                         <i class="bi bi-trash me-1"></i>
                         Eliminar
                     </button>
@@ -806,12 +806,12 @@ if (!$resultado) {
     <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="editModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="editModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-pencil me-2"></i>
                         Editar Estudiante
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="updateStudent.php" method="POST" class="needs-validation" novalidate id="formEditStudent">
@@ -819,7 +819,7 @@ if (!$resultado) {
                         <div class="row g-3">
                             <!-- Información Personal -->
                             <div class="col-12">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-person-badge me-2"></i>
                                     Datos Personales
                                 </h6>
@@ -889,7 +889,7 @@ if (!$resultado) {
 
                             <!-- Información Académica -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-book me-2"></i>
                                     Información Académica
                                 </h6>
@@ -931,7 +931,7 @@ if (!$resultado) {
 
                             <!-- Información de Contacto -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-telephone me-2"></i>
                                     Información de Contacto
                                 </h6>
@@ -963,7 +963,7 @@ if (!$resultado) {
 
                             <!-- Información del Tutor -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-person-hearts me-2"></i>
                                     Información del Tutor
                                 </h6>
@@ -1053,17 +1053,17 @@ if (!$resultado) {
      <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="deleteModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="deleteModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         Confirmar Eliminación
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center">
                         <i class="bi bi-person-x text-danger display-1 mb-3"></i>
-                        <h5>¿Está seguro que desea eliminar este docente?</h5>
+                        <h5>¿Está seguro que desea eliminar este estudiante?</h5>
                         <p class="text-muted" id="delete-teacher-info">Esta acción no se puede deshacer.</p>
                     </div>
                 </div>
@@ -1072,9 +1072,9 @@ if (!$resultado) {
                         <i class="bi bi-x-circle me-2"></i>
                         Cancelar
                     </button>
-                    <button type="button" class="btn btn-danger"  id="eliminar">
+                    <button type="button" class="btn" id="eliminar" style="background-color: #192E4E; color: white; border: none;">
                         <i class="bi bi-trash me-2"></i>
-                        Eliminar Docente
+                        Eliminar Estudiante
                     </button>
                 </div>
             </div>
@@ -1124,9 +1124,12 @@ if (!$resultado) {
     <div class="modal fade" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="modalCamposFormativosLabel">Boleta</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="modalCamposFormativosLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Boleta
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Ãrea para mostrar la información del estudiante -->

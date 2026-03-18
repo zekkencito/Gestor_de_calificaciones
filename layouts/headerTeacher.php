@@ -18,33 +18,27 @@ $result = $stmt->get_result();
 $user_data = $result->fetch_assoc();
 ?>
 <link rel="icon" href="../img/logo.ico">
-<header class="p-2" style="background-color: #192E4E; ">
-    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #192E4E; ">
-        <div class="container-fluid text-white">
-            <div class="col-8 row">                    
-                <h5 class="col-6 px-4 pt-3">Escuela Gregorio Torres Quintero No. 2308</h5>
-            </div>                    
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="navbar-item1 mx-3 dropdown text-black">
-                        <a href="" style="color: white; text-decoration: none;" class="nav-link1 dropdown-toggle" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" >
-                        <?php
-                            if ($user_data) {
-                                echo htmlspecialchars($user_data['names'] . ' ' . $user_data['lastnamePa']);
-                            } else {
-                                echo "Docente"; 
-                            }
-                        ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li>
-                                <a href="../admin/php/logout.php" class="dropdown-item">
-                                    <i class="bi bi-box-arrow-left"></i>&nbsp;&nbsp;Cerrar Sesión</a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+<header class="p-4" style="background-color: #192E4E; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; min-height: 90px;">
+    <div>                    
+        <h5 style="margin: 0; color: white; padding: 0 20px;">Escuela Gregorio Torres Quintero No. 2308</h5>
+    </div>                    
+    <div style="display: flex; align-items: center; padding-right: 20px; z-index: 1001;">
+        <div class="dropdown">
+            <button style="color: white; text-decoration: none; background: none; border: none; cursor: pointer; font-size: 1rem;" class="dropdown-toggle" id="userDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <?php
+                if ($user_data) {
+                    echo htmlspecialchars($user_data['names'] . ' ' . $user_data['lastnamePa']);
+                } else {
+                    echo "Docente"; 
+                }
+            ?>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li>
+                    <a href="../admin/php/logout.php" class="dropdown-item">
+                        <i class="bi bi-box-arrow-left"></i>&nbsp;&nbsp;Cerrar Sesión</a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
 </header>

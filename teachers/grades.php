@@ -158,7 +158,7 @@ if ($teacher_id) {
                             </div>
                             <div class="card-body">
                                 <!-- Alerta informativa del año actual -->
-                                <div class="alert alert-info alert-dismissible fade show mb-2" role="alert">
+                                <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
                                     <i class="bi bi-calendar-check-fill me-2"></i>
                                     <strong>Año Escolar:</strong> <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
                                     <span class="text-muted ms-2">(<?php echo date('d/m/Y', strtotime($currentSchoolYear['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentSchoolYear['endDate'])); ?>)</span>

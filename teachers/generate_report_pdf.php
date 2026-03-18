@@ -175,7 +175,7 @@ function generateReportPDF($idConductReport, $conexion) {
     // Crear PDF
     $pdf = new FPDF('P', 'mm', 'Letter');
     $pdf->AddPage();
-    $pdf->SetMargins(20, 15, 20);
+    $pdf->SetMargins(13, 15, 13);
     
     // Logo y encabezado (FPDF solo soporta JPG, PNG, GIF)
     $logoPaths = [
@@ -224,7 +224,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(0, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
+    $pdf->Cell(190, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
     
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetFont('Times', '', 11);
@@ -249,7 +249,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(0, 8, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 1, 1, 'C', true);
+    $pdf->Cell(190, 8, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 1, 1, 'C', true);
     
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetFont('Times', '', 11);
@@ -287,7 +287,7 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(0, 8, utf8_decode_safe('DOCENTE DE TURNO'), 1, 1, 'C', true);
+    $pdf->Cell(190, 8, utf8_decode_safe('DOCENTE DE TURNO'), 1, 1, 'C', true);
     
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetFont('Times', '', 11);

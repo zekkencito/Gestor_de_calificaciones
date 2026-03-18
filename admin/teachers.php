@@ -47,58 +47,29 @@ if (!$resultado) {
     <title>Maestros</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../css/admin/teacher.css">
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="icon" href="../img/logo.ico">
+    <link rel="stylesheet" href="../css/admin/teacher.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
     
-    <style>
-        #preloader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease-out;
-        }
-        
-        #preloader.loaded {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        #preloader.hidden {
-            display: none !important;
-        }
-        
-        
-        #preloader.loaded .logo {
-            animation: none;
-            transform: rotate(0deg);
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <!-- TIPOGRAFIA -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100vh; width: 100%; margin: 0; padding: 0; overflow: hidden;">
+<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
     </div>
-    
     <!-- ASIDEBAR -->
     <?php include "../layouts/aside.php"; ?>
     <!-- END ASIDEBAR -->
     
     <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 col-9 p-0" style="height: 100vh; overflow-y: auto;">
+    <main class="flex-grow-1 col-9 p-0">
         <?php include "../layouts/header.php"; ?>
         
         <!-- Header de la página -->
@@ -173,7 +144,7 @@ if (!$resultado) {
                             <div class="card-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
-                                        <thead class="table-dark">
+                                        <thead class="table-light">
                                             <tr>
                                                 <th class="fw-semibold">ID</th>
                                                 <th class="fw-semibold">Apellido Paterno</th>
@@ -213,7 +184,7 @@ if (!$resultado) {
                                                         $gruposArray = explode(',', $grupos);
                                                         foreach ($gruposArray as $grupo) {
                                                             if (!empty(trim($grupo))) {
-                                                                echo '<span class="badge bg-primary me-1">' . htmlspecialchars(trim($grupo)) . '</span>';
+                                                                echo '<span class="badge text-white me-1" style="background-color: #192E4E;">' . htmlspecialchars(trim($grupo)) . '</span>';
                                                             }
                                                         }
                                                     } else {
@@ -229,7 +200,7 @@ if (!$resultado) {
                                                         $materiasLimitadas = array_slice($materiasArray, 0); // Solo mostrar 3
                                                         foreach ($materiasLimitadas as $materia) {
                                                             if (!empty(trim($materia))) {
-                                                                echo '<span class="badge bg-info text-dark me-1 mb-1">' . htmlspecialchars(trim($materia)) . '</span>';
+                                                                echo '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' . htmlspecialchars(trim($materia)) . '</span>';
                                                             }
                                                         }
                                                     } else {
@@ -311,18 +282,18 @@ if (!$resultado) {
     <div class="modal fade" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="showModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="showModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-person-circle me-2"></i>
                         Información del Docente
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <!-- Información Personal -->
                         <div class="col-12">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-person-badge me-2"></i>
                                 Datos Personales
                             </h6>
@@ -350,7 +321,7 @@ if (!$resultado) {
                         
                         <!-- Información de Contacto -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-telephone me-2"></i>
                                 Información de Contacto
                             </h6>
@@ -370,7 +341,7 @@ if (!$resultado) {
                         
                         <!-- Información Profesional -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-briefcase me-2"></i>
                                 Información Profesional
                             </h6>
@@ -394,7 +365,7 @@ if (!$resultado) {
                         
                         <!-- Asignaciones -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-clipboard-check me-2"></i>
                                 Asignaciones Actuales
                             </h6>
@@ -410,7 +381,7 @@ if (!$resultado) {
                         
                         <!-- Información de Usuario -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <h6 class="text-black border-bottom pb-2 mb-3">
                                 <i class="bi bi-key me-2"></i>
                                 Credenciales de Acceso
                             </h6>
@@ -439,19 +410,19 @@ if (!$resultado) {
     <div class="modal fade modal-lg" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="addModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="addModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-person-plus me-2"></i>
                         Agregar Docente
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="addTeacher.php" method="POST" class="needs-validation" novalidate>
                         <div class="row g-3">
                             <!-- Información Personal -->
                             <div class="col-12">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-person-badge me-2"></i>
                                     Datos Personales
                                 </h6>
@@ -507,7 +478,7 @@ if (!$resultado) {
 
                             <!-- Información Profesional -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-briefcase me-2"></i>
                                     Información Profesional
                                 </h6>
@@ -531,7 +502,7 @@ if (!$resultado) {
 
                             <!-- Información de Contacto -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <h6 class="text-black border-bottom pb-2 mb-3">
                                     <i class="bi bi-telephone me-2"></i>
                                     Información de Contacto
                                 </h6>
@@ -582,12 +553,12 @@ if (!$resultado) {
     <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="editModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="editModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-pencil me-2"></i>
                         Editar Docente
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="updateTeacher.php" method="POST" class="needs-validation" novalidate>
@@ -595,7 +566,7 @@ if (!$resultado) {
                         <div class="row g-3">
                             <!-- Información Personal -->
                             <div class="col-12">
-                                <h6 class="text-muted mb-3">
+                                <h6 class="text-black mb-3">
                                     <i class="bi bi-person-lines-fill me-2"></i>Información Personal
                                 </h6>
                             </div>
@@ -626,7 +597,7 @@ if (!$resultado) {
 
                             <!-- Documentos e Identificación -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-muted mb-3">
+                                <h6 class="text-black mb-3">
                                     <i class="bi bi-file-text me-2"></i>Documentos e Identificación
                                 </h6>
                             </div>
@@ -643,7 +614,7 @@ if (!$resultado) {
 
                             <!-- Información de Contacto -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-muted mb-3">
+                                <h6 class="text-black mb-3">
                                     <i class="bi bi-envelope me-2"></i>Información de Contacto
                                 </h6>
                             </div>
@@ -708,12 +679,12 @@ if (!$resultado) {
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="deleteModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="deleteModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         Confirmar Eliminación
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center">
@@ -727,7 +698,7 @@ if (!$resultado) {
                         <i class="bi bi-x-circle me-2"></i>
                         Cancelar
                     </button>
-                    <button type="button" class="btn btn-danger" id="confirm-delete">
+                    <button type="button" class="btn" id="confirm-delete" style="background-color: #192E4E; color: white; border: none;">
                         <i class="bi bi-trash me-2"></i>
                         Eliminar Docente
                     </button>
@@ -833,7 +804,7 @@ if (!$resultado) {
                     if (data.grupos && data.grupos.trim()) {
                         const gruposArray = data.grupos.split(',');
                         gruposElement.innerHTML = gruposArray.map(grupo => 
-                            '<span class="badge bg-primary me-1 mb-1">' + grupo.trim() + '</span>'
+                            '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' + grupo.trim() + '</span>'
                         ).join('');
                     } else {
                         gruposElement.innerHTML = '<span class="text-muted">Sin asignaciones</span>';
@@ -844,7 +815,7 @@ if (!$resultado) {
                     if (data.materias && data.materias.trim()) {
                         const materiasArray = data.materias.split(',');
                         materiasElement.innerHTML = materiasArray.map(materia => 
-                            '<span class="badge bg-info text-dark me-1 mb-1">' + materia.trim() + '</span>'
+                            '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' + materia.trim() + '</span>'
                         ).join('');
                     } else {
                         materiasElement.innerHTML = '<span class="text-muted">Sin materias</span>';

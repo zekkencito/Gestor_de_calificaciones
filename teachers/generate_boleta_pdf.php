@@ -176,8 +176,9 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
     }
 
     // Crear el PDF con soporte para UTF-8
-    $pdf = new FPDF();
+    $pdf = new FPDF('P', 'mm', 'Letter');
     $pdf->AddPage();
+    $pdf->SetMargins(13, 15, 13);
 
     // Logo y encabezado (FPDF solo soporta JPG, PNG, GIF)
     $logoPaths = [
@@ -187,10 +188,15 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
         '../img/logo.gif'
     ];
     
+    // Encabezado profesional con logo centrado
+    $pageWidth = 216; // Ancho de página Letter en mm
+    $logoWidth = 20;
+    $logoX = ($pageWidth - $logoWidth) / 2;
+    
     foreach ($logoPaths as $logoPath) {
         if (file_exists($logoPath)) {
             try {
-                $pdf->Image($logoPath, 15, 15, 25, 25);
+                $pdf->Image($logoPath, $logoX, 12, $logoWidth, $logoWidth);
                 break;
             } catch (Exception $e) {
                 error_log("Error al cargar logo: " . $e->getMessage());
@@ -198,28 +204,29 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
         }
     }
 
-    // Título del documento - posicionado al lado derecho del logo
-    $pdf->SetXY(45, 18);
-    $pdf->SetFont('Times', 'B', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('ESCUELA PRIMARIA'), 0, 1, 'L');
-    $pdf->SetXY(45, 26);
-    $pdf->Cell(0, 8, utf8_decode_safe('GREGORIO TORRES QUINTERO NO.2308'), 0, 1, 'L');
-    $pdf->Ln(10);
+    // Nombre de la escuela centrado debajo del logo
+    $pdf->SetY(35);
+    $pdf->SetFont('Times', '', 10);
+    $pdf->Cell(0, 5, utf8_decode_safe('Escuela Primaria'), 0, 1, 'C');
+    $pdf->SetFont('Times', '', 10);
+    $pdf->Cell(0, 5, utf8_decode_safe('Gregorio Torres Quintero No.2308'), 0, 1, 'C');
     
-    // Título de boleta de calificaciones centrado
-    $pdf->SetFont('Times', 'B', 19);
+    $pdf->Ln(5);
+    
+    // Título de boleta centrado
+    $pdf->SetFont('Times', 'B', 14);
     $pdf->Cell(0, 10, utf8_decode_safe('BOLETA DE CALIFICACIONES'), 0, 1, 'C');
 
     // Línea separadora
-    $pdf->Ln(15);
+    $pdf->Ln(5);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-    $pdf->Ln(10);
+    $pdf->Ln(5);
 
     // Información del estudiante
-    $pdf->SetFont('Times', 'B', 14);
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(0, 10, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
+    $pdf->SetFont('Times', 'B', 10);    
+    $pdf->Cell(190, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
     
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetFillColor(250, 250, 250);
@@ -252,13 +259,13 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
         $pdf->SetFont('Times', 'B', 11);
         $pdf->Cell(43, 8, utf8_decode_safe($student['curp']), 1, 1, 'L');
     } else {
-        $pdf->Cell(65, 8, '', 1, 1, 'L');
+        $pdf->Cell(75, 8, '', 1, 1, 'L');
     }
 
-    $pdf->Ln(10);
+    $pdf->Ln(8);
 
     // Promedio General
-    $pdf->SetFont('Times', 'B', 14);
+    $pdf->SetFont('Times', 'B', 12);
 
     // Determinar color del promedio general
     if ($generalAverage >= 9) {
@@ -271,63 +278,28 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
         $pdf->SetFillColor(158, 158, 158); // Gris fuerte
     }
 
-    $pdf->Cell(0, 12, utf8_decode_safe('PROMEDIO GENERAL: ' . number_format($generalAverage, 1)), 1, 1, 'C', true);
+    $pdf->Cell(190, 12, utf8_decode_safe('PROMEDIO GENERAL: ' . number_format($generalAverage, 1)), 1, 1, 'C', true);
     $pdf->Ln(8);
 
     // Tabla de calificaciones
-    $pdf->SetFont('Times', 'B', 14);
+    $pdf->SetFont('Times', 'B', 10);
     $pdf->SetFillColor(25, 46, 78);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(0, 10, utf8_decode_safe('CALIFICACIONES POR MATERIA'), 1, 1, 'C', true);
+    $pdf->Cell(190, 8, utf8_decode_safe('CALIFICACIONES POR MATERIA'), 1, 1, 'C', true);
 
     // Encabezado de la tabla
-    $pdf->SetFont('Times', 'B', 12);
+    $pdf->SetFont('Times', 'B', 11);
     $pdf->SetFillColor(255, 255, 255);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->Cell(60, 10, utf8_decode_safe('CAMPO FORMATIVO'), 1, 0, 'C', true);
-    $pdf->Cell(80, 10, utf8_decode_safe('MATERIA'), 1, 0, 'C', true);
-    $pdf->Cell(50, 10, utf8_decode_safe('CALIFICACIÓN'), 1, 1, 'C', true);
+    $pdf->Cell(60, 8, utf8_decode_safe('CAMPO FORMATIVO'), 1, 0, 'C', true);
+    $pdf->Cell(80, 8, utf8_decode_safe('MATERIA'), 1, 0, 'C', true);
+    $pdf->Cell(50, 8, utf8_decode_safe('CALIFICACIÓN'), 1, 1, 'C', true);
 
     // Filas de la tabla por áreas de aprendizaje
     $pdf->SetFont('Times', '', 10);
+    $pdf->SetTextColor(0, 0, 0);
 
     foreach ($learningAreas as $area) {
-        $subjectCount = count($area['subjects']);
-        
-        // Determinar color de fondo para el área
-        $areaAverage = $area['average'];
-        if ($areaAverage >= 9) {
-            $pdf->SetFillColor(76, 194, 23); // Verde fuerte
-        } elseif ($areaAverage >= 7) {
-            $pdf->SetFillColor(255, 251, 23); // Amarillo fuerte
-        } elseif ($areaAverage >= 0) {
-            $pdf->SetFillColor(242, 74, 41); // Rojo fuerte
-        } else {
-            $pdf->SetFillColor(158, 158, 158); // Gris fuerte
-        }
-        
-        // Primera fila: Área de aprendizaje con su promedio
-        $pdf->SetFont('Times', 'B', 10);
-        $y = $pdf->GetY();
-        
-        // Celda del área (usando rowspan simulado)
-        $areaText = utf8_decode_safe($area['name']);
-        
-        // Calcular altura necesaria para el área
-        $rowHeight = 8;
-        $totalHeight = $rowHeight * $subjectCount;
-        
-        // Dibujar celda del área manualmente para simular rowspan
-        $pdf->Rect($pdf->GetX(), $y, 60, $totalHeight, 'FD');
-        
-        // Centrar texto del área verticalmente
-        $middleY = $y + ($totalHeight / 2) - 2;
-        $pdf->SetXY($pdf->GetX() + 2, $middleY - 1);
-        $pdf->SetFont('Times', 'B', 10);
-        $pdf->Cell(56, 4, $areaText, 0, 0, 'C');
-        
-        // Ahora dibujar las materias y calificaciones
-        $currentY = $y;
         foreach ($area['subjects'] as $index => $subject) {
             // Determinar color de fondo según la calificación de la materia
             if ($subject['average'] >= 9) {
@@ -340,28 +312,38 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
                 $pdf->SetFillColor(158, 158, 158); // Gris fuerte
             }
             
-            // Posicionarse para la materia
-            $pdf->SetXY(70, $currentY);
-            $pdf->SetFont('Times', 'B', 10);
+            // Primera materia del área: mostrar nombre del área
+            if ($index === 0) {
+                $pdf->SetFont('Times', 'B', 10);
+                $pdf->Cell(60, 7, utf8_decode_safe($area['name']), 1, 0, 'C', true);
+            } else {
+                // Demás materias: celda del área vacía con fondo blanco
+                $pdf->SetFillColor(255, 255, 255); // Blanco
+                $pdf->Cell(60, 7, '', 1, 0, 'C', true);
+            }
             
             // Celda de materia
-            $pdf->Cell(80, $rowHeight, utf8_decode_safe($subject['name']), 1, 0, 'C', true);
+            $pdf->SetFont('Times', '', 10);
+            // Volver a setear el color según la materia
+            if ($subject['average'] >= 9) {
+                $pdf->SetFillColor(76, 194, 23);
+            } elseif ($subject['average'] >= 7) {
+                $pdf->SetFillColor(255, 251, 23);
+            } elseif ($subject['average'] >= 0) {
+                $pdf->SetFillColor(242, 74, 41);
+            } else {
+                $pdf->SetFillColor(158, 158, 158);
+            }
+            $pdf->Cell(80, 7, utf8_decode_safe($subject['name']), 1, 0, 'L', true);
             
             // Celda de calificación
-            $pdf->Cell(50, $rowHeight, number_format($subject['average'], 1), 1, 0, 'C', true);
-            
-            $currentY += $rowHeight;
+            $pdf->SetFont('Times', 'B', 10);
+            $pdf->Cell(50, 7, number_format($subject['average'], 1), 1, 1, 'C', true);
         }
-        
-        // Posicionarse después del área completa
-        $pdf->SetXY(10, $y + $totalHeight);
-        
-        // Añadir un pequeño espacio entre áreas
-        $pdf->Ln(2);
     }
 
     // Información adicional
-    $pdf->Ln(15);
+    $pdf->Ln(10);
 
     // Línea separadora
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
@@ -375,9 +357,8 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $idTeac
     $pdf->Ln(5);
 
     $pdf->SetFont('Times', 'I', 8);
-    // Obtener hora actual y restar 1 hora (diferencia entre Perú y México)
-    $mexicoTime = time() - 3600; // 3600 segundos = 1 hora
-    $pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s', $mexicoTime)), 0, 1, 'R');
+    // Obtener hora actual
+    $pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s')), 0, 1, 'R');
     $pdf->Cell(0, 4, utf8_decode_safe('Sistema de Gestión de Calificaciones - Versión 1.0'), 0, 1, 'R');
 
     return $pdf->Output('S'); // Devolver como string
@@ -572,8 +553,9 @@ if (empty($student['names'])) {
 
 try {
     // Crear el PDF con soporte para UTF-8
-    $pdf = new FPDF();
+    $pdf = new FPDF('P', 'mm', 'Letter');
     $pdf->AddPage();
+    $pdf->SetMargins(20, 15, 20);
 
     // Logo y encabezado (FPDF solo soporta JPG, PNG, GIF)
     $logoPaths = [
@@ -583,10 +565,15 @@ try {
         '../img/logo.gif'
     ];
     
+    // Encabezado profesional con logo centrado
+    $pageWidth = 216; // Ancho de página Letter en mm
+    $logoWidth = 20;
+    $logoX = ($pageWidth - $logoWidth) / 2;
+    
     foreach ($logoPaths as $logoPath) {
         if (file_exists($logoPath)) {
             try {
-                $pdf->Image($logoPath, 15, 15, 25, 25);
+                $pdf->Image($logoPath, $logoX, 12, $logoWidth, $logoWidth);
                 break;
             } catch (Exception $e) {
                 error_log("Error al cargar logo: " . $e->getMessage());
@@ -594,28 +581,29 @@ try {
         }
     }
 
-    // Título del documento - posicionado al lado derecho del logo
-    $pdf->SetXY(45, 18);
-    $pdf->SetFont('Times', 'B', 12);
-    $pdf->Cell(0, 8, utf8_decode_safe('ESCUELA PRIMARIA'), 0, 1, 'L');
-    $pdf->SetXY(45, 26);
-    $pdf->Cell(0, 8, utf8_decode_safe('GREGORIO TORRES QUINTERO NO.2308'), 0, 1, 'L');
-    $pdf->Ln(10);
+    // Nombre de la escuela centrado debajo del logo
+    $pdf->SetY(35);
+    $pdf->SetFont('Times', '', 10);
+    $pdf->Cell(0, 5, utf8_decode_safe('Escuela Primaria'), 0, 1, 'C');
+    $pdf->SetFont('Times', '', 10);
+    $pdf->Cell(0, 5, utf8_decode_safe('Gregorio Torres Quintero No.2308'), 0, 1, 'C');
     
-    // Título de boleta de calificaciones centrado
-    $pdf->SetFont('Times', 'B', 19);
+    $pdf->Ln(5);
+    
+    // Título de boleta centrado
+    $pdf->SetFont('Times', 'B', 14);
     $pdf->Cell(0, 10, utf8_decode_safe('BOLETA DE CALIFICACIONES'), 0, 1, 'C');
 
     // Línea separadora
-    $pdf->Ln(15);
+    $pdf->Ln(5);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-    $pdf->Ln(10);
+    $pdf->Ln(5);
 
 // Información del estudiante
-$pdf->SetFont('Times', 'B', 14);
 $pdf->SetFillColor(25, 46, 78);
 $pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 10, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
+$pdf->SetFont('Times', 'B', 10);
+$pdf->Cell(0, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
 
 $pdf->SetTextColor(0, 0, 0);
 $pdf->SetFont('Times', '', 11);
@@ -651,10 +639,10 @@ if (!empty($student['curp'])) {
     $pdf->Cell(65, 8, '', 1, 1, 'L');
 }
 
-$pdf->Ln(10);
+$pdf->Ln(8);
 
 // Promedio General
-$pdf->SetFont('Times', 'B', 14);
+$pdf->SetFont('Times', 'B', 12);
 
 // Determinar color del promedio general
 if ($generalAverage >= 9) {
@@ -671,61 +659,26 @@ $pdf->Cell(0, 12, utf8_decode_safe('PROMEDIO GENERAL: ' . number_format($general
 $pdf->Ln(8);
 
 // Tabla de calificaciones
-$pdf->SetFont('Times', 'B', 14);
+$pdf->SetFont('Times', 'B', 10);
 $pdf->SetFillColor(25, 46, 78);
 $pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 10, utf8_decode_safe('CALIFICACIONES POR MATERIA'), 1, 1, 'C', true);
+$pdf->Cell(0, 8, utf8_decode_safe('CALIFICACIONES POR MATERIA'), 1, 1, 'C', true);
 
 // Encabezado de la tabla con áreas de aprendizaje
-$pdf->SetFont('Times', 'B', 12);
+$pdf->SetFont('Times', 'B', 11);
 $pdf->SetFillColor(255, 255, 255);
 $pdf->SetTextColor(0, 0, 0);
-$pdf->Cell(60, 10, utf8_decode_safe('CAMPO FORMATIVO'), 1, 0, 'C', true);
-$pdf->Cell(80, 10, utf8_decode_safe('MATERIA'), 1, 0, 'C', true);
-$pdf->Cell(50, 10, utf8_decode_safe('CALIFICACIÓN'), 1, 1, 'C', true);
+$pdf->Cell(60, 8, utf8_decode_safe('CAMPO FORMATIVO'), 1, 0, 'C', true);
+$pdf->Cell(80, 8, utf8_decode_safe('MATERIA'), 1, 0, 'C', true);
+$pdf->Cell(50, 8, utf8_decode_safe('CALIFICACIÓN'), 1, 1, 'C', true);
 
 // Restablecer color de texto
 $pdf->SetTextColor(0, 0, 0);
 
 // Filas de la tabla por áreas de aprendizaje
-$pdf->SetFont('Times', 'B', 10);
+$pdf->SetFont('Times', '', 10);
 
 foreach ($learningAreas as $area) {
-    $subjectCount = count($area['subjects']);
-    
-    // Determinar color de fondo para el área
-    $areaAverage = $area['average'];
-    if ($areaAverage >= 9) {
-        $pdf->SetFillColor(76, 194, 23); // Verde fuerte
-    } elseif ($areaAverage >= 7) {
-        $pdf->SetFillColor(240, 240, 67); // Amarillo fuerte
-    } elseif ($areaAverage >= 0) {
-        $pdf->SetFillColor(242, 74, 41); // Rojo fuerte
-    } else {
-        $pdf->SetFillColor(158, 158, 158); // Gris fuerte
-    }
-    
-    // Primera fila: Área de aprendizaje con su promedio
-    $pdf->SetFont('Times', 'B', 10);
-    $y = $pdf->GetY();
-    
-    // Celda del área (usando rowspan simulado)
-    $areaText = utf8_decode_safe($area['name']);
-    
-    // Calcular altura necesaria para el área
-    $rowHeight = 8;
-    $totalHeight = $rowHeight * $subjectCount;
-    
-    // Dibujar celda del área manualmente para simular rowspan
-    $pdf->Rect($pdf->GetX(), $y, 60, $totalHeight, 'FD');
-    
-    // Centrar texto del área verticalmente
-    $middleY = $y + ($totalHeight / 2) - 2;
-    $pdf->SetXY($pdf->GetX() + 2, $middleY - 1);
-    $pdf->Cell(56, 4, $areaText, 0, 0, 'C');
-    
-    // Ahora dibujar las materias y calificaciones
-    $currentY = $y;
     foreach ($area['subjects'] as $index => $subject) {
         // Determinar color de fondo según la calificación de la materia
         if ($subject['average'] >= 9) {
@@ -738,28 +691,38 @@ foreach ($learningAreas as $area) {
             $pdf->SetFillColor(158, 158, 158); // Gris fuerte
         }
         
-        // Posicionarse para la materia
-        $pdf->SetXY(70, $currentY);
-        $pdf->SetFont('Times', '', 10);
+        // Primera materia del área: mostrar nombre del área
+        if ($index === 0) {
+            $pdf->SetFont('Times', 'B', 10);
+            $pdf->Cell(60, 7, utf8_decode_safe($area['name']), 1, 0, 'C', true);
+        } else {
+            // Demás materias: celda del área vacía con fondo blanco
+            $pdf->SetFillColor(255, 255, 255); // Blanco
+            $pdf->Cell(60, 7, '', 1, 0, 'C', true);
+        }
         
         // Celda de materia
-        $pdf->Cell(80, $rowHeight, utf8_decode_safe($subject['name']), 1, 0, 'L', true);
+        $pdf->SetFont('Times', '', 10);
+        // Volver a setear el color según la materia
+        if ($subject['average'] >= 9) {
+            $pdf->SetFillColor(76, 194, 23);
+        } elseif ($subject['average'] >= 7) {
+            $pdf->SetFillColor(240, 240, 67);
+        } elseif ($subject['average'] >= 0) {
+            $pdf->SetFillColor(242, 74, 41);
+        } else {
+            $pdf->SetFillColor(158, 158, 158);
+        }
+        $pdf->Cell(80, 7, utf8_decode_safe($subject['name']), 1, 0, 'L', true);
         
         // Celda de calificación
-        $pdf->Cell(50, $rowHeight, number_format($subject['average'], 1), 1, 0, 'C', true);
-        
-        $currentY += $rowHeight;
+        $pdf->SetFont('Times', 'B', 10);
+        $pdf->Cell(50, 7, number_format($subject['average'], 1), 1, 1, 'C', true);
     }
-    
-    // Posicionarse después del área completa
-    $pdf->SetXY(10, $y + $totalHeight);
-    
-    // Añadir un pequeño espacio entre áreas
-    $pdf->Ln(2);
 }
 
 // Información adicional
-$pdf->Ln(15);
+$pdf->Ln(10);
 
 // Línea separadora
 $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
@@ -773,9 +736,8 @@ $pdf->Cell(0, 5, utf8_decode_safe('Excelente: 9.0 - 10.0  |  Bien: 7.0 - 8.9  | 
 $pdf->Ln(5);
 
 $pdf->SetFont('Times', 'I', 8);
-// Obtener hora actual y restar 1 hora (diferencia entre Perú y México)
-$mexicoTime = time() - 3600; // 3600 segundos = 1 hora
-$pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s', $mexicoTime)), 0, 1, 'R');
+// Obtener hora actual
+$pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s')), 0, 1, 'R');
 $pdf->Cell(0, 4, utf8_decode_safe('Sistema de Gestión de Calificaciones - Versión 1.0'), 0, 1, 'R');
 
 // Limpiar cualquier output buffer antes de generar el PDF

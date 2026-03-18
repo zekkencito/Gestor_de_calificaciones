@@ -83,45 +83,50 @@ option{
 
 /* Estilos para botones de acciones en la tabla */
 .botonVer, #botonVer {
-    border: none;
-    background: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.3s ease;
+    border: none !important;
+    background-color: transparent !important;
+    cursor: pointer !important;
+    font-size: 1.5rem !important;
+    color: black !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 auto !important;
 }
 
 .botonVer:hover, #botonVer:hover {
-    transform: scale(1.1);
+    color: #192E4E !important;
+    transform: none;
 }
 
 /* Estilos para el botón de reporte */
 .botonReporte {
     border: none !important;
-    background: none !important;
     background-color: transparent !important;
     cursor: pointer !important;
-    font-size: 2rem !important;
+    font-size: 1.5rem !important;
+    color: black !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.2s ease !important;
     padding: 0 !important;
-    padding-left: 5% !important;
-    width: 100% !important;
+    width: auto !important;
     height: auto !important;
     margin: 0 auto !important;
 }
 
 .botonReporte:hover {
-    transform: scale(1.1) !important;
+    color: #192E4E !important;
+    transform: none;
 }
 
 .botonReporte i {
-    font-size: 2rem !important;
+    font-size: 1.5rem !important;
     display: block !important;
 }
 

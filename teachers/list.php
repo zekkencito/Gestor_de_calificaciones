@@ -233,13 +233,13 @@ if ($selectedGroup) {
                             <div class="card-body">
                                 <div class="row g-3">
                                     <div class="col-md-12">
-                                        <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
+                                        <div class="alert alert-success mb-0 d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong><i class="bi bi-calendar-date me-2"></i>Año Escolar:</strong> 
+                                                <i class="bi bi-calendar-date me-2"></i><strong>Año Escolar:</strong> 
                                                 <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
                                             </div>
                                             <div>
-                                                <strong><i class="bi bi-calendar3 me-2"></i>Trimestre:</strong> 
+                                                <i class="bi bi-calendar3 me-2"></i><strong>Trimestre:</strong> 
                                                 <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
                                             </div>
                                         </div>
@@ -264,8 +264,8 @@ if ($selectedGroup) {
                                 <div class="row g-3 mt-2">
                                     <div class="col-md-12" id="contenedorBotonDescargar">
                                         <button type="button" id="descargarGrupoBtn" 
-                                                class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> w-100" 
-                                                <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
+                                                class="btn <?php echo $descargasHabilitadas ? 'w-100' : 'btn-secondary w-100'; ?>" 
+                                                <?php if($descargasHabilitadas) echo 'style="background-color: #192E4E; border-color: #192E4E; color: white;"'; else echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                                             <i class="fas fa-download me-2"></i> 
                                             <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                                         </button>
@@ -483,6 +483,8 @@ if ($selectedGroup) {
                 border-radius: 8px;
                 font-weight: 500;
                 transition: all 0.2s ease;
+                justify-content: center;
+                align-items: center;
             }
             
             .table .btn-info {
@@ -615,7 +617,6 @@ if ($selectedGroup) {
 
                 <div class="modal-body">
                     <div class="mb-4" id="divCamposFormativos">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">Campos Formativos</h6>
                         
                         <div id="loadingGrades" class="text-center my-4">
                             <div class="spinner-border text-primary" role="status">
@@ -1062,7 +1063,7 @@ if ($selectedGroup) {
 
                     // Mostrar promedio general
                     const avgItem = document.createElement('div');
-                    avgItem.className = 'alert alert-primary fw-bold text-center mb-3';
+                    avgItem.className = 'alert fw-bold text-center mb-3';
                     
                     // Determinar el color del promedio
                     let avgBadgeClass = 'bg-secondary';
@@ -1334,12 +1335,12 @@ if ($selectedGroup) {
             
             // Actualizar la información del estudiante
             studentInfoDiv.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="alert alert-success d-flex justify-content-between align-items-center f-6">
                     <div>
-                        <strong>Alumno:</strong> ${studentName}<br>
+                        <span class="fw-bold">Alumno:</span> ${studentName}
                     </div>
                     <div class="text-end">
-                        <strong>Grado:</strong> ${gradeInfo}° <strong>Grupo:</strong> ${groupInfo}
+                        <span class="fw-bold">Grado:</span> ${gradeInfo}° <span class="fw-bold">Grupo:</span> ${groupInfo}
                     </div>
                 </div>
             `;

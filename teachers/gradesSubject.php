@@ -214,7 +214,7 @@ if ($selectedYear && $idSchoolQuarter) {
     ?>
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
-     <main class="flex-grow-1 col-9 p-0 ">
+     <main class="flex-grow-1 p-0 w-100">
         <?php include "../layouts/headerTeacher.php"; ?>
         
         <!-- Header de la página -->
@@ -274,7 +274,7 @@ if ($selectedYear && $idSchoolQuarter) {
                                             </button>
                                             <button class="btn  flex-fill" id="removeColumnBtn">
                                                 <i class="bi bi-trash3-fill me-2"></i>
-                                                Eliminar
+                                                Eliminar Criterio
                                             </button>
                                         </div>
                                     </div>
@@ -319,7 +319,9 @@ if ($selectedYear && $idSchoolQuarter) {
                                                     $num_criterios = max(3, $num_criterios);
                                                     for ($c = 1; $c <= $num_criterios; $c++):
                                                 ?>
-                                                <th class="fw-semibold text-center">C<?php echo $c; ?></th>
+                                                <th class="fw-semibold text-center criteria-header" data-col-index="<?php echo $c; ?>" style="cursor: pointer;" title="Doble clic para renombrar">
+                                                    <span class="criteria-name">C<?php echo $c; ?></span>
+                                                </th>
                                                 <?php endfor; ?>
                                                 <th class="fw-semibold text-center">Promedio</th>
                                             </tr>
@@ -383,7 +385,6 @@ if ($selectedYear && $idSchoolQuarter) {
                         <!-- Panel de acciones -->
                         <div class="card-footer bg-light border-0 d-flex justify-content-end">
                             <button id="guardar" class="btn btn-primary btn-lg px-4">
-                                <i class="bi bi-floppy2-fill me-2"></i>
                                 Guardar
                             </button>
                         </div>
@@ -673,10 +674,12 @@ if ($selectedYear && $idSchoolQuarter) {
 
                         // Esperar un momento para que se creen los elementos
                         setTimeout(() => {
-                            // Establecer los porcentajes guardados
+                            // Establecer los porcentajes guardados y actualizar los nombres de criterios
                             data.data.forEach((criteria, index) => {
                                 const columnNumber = index + 1;
                                 const percentageSelect = document.querySelector(`#C${columnNumber}-percentage`);
+                                const header = document.querySelector(`.criteria-header[data-col-index='${columnNumber}']`);
+                                
                                 if (percentageSelect) {
                                     percentageSelect.value = criteria.percentage.toString(); // <-- valor como string
                                     percentageSelect.setAttribute('data-criteria-id', criteria.idEvalCriteria);
@@ -684,6 +687,15 @@ if ($selectedYear && $idSchoolQuarter) {
                                     document.querySelectorAll(`.grade-input[data-col-index='${columnNumber}']`).forEach(input => {
                                         input.setAttribute('data-criteria-id', criteria.idEvalCriteria);
                                     });
+                                }
+                                
+                                // Actualizar el nombre del criterio en el encabezado
+                                if (header) {
+                                    const nameSpan = header.querySelector('.criteria-name');
+                                    if (nameSpan && criteria.name) {
+                                        nameSpan.textContent = criteria.name;
+                                        header.setAttribute('data-criteria-name', criteria.name);
+                                    }
                                 }
                             });
                             
@@ -1146,6 +1158,73 @@ if ($selectedYear && $idSchoolQuarter) {
             document.querySelectorAll('#dataTable tbody tr').forEach(row => calcularPromedioFila(row));
         }
     });
+
+    // --- NUEVA FUNCIONALIDAD: RENOMBRAR CRITERIOS POR MATERIA ---
+    // Hacer que los encabezados de criterios sean editables al doble clic
+    document.addEventListener('dblclick', function(e) {
+        const header = e.target.closest('.criteria-header');
+        if (!header) return;
+        
+        const nameSpan = header.querySelector('.criteria-name');
+        if (!nameSpan) return; // Si no es el span del nombre, no hacer nada
+        
+        const currentName = nameSpan.textContent.trim();
+        
+        // Crear un input editable
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentName;
+        input.className = 'form-control form-control-sm';
+        input.style.maxWidth = '120px';
+        
+        // Reemplazar el span por el input
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+        
+        const saveEdit = () => {
+            const newName = input.value.trim() || currentName;
+            const newSpan = document.createElement('span');
+            newSpan.className = 'criteria-name';
+            newSpan.textContent = newName;
+            input.replaceWith(newSpan);
+            
+            // Guardar el cambio en el atributo data
+            header.setAttribute('data-criteria-name', newName);
+        };
+        
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveEdit();
+        });
+    });
+
+    // Modificar guardarCriteriosEvaluacion para enviar los nombres editados
+    window.guardarCriteriosEvaluacionOriginal = window.guardarCriteriosEvaluacion;
+    window.guardarCriteriosEvaluacion = function(idSubject, idSchoolYear, idSchoolQuarter) {
+        const criterias = [];
+        document.querySelectorAll('.percentage-select').forEach((select, idx) => {
+            const colIndex = idx + 1;
+            const header = document.querySelector(`.criteria-header[data-col-index='${colIndex}']`);
+            const name = header && header.getAttribute('data-criteria-name') 
+                ? header.getAttribute('data-criteria-name')
+                : `C${colIndex}`;
+            criterias.push({
+                name: name,
+                percentage: parseInt(select.value) || 0
+            });
+        });
+        return fetch('saveEvaluationCriteria.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                idSubject: idSubject,
+                idSchoolYear: idSchoolYear,
+                idSchoolQuarter: idSchoolQuarter,
+                criterias: criterias
+            })
+        }).then(response => response.json());
+    };
     </script>
 
 </body>

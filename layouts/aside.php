@@ -60,8 +60,8 @@
                     aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-primary text-white border-0">
-                                <h5 id="tituloModal" class="modal-title">
+                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                                <h5 class="modal-title" style="font-size: 1.25rem;">
                                     <i class="bi bi-calendar-date-fill me-2"></i>
                                     Configurar Plazo de Calificaciones
                                 </h5>
@@ -113,7 +113,7 @@
                                     <i class="bi bi-trash me-1"></i>
                                     Quitar Fecha
                                 </button>
-                                <button class="btn btn-primary" type="button" id="btnGuardarFecha">
+                                <button class="btn" type="button" id="btnGuardarFecha" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                                     <i class="bi bi-check-circle me-1"></i>
                                     Guardar
                                 </button>
@@ -126,8 +126,8 @@
                     aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-primary text-white border-0">
-                                <h5 id="tituloModal" class="modal-title">
+                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                                <h5 class="modal-title" style="font-size: 1.25rem;">
                                     <i class="bi bi-calendar-event-fill me-2"></i>
                                     Ciclo Escolar <span id="añoActualDisplay"></span>
                                 </h5>
@@ -158,7 +158,7 @@
                                             <input type="text" class="form-control border-secondary flatpickr-date" id="nuevoFin" placeholder="Seleccionar fecha" readonly>
                                         </div>
                                         <div class="col-md-2 d-flex align-items-end">
-                                            <button class="btn btn-primary w-100" id="btnCrearCiclo">
+                                            <button class="btn w-100" id="btnCrearCiclo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                                                 <i class="bi bi-plus-circle me-1"></i>
                                                 Crear
                                             </button>
@@ -190,8 +190,8 @@
                                                     </label>
                                                     <input type="text" class="form-control border-secondary flatpickr-date" id="editFin" placeholder="Seleccionar fecha" readonly>
                                                 </div>
-                                                <div class="col-12">
-                                                    <button class="btn btn-success" id="btnGuardarCiclo">
+                                                <div class="d-flex justify-content-end">
+                                                    <button class="btn" id="btnGuardarCiclo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                                                         <i class="bi bi-check-circle me-1"></i>
                                                         Guardar Cambios
                                                     </button>
@@ -211,8 +211,8 @@
                     aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-primary text-white border-0">
-                                <h5 id="tituloModal" class="modal-title">
+                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                                <h5 class="modal-title" style="font-size: 1.25rem;">
                                     <i class="bi bi-diagram-3-fill me-2"></i>
                                     Administrar Grupos
                                 </h5>
@@ -255,7 +255,7 @@
                                             maxlength="2" placeholder="Ej: 1">
                                     </div>
                                     <div class="col-md-2 d-flex align-items-end">
-                                        <button class="btn btn-primary w-100" id="btnAgregarGrupo">
+                                        <button class="btn w-100" id="btnAgregarGrupo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease; margin-bottom: 15px;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                                             <i class="bi bi-plus-circle me-1"></i>
                                             Agregar
                                         </button>
@@ -272,8 +272,8 @@
                     aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-primary text-white border-0">
-                                <h5 id="tituloModal" class="modal-title">
+                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                                <h5 class="modal-title" style="font-size: 1.25rem;">
                                     <i class="bi bi-calendar3-range me-2"></i>
                                     Trimestres del Ciclo Escolar <span id="añoPeriodosDisplay"></span>
                                 </h5>
@@ -281,7 +281,7 @@
                                     aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-info">
+                                <div class="alert alert-warning">
                                     <i class="bi bi-info-circle me-2"></i>
                                     Define las fechas de inicio y fin para cada uno de los 3 trimestres del ciclo escolar actual.
                                 </div>
@@ -544,7 +544,7 @@
                     data.groups.forEach(g => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `<td>${g.group_}</td><td>${g.grade}</td>
-                        <td><button style="height: 5vh;" class='buttonDelete1' onclick='eliminarGrupo(${g.idGroup})'>Borrar</button></td>`;
+                        <td><button style="height: 5vh;" class='buttonDelete1' onclick='eliminarGrupo(${g.idGroup})'>Eliminar</button></td>`;
                         tbody.appendChild(tr);
                     });
                 } else {
@@ -626,8 +626,8 @@
                 const card = document.createElement('div');
                 card.className = 'card mb-3';
                 card.innerHTML = `
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0">
+                    <div class="card-header text-white" style="background-color: #192E4E;">
+                        <h6 class="mb-0" style="font-size: 1.125rem;">
                             <i class="bi bi-calendar3 me-2"></i>${q.name}
                         </h6>
                     </div>
@@ -651,7 +651,10 @@
                                        value="${q.endDate || ''}" placeholder="Seleccionar fecha" readonly>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button class="btn btn-success w-100" 
+                                <button class="btn w-100" 
+                                        style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease; margin-bottom: 13px;"
+                                        onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'"
+                                        onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
                                         onclick="guardarFechasTrimestre(${q.idSchoolQuarter})">
                                     <i class="bi bi-check-circle me-1"></i>
                                     Guardar

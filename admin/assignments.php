@@ -25,12 +25,15 @@ $resultYears2 = $conexion->query($sqlYears1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Asignaciones</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/stylesBoot.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/admin/assignment.css">
+    <link rel="stylesheet" href="../css/stylesBoot.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../css/styles.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../css/admin/assignment.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
 
     <!-- TIPOGRAFIA -->
@@ -47,7 +50,7 @@ $resultYears2 = $conexion->query($sqlYears1);
     
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100vh; width: 100%; margin: 0; padding: 0; overflow: hidden;">
+<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -58,7 +61,7 @@ $resultYears2 = $conexion->query($sqlYears1);
     ?>
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
-     <main class="flex-grow-1 col-9 p-0" style="height: 100vh; overflow-y: auto;">
+     <main class="flex-grow-1 col-9 p-0">
         <?php include "../layouts/header.php"; ?>
         
         <!-- Header de la página -->
@@ -80,64 +83,77 @@ $resultYears2 = $conexion->query($sqlYears1);
 
         <!-- Contenido principal -->
         <div class="container-fluid px-4">
-            <!-- Controles superiores -->
-            <div class="row mb-4">
+            <!-- Panel de filtros -->
+            <div class="row mb-4 pb-4">
                 <div class="col-12">
-                    <div class="d-flex justify-content-end align-items-center gap-3 flex-wrap">
-                        <!-- Filtro por grupo -->
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="form-label mb-0 fw-semibold text-nowrap">
-                                <i class="bi bi-collection me-1"></i>
-                                Filtrar por grupo:
-                            </label>
-                            <select class="form-select form-select-sm border-secondary" id="filterGrupo" style="min-width: 200px;">
-                                <option value="">Todos los grupos</option>
-                                <?php
-                                $sqlGroupsFilter = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                                $resultGroupsFilter = $conexion->query($sqlGroupsFilter);
-                                while($groupFilter = $resultGroupsFilter->fetch_assoc()) { ?>
-                                    <option value="<?php echo $groupFilter['idGroup']; ?>"><?php echo htmlspecialchars($groupFilter['grupo']); ?></option>
-                                <?php } ?>
-                            </select>
+                    <div class="filter-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2 text-primary"></i>
+                                    Filtrar Asignaciones
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label for="filterGrupo" class="form-label fw-semibold">
+                                            <i class="bi bi-collection me-1"></i>
+                                            Filtrar por grupo:
+                                        </label>
+                                        <div class="form-select-container">
+                                            <select class="form-select border-secondary" id="filterGrupo">
+                                                <option value="">Todos los grupos</option>
+                                                <?php
+                                                $sqlGroupsFilter = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                                $resultGroupsFilter = $conexion->query($sqlGroupsFilter);
+                                                while($groupFilter = $resultGroupsFilter->fetch_assoc()) { ?>
+                                                    <option value="<?php echo $groupFilter['idGroup']; ?>"><?php echo htmlspecialchars($groupFilter['grupo']); ?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 d-flex align-items-end pt-4">
+                                        <button type="button" class="btn w-100" style="background-color: #192E4E; border-color: #192E4E; color: white; margin-top: 5px; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                                            <i class="bi bi-plus-lg me-2"></i>
+                                            Crear Asignación
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <!-- Botón crear asignación -->
-                        <button type="button" class="btn btn-primary btn-lg shadow" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Crear Nueva Asignación
-                        </button>
                     </div>
                 </div>
             </div>
-            
+
+        <!-- Contenido principal - TABLA (Sin padding) -->
+        <div class="container-fluid" style="padding-left: 0; padding-right: 0;">
             <!-- Tabla de asignaciones -->
-            <div class="table-card mt-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-light border-0">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
+            <div class="row" style="margin-left: 0; margin-right: 0;">
+                <div class="col-12" style="padding-left: 0; padding-right: 0;">
+                    <div class="table-card">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-list-check me-2 text-primary"></i>
                                     Asignaciones Registradas
                                 </h5>
                             </div>
-                            
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="tabla">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th class="text-center"><i class="bi bi-calendar me-1"></i>Ciclo Escolar</th>
-                                        <th class="text-center"><i class="bi bi-collection me-1"></i>Grupo</th>
-                                        <th class="text-center"><i class="bi bi-book me-1"></i>Materias</th>
-                                        <th class="text-center"><i class="bi bi-person me-1"></i>Apellido Paterno</th>
-                                        <th class="text-center"><i class="bi bi-person me-1"></i>Apellido Materno</th>
-                                        <th class="text-center"><i class="bi bi-person-check me-1"></i>Nombre</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tbody">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="tabla">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="fw-semibold text-center">Ciclo Escolar</th>
+                                                <th class="fw-semibold text-center">Grupo</th>
+                                                <th class="fw-semibold text-center">Materias</th>
+                                                <th class="fw-semibold text-center">Apellido Paterno</th>
+                                                <th class="fw-semibold text-center">Apellido Materno</th>
+                                                <th class="fw-semibold text-center">Nombre</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody">
                     <?php
                     // Filtro PHP para mostrar solo los resultados buscados (solo para carga inicial)
                     $where = '';
@@ -195,7 +211,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                             
                             echo '<tr class="align-middle">';
                             echo '<td class="text-center">' . $rowTxtCiclo . '</td>';
-                            echo '<td class="text-center"><span class="badge bg-primary">' . $rowTxtGrupo . '</span></td>';
+                            echo '<td class="text-center"><span class="badge text-white" style="background-color: #192E4E;">' . $rowTxtGrupo . '</span></td>';
                             
                             // Columna de Materias con Badges Interactivos
                             echo '<td class="text-center">';
@@ -210,7 +226,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                                 
                                 // Badge interactivo
                                 echo '<div class="btn-group btn-group-sm" role="group">';
-                                echo '<span class="btn btn-info btn-sm disabled" style="opacity: 1; color: #000; font-weight: 500;">' . $subName . '</span>';
+                                echo '<span class="btn btn-sm disabled text-white" style="background-color: #192E4E; opacity: 1; font-weight: 500;">' . $subName . '</span>';
                                 
                                 // Botón Editar
                                 echo '<button type="button" class="btn btn-warning btn-sm btn-edit-subject" '
@@ -228,14 +244,14 @@ $resultYears2 = $conexion->query($sqlYears1);
                                     . '</button>';
                                     
                                 // Botón Eliminar
-                                echo '<button type="button" class="btn btn-danger btn-sm btn-delete-subject" '
+                                echo '<button type="button" class="btn btn-sm btn-delete-subject" style="background-color: #dc3545; color: white; border: none;" '
                                     . 'data-bs-toggle="modal" data-bs-target="#deleteModal" '
                                     . 'data-idgrupo="' . $rowIdGroup . '" '
                                     . 'data-idteacher="' . $rowIdTeacher . '" '
                                     . 'data-idyear="' . $rowIdYear . '" '
                                     . 'data-idsubject="' . $subId . '" '
                                     . 'title="Eliminar ' . $subName . '">'
-                                    . '<i class="bi bi-trash-fill"></i>'
+                                    . '<i class="bi bi-trash-fill" style="color: white;"></i>'
                                     . '</button>';
                                 echo '</div>';
                             }
@@ -244,7 +260,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                             
                             echo '<td class="text-center">' . htmlspecialchars($row['lastnamePa']) . '</td>';
                             echo '<td class="text-center">' . htmlspecialchars($row['lastnameMa']) . '</td>';
-                            echo '<td class="text-center fw-semibold">' . htmlspecialchars($row['names']) . '</td>';
+                            echo '<td class="text-center">' . htmlspecialchars($row['names']) . '</td>';
                             
                             echo '</tr>';
                         }
@@ -262,18 +278,287 @@ $resultYears2 = $conexion->query($sqlYears1);
                 </div>
             </div>
         </div>
+
+        <style>
+            /* Estilos para el header */        
+            .page-header {
+                text-align: center;
+                padding: 1.5rem 0 1rem 0;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 15px;
+                margin-top: 4rem;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .page-title {
+                color: #192E4E;
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 0.3rem;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .page-subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 0;
+                opacity: 0.8;
+            }
+
+            /* Tarjetas */
+            .filter-card, .table-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            
+            .filter-card:hover, .table-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+            }
+            
+            .filter-card .card, .table-card .card {
+                border-radius: 15px;
+                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+                border: none;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            }
+            
+            .filter-card .card-header, .table-card .card-header {
+                border-radius: 15px 15px 0 0;
+                border-bottom: 1px solid #e9ecef;
+                background-color: #f8f9fa;
+            }
+
+            .filter-card .card-title, .table-card .card-title {
+                color: #192E4E;
+                font-weight: 600;
+                margin-bottom: 0;
+            }
+
+            /* Tabla Mejorada */
+            .table-responsive {
+                border-radius: 0 0 15px 15px;
+                width: 100%;
+                overflow: hidden;
+            }
+            
+            .table {
+                margin-bottom: 0 !important;
+                width: 100%;
+                table-layout: auto;
+            }
+            
+            .table th {
+                background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+                border: none !important;
+                padding: 1rem !important;
+                font-weight: 600 !important;
+                color: #495057 !important;
+                text-transform: uppercase !important;
+                font-size: 0.875rem !important;
+                letter-spacing: 0.5px !important;
+            }
+            
+            .table tbody tr {
+                transition: all 0.2s ease;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .table tbody tr:hover {
+                background-color: rgba(13, 110, 253, 0.08) !important;
+                box-shadow: inset 0 0 0 1px rgba(13, 110, 253, 0.1);
+            }
+
+            .table tbody tr:last-child td {
+                border-bottom: none !important;
+            }
+
+            /* Selector específico para celdas de tabla */
+            .table-card .table tbody td {
+                padding: 1rem !important;
+                border: none !important;
+                border-bottom: 1px solid #f1f3f4 !important;
+                vertical-align: middle !important;
+                font-weight: 500 !important;
+            }
+
+            /* Botones en tabla */
+            .table .btn {
+                border-radius: 6px;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                padding: 0.4rem 0.7rem !important;
+                font-size: 0.85rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.3rem;
+                border: none !important;
+            }
+
+            .table .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+            }
+            
+            .table .btn-info {
+                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+                color: white !important;
+            }
+
+            .table .btn-info:hover {
+                background: linear-gradient(135deg, #138496 0%, #0d5860 100%) !important;
+            }
+
+            .table .btn-warning {
+                background-color: #ffc107 !important;
+                color: #000 !important;
+            }
+
+            .table .btn-warning:hover {
+                background-color: #ffb300 !important;
+            }
+
+            .table .btn-danger {
+                background-color: #dc3545 !important;
+                color: white !important;
+            }
+
+            .table .btn-danger:hover {
+                background-color: #c82333 !important;
+            }
+            
+            .table .btn-primary {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+                color: white !important;
+            }
+
+            .table .btn-primary:hover {
+                background: linear-gradient(135deg, #0056b3 0%, #003d82 100%) !important;
+            }
+
+            /* Botones de retina */
+            .botonVer, #botonVer {
+                border: none !important;
+                background-color: transparent !important;
+                cursor: pointer !important;
+                font-size: 1.5rem !important;
+                color: black !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                transition: all 0.2s ease !important;
+                padding: 0 !important;
+                width: auto !important;
+                height: auto !important;
+                margin: 0 auto !important;
+            }
+
+            .botonVer:hover, #botonVer:hover {
+                color: #192E4E !important;
+                transform: scale(1.15) !important;
+            }
+
+            .botonReporte {
+                border: none !important;
+                background-color: transparent !important;
+                cursor: pointer !important;
+                font-size: 1.5rem !important;
+                color: black !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                transition: all 0.2s ease !important;
+                padding: 0 !important;
+                width: auto !important;
+                height: auto !important;
+                margin: 0 auto !important;
+            }
+
+            .botonReporte:hover {
+                color: #192E4E !important;
+                transform: scale(1.15) !important;
+            }
+
+            .botonReporte i {
+                font-size: 1.5rem !important;
+                display: block !important;
+            }
+
+            /* Badges */
+            .badge {
+                padding: 0.5rem 0.75rem;
+                font-weight: 600;
+                font-size: 0.85rem;
+                border-radius: 6px;
+                transition: all 0.2s ease;
+            }
+
+            .badge:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+
+            /* Estado vacío */
+            .empty-state {
+                padding: 2rem;
+                text-align: center;
+            }
+
+            .empty-state i {
+                opacity: 0.5;
+            }
+
+            /* Responsividad */
+            @media (max-width: 768px) {
+                .page-title {
+                    font-size: 2rem;
+                }
+                
+                .page-header {
+                    padding: 1rem 0 0.75rem 0;
+                    margin-bottom: 1rem;
+                }
+
+                .table th {
+                    font-size: 0.75rem;
+                    padding: 0.8rem 0.6rem !important;
+                }
+
+                .table-card .table tbody td {
+                    padding: 0.8rem 0.6rem !important;
+                    font-size: 0.9rem;
+                }
+
+                .table .btn {
+                    padding: 0.3rem 0.6rem !important;
+                    font-size: 0.75rem;
+                }
+                
+                .filter-card .card-body .row {
+                    flex-direction: column;
+                }
+                
+                .filter-card .card-body .col-md-4 {
+                    margin-bottom: 1rem;
+                }
+
+                .botonVer, #botonVer, .botonReporte {
+                    font-size: 1.25rem !important;
+                }
+            }
+        </style>
     </main>
-    <!-- END MAIN CONTENT --> 
+    <!-- END MAIN CONTENT -->
         <!-- MODAL EDIT-->
         <div class="modal fade modal-m" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content border-0 shadow">
-                    <div class="modal-header bg-primary text-white border-0">
-                        <h5 class="modal-title" id="editModalLabel">
+                    <div class="modal-header border-0" style="background-color: #192E4E;">
+                        <h5 class="modal-title text-white fw-bold" id="editModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                             <i class="bi bi-pencil-square me-2"></i>
                             Editar Asignación
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form id="formEditAssignment">
                         <div class="modal-body">
@@ -350,12 +635,12 @@ $resultYears2 = $conexion->query($sqlYears1);
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="deleteModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="deleteModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         Confirmar Eliminación
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center py-3">
@@ -369,7 +654,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                         <i class="bi bi-x-circle me-1"></i>
                         Cancelar
                     </button>
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                    <button type="button" class="btn" style="background-color: #192E4E; color: white; border: none;" data-bs-toggle="modal" data-bs-target="#confirmModal">
                         <i class="bi bi-trash3 me-1"></i>
                         Eliminar
                     </button>
@@ -382,12 +667,12 @@ $resultYears2 = $conexion->query($sqlYears1);
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="confirmModalLabel">
+                <div class="modal-header border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title text-white fw-bold" id="confirmModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
                         <i class="bi bi-shield-exclamation me-2"></i>
                         Confirmación Final
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center py-3">
@@ -401,7 +686,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                         <i class="bi bi-arrow-left me-1"></i>
                         Cambié de Opinión
                     </button>
-                    <button type="button" class="btn btn-danger btnEliminar" id="eliminar">
+                    <button type="button" class="btn btnEliminar" id="eliminar" style="background-color: #dc3545; color: white; border: none;">
                         <i class="bi bi-trash3-fill me-1"></i>
                         Eliminar Definitivamente
                     </button>
@@ -640,8 +925,8 @@ $resultYears2 = $conexion->query($sqlYears1);
     <div class="modal fade" id="addAssignmentModal" tabindex="-1" aria-labelledby="addAssignmentModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="addAssignmentModalLabel">
+                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                    <h5 class="modal-title" id="addAssignmentModalLabel" style="font-size: 1.25rem;">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nueva Asignación
                     </h5>
@@ -714,17 +999,17 @@ $resultYears2 = $conexion->query($sqlYears1);
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Ciclo Escolar:</strong> Esta asignación se creará para el ciclo escolar del año actual (<?php echo date('Y'); ?>)
                         </div>
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-1"></i>
-                                Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>
-                                Crear Asignación
-                            </button>
-                        </div>
                     </form>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn" form="form" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Crear Asignación
+                    </button>
                 </div>
             </div>
         </div>
