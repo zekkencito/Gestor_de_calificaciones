@@ -633,7 +633,8 @@ if ($selectedGroup) {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button id="btnVerDetalles" type="button" 
-                            class="btn <?php echo $descargasHabilitadas ? 'btn-primary' : 'btn-secondary'; ?>"
+                            class="btn"
+                            style="background-color: #192E4E; color: white; border: none; <?php echo !$descargasHabilitadas ? 'opacity: 0.6;' : ''; ?>"
                             <?php if(!$descargasHabilitadas) echo 'title="Disponible después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                         <?php echo $descargasHabilitadas ? 'Imprimir boleta' : 'Boleta disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                     </button>
@@ -1676,7 +1677,7 @@ if ($selectedGroup) {
                                 <td>${report.fecha}</td>
                                 <td>${report.teacherFullName || 'N/A'}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-danger me-2" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
+                                    <button style="background-color: #FF0000; color: white; border: none; padding: 0.375rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; margin-right: 0.5rem; cursor: pointer;" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
                                         <i class="bi bi-file-pdf"></i> Ver PDF
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary" onclick="viewReportDetails(${report.idConductReport})" title="Ver detalles">

@@ -96,7 +96,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-8">
+                                    <div class="col-md-6">
                                         <label for="filterGrupo" class="form-label fw-semibold">
                                             <i class="bi bi-collection me-1"></i>
                                             Filtrar por grupo:
@@ -113,8 +113,26 @@ $resultYears2 = $conexion->query($sqlYears1);
                                             </select>
                                         </div>
                                     </div>
+
+                                    <div class="col-md-6">
+                                        <label for="filterDocente" class="form-label fw-semibold">
+                                            <i class="bi bi-person-workspace me-1"></i>
+                                            Filtrar por docente:
+                                        </label>
+                                        <div class="form-select-container">
+                                            <select class="form-select border-secondary" id="filterDocente">
+                                                <option value="">Todos los docentes</option>
+                                                <?php
+                                                $sqlDocentesFilter = "SELECT t.idTeacher, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS nombre FROM teachers t INNER JOIN users u ON t.idUser = u.idUser INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo ORDER BY ui.names, ui.lastnamePa, ui.lastnameMa";
+                                                $resultDocentesFilter = $conexion->query($sqlDocentesFilter);
+                                                while($docenteFilter = $resultDocentesFilter->fetch_assoc()) { ?>
+                                                    <option value="<?php echo $docenteFilter['idTeacher']; ?>"><?php echo htmlspecialchars($docenteFilter['nombre']); ?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                    </div>
                                     
-                                    <div class="col-md-4 d-flex align-items-end pt-4">
+                                    <div class="col-md-12 d-flex align-items-end pt-2">
                                         <button type="button" class="btn w-100" style="background-color: #192E4E; border-color: #192E4E; color: white; margin-top: 5px; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
                                             <i class="bi bi-plus-lg me-2"></i>
                                             Crear Asignación
@@ -209,7 +227,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                             $rowTxtCiclo = htmlspecialchars($row['ciclo']);
                             $rowTxtDocente = htmlspecialchars($row['names'] . ' ' . $row['lastnamePa'] . ' ' . $row['lastnameMa']);
                             
-                            echo '<tr class="align-middle">';
+                            echo '<tr class="align-middle" data-idgrupo="' . $rowIdGroup . '" data-idteacher="' . $rowIdTeacher . '" data-idyear="' . $rowIdYear . '">';
                             echo '<td class="text-center">' . $rowTxtCiclo . '</td>';
                             echo '<td class="text-center"><span class="badge text-white" style="background-color: #192E4E;">' . $rowTxtGrupo . '</span></td>';
                             
@@ -895,30 +913,38 @@ $resultYears2 = $conexion->query($sqlYears1);
     </script>
 
     <script>
-        // Filtro rápido por grupo
-        document.getElementById('filterGrupo').addEventListener('change', function() {
-            const grupoId = this.value;
+        // Filtro rápido por grupo y docente
+        function aplicarFiltros() {
+            const grupoId = document.getElementById('filterGrupo').value;
+            const docenteId = document.getElementById('filterDocente').value;
             const tbody = document.getElementById('tbody');
             const rows = tbody.getElementsByTagName('tr');
             
-            // Mostrar todas las filas si no hay filtro
-            if (!grupoId) {
-                Array.from(rows).forEach(row => {
-                    row.style.display = '';
-                });
-                return;
-            }
-            
-            // Filtrar filas por grupo
+            // Filtrar filas según los valores seleccionados
             Array.from(rows).forEach(row => {
                 const rowGrupoId = row.getAttribute('data-idgrupo');
-                if (rowGrupoId === grupoId) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+                const rowDocenteId = row.getAttribute('data-idteacher');
+                
+                // Mostrar la fila si cumple con los filtros seleccionados
+                let mostrar = true;
+                
+                // Si hay filtro de grupo y no coincide, ocultar
+                if (grupoId && rowGrupoId !== grupoId) {
+                    mostrar = false;
                 }
+                
+                // Si hay filtro de docente y no coincide, ocultar
+                if (docenteId && rowDocenteId !== docenteId) {
+                    mostrar = false;
+                }
+                
+                row.style.display = mostrar ? '' : 'none';
             });
-        });
+        }
+        
+        // Eventos para ambos filtros
+        document.getElementById('filterGrupo').addEventListener('change', aplicarFiltros);
+        document.getElementById('filterDocente').addEventListener('change', aplicarFiltros);
     </script>
 
     <!-- Modal para crear asignación -->

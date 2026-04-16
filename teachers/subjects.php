@@ -76,18 +76,22 @@ if (!$currentQuarter && count($quarters) > 0) {
 $subjects = [];
 if ($teacher_id && $currentSchoolYear && $currentQuarter) {
     // Paso 2: Obtener las materias asignadas a este docente para el año y trimestre actual
+    // Para materias especiales, incluir grupo y grado
     $query = "SELECT DISTINCT
                 s.idSubject, 
                 s.name, 
                 s.specialSubject, 
                 s.description, 
-                la.name AS learningAreaName
+                la.name AS learningAreaName,
+                CASE WHEN s.specialSubject = 1 THEN CONCAT(g.grade, '°', g.group_, ' - ') ELSE '' END AS groupInfo
               FROM teacherSubject ts
               JOIN subjects s ON ts.idSubject = s.idSubject
               JOIN learningArea la ON s.idLearningArea = la.idLearningArea
+              LEFT JOIN teacherGroupsSubjects tgs ON ts.idTeacher = tgs.idTeacher AND ts.idSubject = tgs.idSubject
+              LEFT JOIN groups g ON tgs.idGroup = g.idGroup
               WHERE ts.idTeacher = ? 
                 AND ts.idSchoolYear = ?
-              ORDER BY s.name ASC";
+              ORDER BY s.name ASC, g.grade ASC, g.group_ ASC";
     $stmt = $conexion->prepare($query);
     if (!$stmt) {
         die("Error al preparar consulta: " . $conexion->error);
@@ -156,6 +160,9 @@ if ($teacher_id && $currentSchoolYear && $currentQuarter) {
                                         <h5 class="card-title mb-0 fw-bold">
                                             <i class="bi bi-book me-2"></i>
                                             <?php echo htmlspecialchars($subject['name']); ?>
+                                            <?php if($subject['specialSubject'] && $subject['groupInfo']): ?>
+                                                <small class="text-warning fw-normal ms-2"><?php echo htmlspecialchars($subject['groupInfo']); ?></small>
+                                            <?php endif; ?>
                                         </h5>
                                         <?php if($subject['specialSubject']): ?>
                                         <span class="badge bg-warning text-dark">

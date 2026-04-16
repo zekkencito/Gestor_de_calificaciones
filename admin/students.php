@@ -1178,7 +1178,8 @@ if (!$resultado) {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button id="btnVerDetalles" type="button" 
-                            class="btn <?php echo $descargasHabilitadas ? 'btn-primary' : 'btn-secondary'; ?>"
+                            class="btn"
+                            style="background-color: #192E4E; color: white; border: none; <?php echo !$descargasHabilitadas ? 'opacity: 0.6;' : ''; ?>"
                             <?php if(!$descargasHabilitadas) echo 'title="Disponible después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                         <?php echo $descargasHabilitadas ? 'Imprimir boleta' : 'Boleta disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                     </button>

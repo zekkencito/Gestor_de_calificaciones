@@ -203,140 +203,130 @@ function generateReportPDF($idConductReport, $conexion) {
 
     // Nombre de la escuela centrado debajo del logo
     $pdf->SetY(35);
-    $pdf->SetFont('Times', '', 10);
+    $pdf->SetFont('Helvetica', '', 10);
     $pdf->Cell(0, 5, utf8_decode_safe('Escuela Primaria'), 0, 1, 'C');
-    $pdf->SetFont('Times', '', 10);
+    $pdf->SetFont('Helvetica', '', 10);
     $pdf->Cell(0, 5, utf8_decode_safe('Gregorio Torres Quintero No.2308'), 0, 1, 'C');
     
     $pdf->Ln(5);
     
-    // Título de reporte centrado
-    $pdf->SetFont('Times', 'B', 14);
-    $pdf->Cell(0, 10, utf8_decode_safe('BITÁCORA DE INCIDENCIA'), 0, 1, 'C');
+    $pdf->Ln(8);
+    
+    // Asignar variables del estudiante
+    $studentLastnamePa = $data['studentLastnamePa'] ?? '';
+    $studentLastnameMa = $data['studentLastnameMa'] ?? '';
+    $studentNames = $data['studentNames'] ?? '';
+    $grade = $data['grade'] ?? '';
+    $group = $data['group_'] ?? '';
 
-    // Línea separadora
-    $pdf->Ln(5);
+    // ===== DATOS DEL ESTUDIANTE =====
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->Cell(0, 6, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 0, 1, 'L');
+    
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(0, 1, '', 0, 1);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-    $pdf->Ln(5);
+    $pdf->Ln(3);
+    
+    // Información del estudiante en dos filas
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(45, 5, utf8_decode_safe('Apellido Paterno: '), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->Cell(50, 5, $studentLastnamePa, 0, 0, 'L');
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(35, 5, utf8_decode_safe('Apellido Materno: '), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->Cell(0, 5, utf8_decode_safe($studentLastnameMa), 0, 1, 'L');
+    
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(30, 5, utf8_decode_safe('Nombre(s): '), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->Cell(65, 5, utf8_decode_safe($studentNames), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(20, 5, utf8_decode_safe('Grado: '), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->Cell(15, 5, utf8_decode_safe($grade), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(15, 5, utf8_decode_safe('Grupo: '), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->Cell(0, 5, utf8_decode_safe($group), 0, 1, 'L');
+    
+    $pdf->Ln(8);
 
 
-    // Datos del estudiante
-    $pdf->SetFillColor(25, 46, 78);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(190, 8, utf8_decode_safe('DATOS DEL ESTUDIANTE'), 1, 1, 'C', true);
+    // ===== INFORMACIÓN DEL REPORTE =====
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->Cell(0, 6, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 0, 1, 'L');
     
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Times', '', 11);
-    $pdf->SetFillColor(250, 250, 250);
-
-    // Nombre completo del estudiante
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, utf8_decode_safe('Nombre completo:'), 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
-    $nombreCompleto = $data['studentNames'] . ' ' . $data['studentLastnamePa'] . ' ' . $data['studentLastnameMa'];
-    $pdf->Cell(0, 8, utf8_decode_safe($nombreCompleto), 1, 1, 'L');
-    
-    // Grado y grupo
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, utf8_decode_safe('Grado y Grupo:'), 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(0, 8, utf8_decode_safe($data['grade'] . '° ' . $data['group_']), 1, 1, 'L');
-    
-    $pdf->Ln(4);
-    
-    // Información del reporte
-    $pdf->SetFillColor(25, 46, 78);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(190, 8, utf8_decode_safe('INFORMACIÓN DEL REPORTE'), 1, 1, 'C', true);
-    
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Times', '', 11);
-    $pdf->SetFillColor(250, 250, 250);
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(0, 1, '', 0, 1);
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(3);
     
     // Fecha del reporte
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, 'Fecha de creacion:', 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(50, 5, 'Fecha de creacion:', 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
     $fechaFormateada = date('d/m/Y', strtotime($data['fecha']));
-    $pdf->Cell(0, 8, $fechaFormateada, 1, 1, 'L');
+    $pdf->Cell(0, 5, $fechaFormateada, 0, 1, 'L');
     
     $pdf->Ln(5);
 
     // Descripción del incidente
-    $pdf->SetFont('Times', 'B', 11);
-    $pdf->Cell(0, 7, utf8_decode_safe('Descripción del incidente:'), 0, 1, 'L');
-    $pdf->SetFont('Times', '', 10);
-    $pdf->MultiCell(0, 5, utf8_decode_safe($data['descripcion']), 0, 'J');
+    $pdf->SetFont('Helvetica', 'B', 10);
+    $pdf->Cell(0, 6, utf8_decode_safe('Descripción del incidente:'), 0, 1, 'L');
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->MultiCell(0, 4, utf8_decode_safe($data['descripcion']), 0, 'J');
     
-    $pdf->Ln(10);
+    $pdf->Ln(5);
     
     // Observaciones (si existen)
     if (!empty($data['observaciones'])) {
-        $pdf->SetFont('Times', 'B', 11);
+        $pdf->SetFont('Helvetica', 'B', 10);
         $pdf->Cell(0, 6, 'Observaciones:', 0, 1, 'L');
-        $pdf->SetFont('Times', '', 10);
-        $pdf->MultiCell(0, 5, utf8_decode_safe($data['observaciones']), 0, 'J');
+        $pdf->SetFont('Helvetica', '', 9);
+        $pdf->MultiCell(0, 4, utf8_decode_safe($data['observaciones']), 0, 'J');
         $pdf->Ln(2);
     }
     
-    $pdf->Ln(10);
+    $pdf->Ln(8);
     
-    // Información del docente
-    $pdf->SetFillColor(25, 46, 78);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(190, 8, utf8_decode_safe('DOCENTE DE TURNO'), 1, 1, 'C', true);
+    // ===== DOCENTE DE TURNO =====
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->Cell(0, 6, utf8_decode_safe('DOCENTE DE TURNO'), 0, 1, 'L');
     
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Times', '', 11);
-    $pdf->SetFillColor(250, 250, 250);
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(0, 1, '', 0, 1);
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(3);
     
     // Nombre del docente
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, utf8_decode_safe('Nombre:'), 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(50, 5, utf8_decode_safe('Nombre:'), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
     $nombreDocente = ($data['teacherNames'] ?? '') . ' ' . ($data['teacherLastnamePa'] ?? '') . ' ' . ($data['teacherLastnameMa'] ?? '');
-    $pdf->Cell(0, 8, utf8_decode_safe(trim($nombreDocente)), 1, 1, 'L');
+    $pdf->Cell(0, 5, utf8_decode_safe(trim($nombreDocente)), 0, 1, 'L');
     
-    // Fecha de creación del reporte
-    /*$pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, utf8_decode_safe('Fecha de creación:'), 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
-    
-    // Si createdAt existe y es válido, usarlo; sino usar la fecha del reporte
-    if (!empty($data['createdAt']) && $data['createdAt'] != '0000-00-00 00:00:00') {
-        $fechaCreacion = date('d/m/Y H:i', strtotime($data['createdAt']));
-    } elseif (!empty($data['fecha'])) {
-        $fechaCreacion = date('d/m/Y', strtotime($data['fecha']));
-    } else {
-        $fechaCreacion = date('d/m/Y');
-    }
-    $pdf->Cell(0, 8, $fechaCreacion, 1, 1, 'L');
-    */
-    
-    $pdf->Ln(4);
+    $pdf->Ln(5);
 
-    //Información del Docente Titular
-    $pdf->SetFillColor(25, 46, 78);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Times', 'B', 10);
-    $pdf->Cell(0, 8, utf8_decode_safe('DOCENTE TITULAR'), 1, 1, 'C', true);
+    // ===== DOCENTE TITULAR =====
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->Cell(0, 6, utf8_decode_safe('DOCENTE TITULAR'), 0, 1, 'L');
     
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Times', '', 11);
-    $pdf->SetFillColor(250, 250, 250);
-
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(0, 1, '', 0, 1);
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(3);
 
     // Nombre del docente titular
-    $pdf->SetFont('Times', '', 11);
-    $pdf->Cell(50, 8, utf8_decode_safe('Nombre:'), 1, 0, 'L', true);
-    $pdf->SetFont('Times', '', 11);
+    $pdf->SetFont('Helvetica', '', 9);
+    $pdf->Cell(50, 5, utf8_decode_safe('Nombre:'), 0, 0, 'L');
+    $pdf->SetFont('Helvetica', 'B', 9);
     $nombreDocenteTitular = ($data['teacherTitleNames'] ?? '') . ' ' . ($data['teacherTitleLastnamePa'] ?? '') . ' ' . ($data['teacherTitleLastnameMa'] ?? '');
-    $pdf->Cell(0, 8, utf8_decode_safe(trim($nombreDocenteTitular)), 1, 1, 'L');
-
-    $pdf->Ln(30);
+    $pdf->Cell(0, 5, utf8_decode_safe(trim($nombreDocenteTitular)), 0, 1, 'L');
+    
+    $pdf->Ln(20);
     
     // Espacio para firmas
     $pdf->SetDrawColor(0, 0, 0);
@@ -360,15 +350,16 @@ function generateReportPDF($idConductReport, $conexion) {
         $pdf->Line($inicioX + ($anchoFirma * 2) + ($espacioEntre * 2), $yLinea, $inicioX + ($anchoFirma * 3) + ($espacioEntre * 2), $yLinea);
         
         // Textos debajo de las líneas
-        $pdf->SetFont('Times', '', 9);
+        $pdf->SetFont('Helvetica', '', 8);
         $pdf->SetY($yLinea + 1);
         
         // Docente de Turno (M. Especial)
+        $pdf->SetY($yLinea + 1);
         $pdf->SetX($inicioX);
         $pdf->Cell($anchoFirma, 4, utf8_decode_safe('Docente de Turno'), 0, 0, 'C');
-        $pdf->SetX($inicioX);
         $pdf->SetY($yLinea + 5);
-        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(M. Especial)'), 0, 0, 'C');
+        $pdf->SetX($inicioX);
+        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(M. Especial)'), 0, 1, 'C');
         
         // Docente Titular (Escolarizado)
         $pdf->SetY($yLinea + 1);
@@ -376,7 +367,7 @@ function generateReportPDF($idConductReport, $conexion) {
         $pdf->Cell($anchoFirma, 4, utf8_decode_safe('Docente Titular'), 0, 0, 'C');
         $pdf->SetY($yLinea + 5);
         $pdf->SetX($inicioX + $anchoFirma + $espacioEntre);
-        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(Escolarizado)'), 0, 0, 'C');
+        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(Escolarizado)'), 0, 1, 'C');
         
         // Dirección
         $pdf->SetY($yLinea + 1);
@@ -396,15 +387,16 @@ function generateReportPDF($idConductReport, $conexion) {
         $pdf->Line($inicioX + $anchoFirma + $espacioEntre, $yLinea, $inicioX + ($anchoFirma * 2) + $espacioEntre, $yLinea);
         
         // Textos debajo de las líneas
-        $pdf->SetFont('Times', '', 9);
+        $pdf->SetFont('Helvetica', '', 8);
         $pdf->SetY($yLinea + 1);
         
         // Docente de Turno (Escolarizado)
+        $pdf->SetY($yLinea + 1);
         $pdf->SetX($inicioX);
         $pdf->Cell($anchoFirma, 4, utf8_decode_safe('Docente de Turno'), 0, 0, 'C');
         $pdf->SetY($yLinea + 5);
         $pdf->SetX($inicioX);
-        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(Escolarizado)'), 0, 0, 'C');
+        $pdf->Cell($anchoFirma, 4, utf8_decode_safe('(Escolarizado)'), 0, 1, 'C');
         
         // Dirección
         $pdf->SetY($yLinea + 1);
@@ -417,11 +409,8 @@ function generateReportPDF($idConductReport, $conexion) {
     $pdf->Ln(8);
     
     // Pie de página con información de generación del documento
-    
-    $pdf->SetFont('Times', 'I', 8);
-    // Obtener hora actual y restar 1 hora (diferencia de zona horaria)
-    $mexicoTime = time() - 3600; // 3600 segundos = 1 hora
-    $pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i:s', $mexicoTime)), 0, 1, 'R');
+    $pdf->SetFont('Helvetica', 'I', 8);
+    $pdf->Cell(0, 4, utf8_decode_safe('Documento generado el: ' . date('d/m/Y H:i', strtotime('now'))), 0, 1, 'R');
     $pdf->Cell(0, 4, utf8_decode_safe('Sistema de Gestión de Calificaciones - Versión 1.0'), 0, 1, 'R');
     
     // Generar nombre del archivo para descarga
