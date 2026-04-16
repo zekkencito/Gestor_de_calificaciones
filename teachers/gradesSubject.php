@@ -1,4 +1,11 @@
 <?php
+// Limpiar OPcache del servidor para forzar recarga del archivo
+if (function_exists('opcache_reset')) {
+    opcache_reset();
+}
+if (function_exists('opcache_invalidate')) {
+    opcache_invalidate(__FILE__, true);
+}
 // Forzar que el navegador NO use caché
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
@@ -174,6 +181,7 @@ if ($selectedYear && $idSchoolQuarter) {
 }
 ?>
 <!DOCTYPE html>
+<!-- ANTIGRAVITY_VERSION: <?php echo date('YmdHis'); ?> -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
