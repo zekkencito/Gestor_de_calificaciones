@@ -385,8 +385,13 @@
                             if (modal) modal.hide();
                             setTimeout(() => {
                                 Swal.fire({ icon: 'success', title: '¡Guardado!', text: 'Fecha límite guardada correctamente.' });
+                                // Actualizar en dashboard si existe la función
+                                if (typeof window.mostrarFechaLimiteDashboard === 'function') {
+                                    window.mostrarFechaLimiteDashboard(fecha);
+                                }
+                                // También intentar actualizar el elemento directamente
                                 const fechaLimiteDashboard = document.getElementById('fechaLimiteDashboard');
-                                if (fechaLimiteDashboard) fechaLimiteDashboard.textContent = fecha;
+                                if (fechaLimiteDashboard) fechaLimiteDashboard.textContent = formatearFechaEspanol(fecha);
                             }, 400);
                         } else {
                             Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'No se pudo guardar la fecha.' });
@@ -408,6 +413,11 @@
                             if (modal) modal.hide();
                             setTimeout(() => {
                                 Swal.fire({ icon: 'success', title: 'Eliminado', text: 'Fecha límite eliminada.' });
+                                // Actualizar en dashboard si existe la función
+                                if (typeof window.mostrarFechaLimiteDashboard === 'function') {
+                                    window.mostrarFechaLimiteDashboard('');
+                                }
+                                // También actualizar elementos directamente
                                 const fechaLimiteDashboard = document.getElementById('fechaLimiteDashboard');
                                 if (fechaLimiteDashboard) fechaLimiteDashboard.textContent = 'No definida';
                                 inputFecha.value = '';

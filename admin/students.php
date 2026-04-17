@@ -177,30 +177,25 @@ if (!$resultado) {
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <!-- BUSCAR POR ALUMNO -->
                                         <div class="search-container">
                                             <label for="alumno" class="form-label fw-semibold">
                                                 <i class="bi bi-person-search me-1"></i>
                                                 Buscar por Alumno:
                                             </label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control border-secondary" id="alumno" placeholder="Buscar alumno...">
-                                                <span class="input-group-text bg-light border-secondary">
-                                                    <i class="bi bi-search text-primary"></i>
-                                                </span>
-                                            </div>
+                                            <input type="text" class="form-control form-control-lg border-secondary border-3" id="alumno" placeholder="Buscar alumno...">
                                         </div>
                                     </div>
                                     
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <!-- BUSCAR POR AÑO ESCOLAR -->
                                         <div class="search-container">
                                             <label for="schoolYear" class="form-label fw-semibold">
                                                 <i class="bi bi-calendar-date me-1"></i>
                                                 Año Escolar:
                                             </label>
-                                            <select class="form-select border-secondary" id="schoolYear" name="schoolYear">
+                                            <select class="form-select border-secondary border-3" id="schoolYear" name="schoolYear">
                                                 <option value="">Todos los años</option>
                                                 <?php
                                                 $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
@@ -213,18 +208,15 @@ if (!$resultado) {
                                             </select>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="row g-3 mt-2">
-                                    <!-- Segunda fila de búsquedas -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <!-- BUSCAR POR GRUPO -->
                                         <div class="search-container">
                                             <label for="grupo" class="form-label fw-semibold">
                                                 <i class="bi bi-collection me-1"></i>
                                                 Buscar por Grupo:
                                             </label>
-                                            <select class="form-select border-secondary" id="grupo" name="grupo">
+                                            <select class="form-select border-secondary border-3" id="grupo" name="grupo">
                                                 <option value="">Todos los grupos</option>
                                                 <?php
                                                 $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
@@ -237,7 +229,11 @@ if (!$resultado) {
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6 d-flex align-items-end">
+                                </div>
+
+                                <div class="row g-3 mt-2">
+                                    <!-- Segunda fila con botones de acción -->
+                                    <div class="col-md-12 d-flex align-items-end">
                                         <!-- Botones de acción -->
                                         <div class="d-flex gap-2 w-100">
                                             <!-- Botón para descargar PDFs del grupo (oculto por defecto) -->
@@ -248,7 +244,7 @@ if (!$resultado) {
                                                 <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                                             </button>
                                             
-                                            <button class="btn btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                                            <button class="btn flex-fill" style="background-color: #192E4E; border-color: #192E4E; color: white;" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                                                 <i class="bi bi-plus-lg me-2"></i>
                                                 Inscribir alumno
                                             </button>

@@ -246,7 +246,7 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
     </script>
 <script>
         // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos, en español)
-        function mostrarFechaLimiteDashboard(fechaLimite = null) {
+        window.mostrarFechaLimiteDashboard = function(fechaLimite = null) {
             const el = document.getElementById('fechaLimiteDashboard');
             if (!el) return;
 
@@ -279,8 +279,8 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
                     }
                 });
             }
-        }
-        document.addEventListener('DOMContentLoaded', () => mostrarFechaLimiteDashboard());
+        };
+        document.addEventListener('DOMContentLoaded', () => window.mostrarFechaLimiteDashboard());
     </script>
 </body>
 </html>
