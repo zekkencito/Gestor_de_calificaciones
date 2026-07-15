@@ -14,7 +14,7 @@ if ($row = $res->fetch_assoc()) {
 
 // Si no hay sesión activa, redirigir al login
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-    header("Location: /Gestor_de_calificaciones/index.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -116,7 +116,7 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
 } else {
     // No se encontró el profesor
     $_SESSION['error'] = 'No tienes permisos para acceder a esta sección';
-    header('Location: /Gestor_de_calificaciones/index.php');
+    header('Location: ../index.php');
     exit();
 }
 

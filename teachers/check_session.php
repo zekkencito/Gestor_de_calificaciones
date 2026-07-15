@@ -8,7 +8,7 @@ if (basename($_SERVER['PHP_SELF']) === 'check_session.php') {
 // Verificar si el usuario está logueado y es un profesor (DO) o maestro especial (ME)
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || !in_array($_SESSION['role'], ['ME', 'MS'])) {
     session_destroy();
-    header("Location: /Gestor_de_calificaciones/index.php");
+    header("Location: ../index.php");
     exit();
 }
 

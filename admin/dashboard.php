@@ -7,7 +7,7 @@ require_once "php/prevent_cache.php";
 // Verificar si el usuario está logueado y es administrador
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'AD') {
     session_destroy();
-    header("Location: /Gestor_de_calificaciones/index.php");
+    header("Location: ../index.php");
     exit();
 }
 

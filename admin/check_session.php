@@ -10,7 +10,7 @@ session_start();
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || !isset($_SESSION['idRole']) || 
     ($_SESSION['role'] !== 'AD' && $_SESSION['idRole'] !== 3)) {
     session_destroy();
-    header("Location: /Gestor_de_calificaciones/index.php");
+    header("Location: ../index.php");
     exit();
 }
 
