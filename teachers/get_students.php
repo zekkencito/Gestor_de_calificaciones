@@ -16,7 +16,7 @@ try {
                 st.nomenclature, st.description
                 FROM students s
                 JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-                JOIN groups g ON s.idGroup = g.idGroup
+                JOIN `groups` g ON s.idGroup = g.idGroup
                 LEFT JOIN tutors t ON s.idTutor = t.idTutor
                 LEFT JOIN studentStatus st ON s.idStudentStatus = st.idStudentStatus
                 WHERE s.idGroup = ? AND s.idSchoolYear = ?

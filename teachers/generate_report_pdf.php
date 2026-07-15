@@ -66,7 +66,7 @@ function generateReportPDF($idConductReport, $conexion) {
             FROM conductReports cr
             JOIN students s ON cr.idStudent = s.idStudent
             JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-            JOIN groups g ON s.idGroup = g.idGroup
+            JOIN `groups` g ON s.idGroup = g.idGroup
             LEFT JOIN teachers t ON cr.idTeacher = t.idTeacher
             LEFT JOIN users u ON t.idUser = u.idUser
             LEFT JOIN usersInfo uit ON u.idUserInfo = uit.idUserInfo

@@ -88,7 +88,7 @@ if ($teacher_id && $currentSchoolYear && $currentQuarter) {
               JOIN subjects s ON ts.idSubject = s.idSubject
               JOIN learningArea la ON s.idLearningArea = la.idLearningArea
               LEFT JOIN teacherGroupsSubjects tgs ON ts.idTeacher = tgs.idTeacher AND ts.idSubject = tgs.idSubject
-              LEFT JOIN groups g ON tgs.idGroup = g.idGroup
+              LEFT JOIN `groups` g ON tgs.idGroup = g.idGroup
               WHERE ts.idTeacher = ? 
                 AND ts.idSchoolYear = ?
               ORDER BY s.name ASC, g.grade ASC, g.group_ ASC";

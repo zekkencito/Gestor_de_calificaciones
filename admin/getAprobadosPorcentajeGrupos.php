@@ -1,7 +1,7 @@
 <?php
 require_once '../conection.php';
 // Para el dashboard admin: porcentaje de grupos aprobados (promedio >= 7 o >= 70)
-$sqlGroups = "SELECT idGroup FROM groups";
+$sqlGroups = "SELECT idGroup FROM `groups`";
 $resG = $conexion->query($sqlGroups);
 $total = 0;
 $aprobados = 0;

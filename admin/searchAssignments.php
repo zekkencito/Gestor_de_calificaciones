@@ -30,7 +30,7 @@ $sql = "SELECT
     t.idTeacher,
     MAX(ts.idTeacherSubject) as ultimaAsignacion
 FROM teacherGroupsSubjects tgs
-INNER JOIN groups g ON tgs.idGroup = g.idGroup
+INNER JOIN `groups` g ON tgs.idGroup = g.idGroup
 INNER JOIN subjects sub ON tgs.idSubject = sub.idSubject
 INNER JOIN teachers t ON tgs.idTeacher = t.idTeacher
 INNER JOIN users u ON t.idUser = u.idUser

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app_gestor:
+    build: .
+    ports:
+      - "3000:80" 
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306" 
+    environment:
+      MYSQL_DATABASE: gestor_bd
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db_data:

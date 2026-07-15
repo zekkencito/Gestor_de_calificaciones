@@ -47,7 +47,7 @@ if (!$idSchoolYear || !$idGroup) {
 try {
     // Obtener información del grupo y año escolar
     $sqlGroupInfo = "SELECT CONCAT(g.grade, g.group_) as grupo, LEFT(sy.startDate, 4) as year 
-                     FROM groups g 
+                     FROM `groups` g 
                      INNER JOIN schoolYear sy ON sy.idSchoolYear = ? 
                      WHERE g.idGroup = ?";
     $stmtGroupInfo = $conexion->prepare($sqlGroupInfo);

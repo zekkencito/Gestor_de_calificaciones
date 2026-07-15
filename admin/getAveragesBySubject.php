@@ -30,7 +30,7 @@ try {
                 sub.idSubject
             FROM students s
             JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-            JOIN groups g ON s.idGroup = g.idGroup
+            JOIN `groups` g ON s.idGroup = g.idGroup
             JOIN subjects sub ON sub.idSubject = ?
             LEFT JOIN average a ON a.idStudent = s.idStudent 
                 AND a.idSubject = ?

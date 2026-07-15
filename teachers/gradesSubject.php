@@ -85,7 +85,7 @@ $groupIds = [];
 if ($idSubject > 0) {
     $stmtGroups = $conexion->prepare("SELECT DISTINCT tgs.idGroup, g.grade, g.group_
                                FROM teacherGroupsSubjects tgs
-                               JOIN groups g ON tgs.idGroup = g.idGroup
+                               JOIN `groups` g ON tgs.idGroup = g.idGroup
                                WHERE tgs.idSubject = ? 
                                AND tgs.idTeacher = ?
                                ORDER BY g.grade, g.group_");
@@ -105,7 +105,7 @@ if (!empty($groupIds) && $selectedYear !== null) {
     $sql = "SELECT DISTINCT s.idStudent, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_ 
             FROM students s
             JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-            JOIN groups g ON s.idGroup = g.idGroup
+            JOIN `groups` g ON s.idGroup = g.idGroup
             JOIN teacherGroupsSubjects tgs ON g.idGroup = tgs.idGroup
             WHERE s.idGroup IN ($in) 
             AND s.idSchoolYear = ?

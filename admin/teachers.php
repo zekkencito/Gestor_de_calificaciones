@@ -28,7 +28,7 @@ INNER JOIN users u ON t.idUser = u.idUser
 INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo
 INNER JOIN teacherStatus ts ON t.idTeacherStatus = ts.idTeacherStatus
 LEFT JOIN teacherGroupsSubjects tgs ON t.idTeacher = tgs.idTeacher
-LEFT JOIN groups g ON tgs.idGroup = g.idGroup
+LEFT JOIN `groups` g ON tgs.idGroup = g.idGroup
 LEFT JOIN subjects s ON tgs.idSubject = s.idSubject
 GROUP BY t.idTeacher";
 

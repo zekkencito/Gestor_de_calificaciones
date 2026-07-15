@@ -75,7 +75,7 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
     // Contar alumnos del maestro
     $sqlAlumnos = "SELECT COUNT(DISTINCT s.idStudent) AS total
                   FROM students s
-                  JOIN groups g ON s.idGroup = g.idGroup
+                  JOIN `groups` g ON s.idGroup = g.idGroup
                   JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup
                   WHERE tgs.idTeacher = ?";
     
@@ -123,7 +123,7 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
 // Contar docentes (solo colegas del mismo departamento o escuela)
 $sqlDocentes = "SELECT COUNT(DISTINCT t2.idTeacher) AS total 
                FROM teachers t1
-               JOIN teachers t2 ON t1.department = t2.department  -- Asumiendo que hay un campo department
+               JOIN teachers t2 ON t1.typeTeacher = t2.typeTeacher AND t2.idTeacherStatus = 1
                WHERE t1.idTeacher = ?";
 
 $stmt = $conexion->prepare($sqlDocentes);

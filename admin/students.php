@@ -14,7 +14,7 @@ $descargasHabilitadas = ($fechaLimite && $hoy > date('Y-m-d', strtotime($fechaLi
 
 // Obtener los ciclos escolares disponibles
 $schoolYears = [];
-$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate, description 
+$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate 
                    FROM schoolYear 
                    ORDER BY startDate DESC";
 $resultSchoolYears = $conexion->query($sqlSchoolYears);
@@ -83,7 +83,7 @@ $sql = "SELECT
         INNER JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
         LEFT JOIN users u ON ui.idUserInfo = u.idUserInfo
         INNER JOIN studentStatus ss ON s.idStudentStatus = ss.idStudentStatus
-        LEFT JOIN groups g ON s.idGroup = g.idGroup
+        LEFT JOIN `groups` g ON s.idGroup = g.idGroup
 LEFT JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
 LEFT JOIN tutors t ON s.idTutor = t.idTutor";
 
@@ -219,7 +219,7 @@ if (!$resultado) {
                                             <select class="form-select border-secondary border-3" id="grupo" name="grupo">
                                                 <option value="">Todos los grupos</option>
                                                 <?php
-                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
                                                 $resultGroups = $conexion->query($sqlGroups);
                                                 while ($group = $resultGroups->fetch_assoc()) {
                                                     $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
@@ -536,7 +536,7 @@ if (!$resultado) {
                                     <select required name="txtGroup" class="form-select border-secondary">
                                         <option value="">Seleccionar grupo</option>
                                         <?php
-                                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
                                         $resultGroups = $conexion->query($sqlGroups);
                                         while ($group = $resultGroups->fetch_assoc()) {
                                             echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";
@@ -898,7 +898,7 @@ if (!$resultado) {
                                 <select class="form-select border-secondary" id="editGroup" name="txtGroup" required>
                                     <option value="">Seleccionar grupo</option>
                                     <?php
-                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
                                     $resultGroups = $conexion->query($sqlGroups);
                                     while ($group = $resultGroups->fetch_assoc()) {
                                         echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";

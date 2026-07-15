@@ -21,7 +21,7 @@ try {
     // Consulta para obtener los grupos
     $query = "SELECT DISTINCT g.idGroup, g.grade, g.group_
              FROM teacherGroupsSubjects tgs
-             JOIN groups g ON tgs.idGroup = g.idGroup
+             JOIN `groups` g ON tgs.idGroup = g.idGroup
              JOIN students s ON s.idGroup = g.idGroup
              WHERE tgs.idTeacher = ? 
              AND s.idSchoolYear = ?
