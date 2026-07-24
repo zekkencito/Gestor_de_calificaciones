@@ -287,13 +287,13 @@ if (!$resultado) {
                                         </thead>
                                         <tbody id="alumnosBody">
                     <?php while ($row = $resultado->fetch_assoc()) { ?>
-                        <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear']); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup']); ?>">
-                            <td><?php echo htmlspecialchars($row['idStudent']); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnamePa']); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnameMa']); ?></td>
-                            <td><?php echo htmlspecialchars($row['names']); ?></td>
-                            <td><?php echo htmlspecialchars($row['grupo']); ?></td>
-                            <td><?php echo htmlspecialchars($row['schoolYear']); ?></td>
+                        <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear'] ?? ''); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup'] ?? ''); ?>">
+                            <td><?php echo htmlspecialchars($row['idStudent'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['lastnamePa'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['lastnameMa'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['names'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['grupo'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($row['schoolYear'] ?? ''); ?></td>
                             <td><?php
                                 if ($row['nomenclature'] == 'AC') {
                                     echo '<span class="badge bg-success">' . $row['status'] . '</span>';
@@ -317,12 +317,12 @@ if (!$resultado) {
                                 <button class="btn btn-sm btn-outline-primary" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalCamposFormativos"
-                                    data-id="<?php echo $row['idStudent']; ?>"
-                                    data-nombres="<?php echo htmlspecialchars($row['names']); ?>"
-                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa']); ?>"
-                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa']); ?>"
-                                    data-grade="<?php echo htmlspecialchars($row['grade']); ?>"
-                                    data-grupo="<?php echo htmlspecialchars($row['grupo']); ?>"
+                                    data-id="<?php echo $row['idStudent'] ?? ''; ?>"
+                                    data-nombres="<?php echo htmlspecialchars($row['names'] ?? ''); ?>"
+                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa'] ?? ''); ?>"
+                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa'] ?? ''); ?>"
+                                    data-grade="<?php echo htmlspecialchars($row['grade'] ?? ''); ?>"
+                                    data-grupo="<?php echo htmlspecialchars($row['grupo'] ?? ''); ?>"
                                     title="Ver boleta">
                                     <i class="bi bi-file-earmark-text-fill"></i>
                                 </button>
