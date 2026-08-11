@@ -62,6 +62,7 @@ Gestor_de_calificaciones/
    - PHP 7.4 o superior
    - MySQL 5.7 o superior
    - Extensiones: mysqli, gd, mbstring
+   - SMTP para recuperación de contraseña: Gmail, Outlook o cualquier servidor compatible con TLS/SSL
 
 4. **Permisos**
    - Dar permisos de escritura a carpeta `temp_downloads/`
@@ -89,6 +90,54 @@ Gestor_de_calificaciones/
 - Control de sesión única por usuario
 - Sistema de "Recordarme" con tokens seguros
 - Cambio de contraseña obligatorio al primer ingreso
+- Recuperación de contraseña por correo con token temporal
+
+### 📧 Configuración de correo
+
+El sistema de recuperación de contraseña usa SMTP. Para desarrollo local puedes crear un archivo `mail.env` en la raíz copiando `mail.env.example`. En producción, define estas variables de entorno en tu servidor:
+
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_ENCRYPTION`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `MAIL_FROM_EMAIL`
+- `MAIL_FROM_NAME`
+- `MAIL_REPLY_TO`
+
+Ejemplo para Gmail:
+
+```bash
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=tu_correo@gmail.com
+MAIL_PASSWORD=tu_contraseña_de_aplicacion
+MAIL_FROM_EMAIL=tu_correo@gmail.com
+MAIL_FROM_NAME="Gestor de Calificaciones"
+MAIL_REPLY_TO=tu_correo@gmail.com
+```
+
+Ejemplo para Outlook / Microsoft 365:
+
+```bash
+MAIL_HOST=smtp.office365.com
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=tu_correo@outlook.com
+MAIL_PASSWORD=tu_contraseña
+MAIL_FROM_EMAIL=tu_correo@outlook.com
+MAIL_FROM_NAME="Gestor de Calificaciones"
+MAIL_REPLY_TO=tu_correo@outlook.com
+```
+
+Nota: en Gmail normalmente necesitas una contraseña de aplicación, no tu contraseña normal.
+
+Si quieres probar localmente:
+
+1. Copia `mail.env.example` a `mail.env`.
+2. Completa los datos de tu cuenta SMTP.
+3. Recarga la página de inicio de sesión y prueba el flujo de recuperación.
 
 ### 🛠️ Tecnologías Utilizadas
 

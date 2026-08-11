@@ -24,4 +24,3 @@ if (isset($_SESSION['force_password_change']) && $_SESSION['force_password_chang
     header("Location: " . $redirect_url);
     exit();
 }
-?>

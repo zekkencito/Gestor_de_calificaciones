@@ -40,7 +40,7 @@ if ($idSchoolYear && $idSchoolQuarter && $idStudent) {
                 sub.name as subject_name
             FROM students s
             JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-            JOIN `groups` g ON s.idGroup = g.idGroup
+            JOIN groups g ON s.idGroup = g.idGroup
             JOIN teacherGroupsSubjects tgs ON g.idGroup = tgs.idGroup
             JOIN subjects sub ON tgs.idSubject = sub.idSubject
             LEFT JOIN average a ON a.idStudent = s.idStudent 

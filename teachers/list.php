@@ -107,7 +107,7 @@ $groups = [];
 
 $sqlGroups = "SELECT DISTINCT g.idGroup, g.grade, g.group_
               FROM teacherGroupsSubjects tgs
-              JOIN `groups` g ON tgs.idGroup = g.idGroup
+              JOIN groups g ON tgs.idGroup = g.idGroup
               WHERE tgs.idTeacher = ?
               AND EXISTS (
                 SELECT 1 FROM students s 
@@ -137,7 +137,7 @@ if ($selectedGroup) {
         st.nomenclature, st.description
         FROM students s
         JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-        JOIN `groups` g ON s.idGroup = g.idGroup
+        JOIN groups g ON s.idGroup = g.idGroup
         LEFT JOIN tutors t ON s.idTutor = t.idTutor
         LEFT JOIN studentStatus st ON s.idStudentStatus = st.idStudentStatus
         WHERE s.idGroup = ? AND s.idSchoolYear = ?

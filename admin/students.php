@@ -14,7 +14,7 @@ $descargasHabilitadas = ($fechaLimite && $hoy > date('Y-m-d', strtotime($fechaLi
 
 // Obtener los ciclos escolares disponibles
 $schoolYears = [];
-$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate 
+$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate, description 
                    FROM schoolYear 
                    ORDER BY startDate DESC";
 $resultSchoolYears = $conexion->query($sqlSchoolYears);
@@ -83,7 +83,7 @@ $sql = "SELECT
         INNER JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
         LEFT JOIN users u ON ui.idUserInfo = u.idUserInfo
         INNER JOIN studentStatus ss ON s.idStudentStatus = ss.idStudentStatus
-        LEFT JOIN `groups` g ON s.idGroup = g.idGroup
+        LEFT JOIN groups g ON s.idGroup = g.idGroup
 LEFT JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
 LEFT JOIN tutors t ON s.idTutor = t.idTutor";
 
@@ -219,7 +219,7 @@ if (!$resultado) {
                                             <select class="form-select border-secondary border-3" id="grupo" name="grupo">
                                                 <option value="">Todos los grupos</option>
                                                 <?php
-                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                                 $resultGroups = $conexion->query($sqlGroups);
                                                 while ($group = $resultGroups->fetch_assoc()) {
                                                     $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
@@ -287,13 +287,13 @@ if (!$resultado) {
                                         </thead>
                                         <tbody id="alumnosBody">
                     <?php while ($row = $resultado->fetch_assoc()) { ?>
-                        <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear'] ?? ''); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup'] ?? ''); ?>">
-                            <td><?php echo htmlspecialchars($row['idStudent'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnamePa'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnameMa'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($row['names'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($row['grupo'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($row['schoolYear'] ?? ''); ?></td>
+                        <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear']); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup']); ?>">
+                            <td><?php echo htmlspecialchars($row['idStudent']); ?></td>
+                            <td><?php echo htmlspecialchars($row['lastnamePa']); ?></td>
+                            <td><?php echo htmlspecialchars($row['lastnameMa']); ?></td>
+                            <td><?php echo htmlspecialchars($row['names']); ?></td>
+                            <td><?php echo htmlspecialchars($row['grupo']); ?></td>
+                            <td><?php echo htmlspecialchars($row['schoolYear']); ?></td>
                             <td><?php
                                 if ($row['nomenclature'] == 'AC') {
                                     echo '<span class="badge bg-success">' . $row['status'] . '</span>';
@@ -317,12 +317,12 @@ if (!$resultado) {
                                 <button class="btn btn-sm btn-outline-primary" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalCamposFormativos"
-                                    data-id="<?php echo $row['idStudent'] ?? ''; ?>"
-                                    data-nombres="<?php echo htmlspecialchars($row['names'] ?? ''); ?>"
-                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa'] ?? ''); ?>"
-                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa'] ?? ''); ?>"
-                                    data-grade="<?php echo htmlspecialchars($row['grade'] ?? ''); ?>"
-                                    data-grupo="<?php echo htmlspecialchars($row['grupo'] ?? ''); ?>"
+                                    data-id="<?php echo $row['idStudent']; ?>"
+                                    data-nombres="<?php echo htmlspecialchars($row['names']); ?>"
+                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa']); ?>"
+                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa']); ?>"
+                                    data-grade="<?php echo htmlspecialchars($row['grade']); ?>"
+                                    data-grupo="<?php echo htmlspecialchars($row['grupo']); ?>"
                                     title="Ver boleta">
                                     <i class="bi bi-file-earmark-text-fill"></i>
                                 </button>
@@ -536,7 +536,7 @@ if (!$resultado) {
                                     <select required name="txtGroup" class="form-select border-secondary">
                                         <option value="">Seleccionar grupo</option>
                                         <?php
-                                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                         $resultGroups = $conexion->query($sqlGroups);
                                         while ($group = $resultGroups->fetch_assoc()) {
                                             echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";
@@ -898,7 +898,7 @@ if (!$resultado) {
                                 <select class="form-select border-secondary" id="editGroup" name="txtGroup" required>
                                     <option value="">Seleccionar grupo</option>
                                     <?php
-                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                     $resultGroups = $conexion->query($sqlGroups);
                                     while ($group = $resultGroups->fetch_assoc()) {
                                         echo "<option value='" . $group['idGroup'] . "'>" . $group['grupo'] . "</option>";

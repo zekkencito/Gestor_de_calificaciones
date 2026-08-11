@@ -11,11 +11,21 @@ $query = "SELECT ui.names, ui.lastnamePa
           JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo 
           WHERE u.idUser = ?";
 
+$user_data = null;
 $stmt = $conexion->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user_data = $result->fetch_assoc();
+if ($stmt) {
+    $stmt->bind_param("i", $user_id);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result) {
+            $user_data = $result->fetch_assoc();
+        }
+    } else {
+        error_log("Error al consultar el encabezado del docente: " . $stmt->error);
+    }
+} else {
+    error_log("Error al preparar el encabezado del docente: " . $conexion->error);
+}
 ?>
 <link rel="icon" href="../img/logo.ico">
 <header class="p-4" style="background-color: #192E4E; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; min-height: 90px;">

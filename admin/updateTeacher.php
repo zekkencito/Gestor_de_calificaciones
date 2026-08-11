@@ -59,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $sqlPassword = "UPDATE users SET 
                 password = ?,
-                raw_password = ?
+                raw_password = ?,
+                password_changed = 0
                 WHERE idUser = (
                     SELECT idUser 
                     FROM teachers 

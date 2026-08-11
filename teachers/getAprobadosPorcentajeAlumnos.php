@@ -14,7 +14,7 @@ $idTeacher = $rowT['idTeacher'];
 
 // Obtener alumnos asignados a materias del maestro
 $sql = "SELECT DISTINCT s.idStudent FROM students s
-JOIN `groups` g ON s.idGroup = g.idGroup
+JOIN groups g ON s.idGroup = g.idGroup
 JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup AND tgs.idTeacher = ?";
 $stmt = $conexion->prepare($sql);
 $stmt->bind_param('i', $idTeacher);

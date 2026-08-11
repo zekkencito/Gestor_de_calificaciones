@@ -1,9 +1,397 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/conection.php";
+
+function loadEnvFile(string $filePath): void
+{
+    if (!is_file($filePath) || !is_readable($filePath)) {
+        return;
+    }
+
+    $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+            continue;
+        }
+
+        [$name, $value] = explode('=', $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+
+        if ($name === '' || getenv($name) !== false) {
+            continue;
+        }
+
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"')) ||
+            (str_starts_with($value, "'") && str_ends_with($value, "'"))
+        ) {
+            $value = substr($value, 1, -1);
+        }
+
+        putenv($name . '=' . $value);
+        $_ENV[$name] = $value;
+        $_SERVER[$name] = $value;
+    }
+}
+
+loadEnvFile(__DIR__ . '/mail.env');
+
+function buildBaseUrl(): string
+{
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
+    $scheme = $isHttps ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+
+    return $scheme . '://' . $host . $basePath;
+}
+
+$authAction = $_GET['action'] ?? '';
+$resetToken = trim($_GET['token'] ?? $_POST['token'] ?? '');
+$showRecoveryForm = $authAction === 'recover';
+$showResetForm = false;
+$resetUserId = null;
+$pageMessage = '';
+$pageMessageType = '';
+
+function getMailConfig(): array
+{
+    return [
+        'host' => getenv('MAIL_HOST') ?: 'smtp.gmail.com',
+        'port' => (int) (getenv('MAIL_PORT') ?: 587),
+        'encryption' => strtolower(getenv('MAIL_ENCRYPTION') ?: 'tls'),
+        'username' => getenv('MAIL_USERNAME') ?: '',
+        'password' => getenv('MAIL_PASSWORD') ?: '',
+        'from_email' => getenv('MAIL_FROM_EMAIL') ?: (getenv('MAIL_USERNAME') ?: ''),
+        'from_name' => getenv('MAIL_FROM_NAME') ?: 'Gestor de Calificaciones',
+        'reply_to' => getenv('MAIL_REPLY_TO') ?: (getenv('MAIL_USERNAME') ?: ''),
+    ];
+}
+
+function smtpReadResponse($socket): string
+{
+    $response = '';
+
+    while ($line = fgets($socket, 515)) {
+        $response .= $line;
+        if (isset($line[3]) && $line[3] === ' ') {
+            break;
+        }
+    }
+
+    return $response;
+}
+
+function smtpExpect($socket, array $codes, string $context): void
+{
+    $response = smtpReadResponse($socket);
+    $code = (int) substr($response, 0, 3);
+
+    if (!in_array($code, $codes, true)) {
+        throw new RuntimeException($context . ': ' . trim($response));
+    }
+}
+
+function smtpSendEmail(array $config, string $toEmail, string $subject, string $htmlMessage, string $plainMessage): bool
+{
+    if ($config['username'] === '' || $config['password'] === '' || $config['from_email'] === '') {
+        throw new RuntimeException('Configura MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD y MAIL_FROM_EMAIL.');
+    }
+
+    $transport = ($config['encryption'] === 'ssl') ? 'ssl' : 'tcp';
+    $socket = stream_socket_client(
+        $transport . '://' . $config['host'] . ':' . $config['port'],
+        $errno,
+        $errstr,
+        20,
+        STREAM_CLIENT_CONNECT
+    );
+
+    if (!$socket) {
+        throw new RuntimeException('No se pudo conectar al servidor SMTP: ' . $errstr);
+    }
+
+    stream_set_timeout($socket, 20);
+    smtpExpect($socket, [220], 'SMTP no respondió correctamente');
+
+    fwrite($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n");
+    smtpExpect($socket, [250], 'EHLO falló');
+
+    if ($config['encryption'] === 'tls') {
+        fwrite($socket, "STARTTLS\r\n");
+        smtpExpect($socket, [220], 'STARTTLS falló');
+
+        if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            fclose($socket);
+            throw new RuntimeException('No se pudo activar TLS en SMTP');
+        }
+
+        fwrite($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n");
+        smtpExpect($socket, [250], 'EHLO tras STARTTLS falló');
+    }
+
+    fwrite($socket, "AUTH LOGIN\r\n");
+    smtpExpect($socket, [334], 'AUTH LOGIN falló');
+
+    fwrite($socket, base64_encode($config['username']) . "\r\n");
+    smtpExpect($socket, [334], 'SMTP username rechazado');
+
+    fwrite($socket, base64_encode($config['password']) . "\r\n");
+    smtpExpect($socket, [235], 'SMTP password rechazado');
+
+    $fromEmail = $config['from_email'];
+    $fromName = $config['from_name'];
+    $replyTo = $config['reply_to'] ?: $fromEmail;
+
+    fwrite($socket, "MAIL FROM:<{$fromEmail}>\r\n");
+    smtpExpect($socket, [250], 'MAIL FROM falló');
+
+    fwrite($socket, "RCPT TO:<{$toEmail}>\r\n");
+    smtpExpect($socket, [250, 251], 'RCPT TO falló');
+
+    fwrite($socket, "DATA\r\n");
+    smtpExpect($socket, [354], 'DATA falló');
+
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $headers = [
+        'From: ' . $fromName . ' <' . $fromEmail . '>',
+        'Reply-To: ' . $replyTo,
+        'To: <' . $toEmail . '>',
+        'Subject: ' . $encodedSubject,
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/alternative; boundary="alt_' . bin2hex(random_bytes(8)) . '"',
+        '',
+    ];
+
+    $boundary = 'alt_' . bin2hex(random_bytes(8));
+    $message = implode("\r\n", [
+        'From: ' . $fromName . ' <' . $fromEmail . '>',
+        'Reply-To: ' . $replyTo,
+        'To: <' . $toEmail . '>',
+        'Subject: ' . $encodedSubject,
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+        '',
+        '--' . $boundary,
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit',
+        '',
+        $plainMessage,
+        '',
+        '--' . $boundary,
+        'Content-Type: text/html; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit',
+        '',
+        $htmlMessage,
+        '',
+        '--' . $boundary . '--',
+        '.',
+    ]);
+
+    fwrite($socket, $message . "\r\n");
+    smtpExpect($socket, [250], 'Mensaje SMTP rechazado');
+
+    fwrite($socket, "QUIT\r\n");
+    fclose($socket);
+
+    return true;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recovery_email'])) {
+    $email = trim($_POST['recovery_email']);
+
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error'] = 'Ingresa un correo válido.';
+        header('Location: index.php?action=recover');
+        exit();
+    }
+
+    $sql = "SELECT u.idUser, u.username, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS full_name, ui.email
+            FROM users u
+            INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo
+            WHERE ui.email = ?
+            LIMIT 1";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+
+    if ($user && !empty($user['email'])) {
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+
+        $saveSql = "INSERT INTO password_reset_tokens (idUser, token_hash, expires, used_at, created_at)
+                    VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE), NULL, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        token_hash = VALUES(token_hash),
+                        expires = VALUES(expires),
+                        used_at = NULL,
+                        created_at = NOW()";
+        $saveStmt = $conexion->prepare($saveSql);
+        if ($saveStmt) {
+            $saveStmt->bind_param('is', $user['idUser'], $tokenHash);
+            if ($saveStmt->execute()) {
+                $resetLink = buildBaseUrl() . '/index.php?token=' . urlencode($token);
+                $subject = 'Recuperación de contraseña - Gestor de Calificaciones';
+                $safeName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
+
+                $htmlMessage = '
+                    <html>
+                    <head><meta charset="UTF-8"></head>
+                    <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
+                            <h2 style="color: #1e3a8a; margin-top: 0;">Recuperación de contraseña</h2>
+                            <p>Hola ' . $safeName . ',</p>
+                            <p>Recibimos una solicitud para restablecer tu contraseña. Da clic en el siguiente enlace para crear una nueva contraseña:</p>
+                            <p style="margin: 24px 0;">
+                                <a href="' . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block; background:#1e3a8a; color:#ffffff; text-decoration:none; padding:12px 18px; border-radius:8px;">Restablecer contraseña</a>
+                            </p>
+                            <p>Este enlace expira en 60 minutos.</p>
+                            <p style="font-size: 0.9rem; color: #6b7280;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                        </div>
+                    </body>
+                    </html>
+                ';
+
+                $headers = [];
+                $headers[] = 'MIME-Version: 1.0';
+                $headers[] = 'Content-type: text/html; charset=UTF-8';
+                $headers[] = 'From: Gestor de Calificaciones <no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>';
+                $headers[] = 'Reply-To: no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+                $plainMessage = "Hola {$user['full_name']},\n\n" .
+                    "Recibimos una solicitud para restablecer tu contraseña.\n" .
+                    "Abre este enlace para crear una nueva contraseña:\n" .
+                    $resetLink . "\n\n" .
+                    "Este enlace expira en 60 minutos.\n\n" .
+                    "Si no solicitaste este cambio, ignora este correo.";
+
+                try {
+                    $mailConfig = getMailConfig();
+                    smtpSendEmail($mailConfig, $email, $subject, $htmlMessage, $plainMessage);
+                    $_SESSION['success'] = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
+                } catch (Throwable $mailException) {
+                    error_log('No se pudo enviar el correo de recuperación a ' . $email . ': ' . $mailException->getMessage());
+                    $_SESSION['error'] = 'No se pudo enviar el correo. Revisa la configuración SMTP.';
+                }
+            } else {
+                $_SESSION['error'] = 'No se pudo generar el enlace de recuperación. Intenta más tarde.';
+            }
+        } else {
+            $_SESSION['error'] = 'No se pudo preparar el enlace de recuperación.';
+        }
+    } else {
+        $_SESSION['success'] = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
+    }
+
+    header('Location: index.php?action=recover');
+    exit();
+}
+
+if ($resetToken !== '') {
+    $showResetForm = true;
+    $showRecoveryForm = false;
+
+    $tokenHash = hash('sha256', $resetToken);
+    $sqlReset = "SELECT prt.idUser, u.username
+                 FROM password_reset_tokens prt
+                 INNER JOIN users u ON u.idUser = prt.idUser
+                 WHERE prt.token_hash = ?
+                   AND prt.used_at IS NULL
+                   AND prt.expires > NOW()
+                 LIMIT 1";
+    $stmtReset = $conexion->prepare($sqlReset);
+    if ($stmtReset) {
+        $stmtReset->bind_param('s', $tokenHash);
+        $stmtReset->execute();
+        $resultReset = $stmtReset->get_result();
+
+        if ($rowReset = $resultReset->fetch_assoc()) {
+            $resetUserId = (int) $rowReset['idUser'];
+        } else {
+            $pageMessage = 'El enlace ya expiró o ya fue usado. Solicita uno nuevo.';
+            $pageMessageType = 'error';
+        }
+    } else {
+        $pageMessage = 'No se pudo validar el enlace de recuperación.';
+        $pageMessageType = 'error';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_password'])) {
+    $submittedToken = trim($_POST['token'] ?? '');
+    $tokenHash = hash('sha256', $submittedToken);
+
+    $sqlReset = "SELECT prt.idUser
+                 FROM password_reset_tokens prt
+                 WHERE prt.token_hash = ?
+                   AND prt.used_at IS NULL
+                   AND prt.expires > NOW()
+                 LIMIT 1";
+    $stmtReset = $conexion->prepare($sqlReset);
+    $stmtReset->bind_param('s', $tokenHash);
+    $stmtReset->execute();
+    $resultReset = $stmtReset->get_result();
+
+    if ($rowReset = $resultReset->fetch_assoc()) {
+        $resetUserId = (int) $rowReset['idUser'];
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (strlen($newPassword) < 6) {
+            $pageMessage = 'La contraseña debe tener al menos 6 caracteres.';
+            $pageMessageType = 'error';
+            $showResetForm = true;
+        } elseif ($newPassword !== $confirmPassword) {
+            $pageMessage = 'Las contraseñas no coinciden.';
+            $pageMessageType = 'error';
+            $showResetForm = true;
+        } else {
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+            $conexion->begin_transaction();
+
+            try {
+                $updateUserSql = "UPDATE users SET password = ?, raw_password = NULL, password_changed = 1 WHERE idUser = ?";
+                $updateUserStmt = $conexion->prepare($updateUserSql);
+                $updateUserStmt->bind_param('si', $hashedPassword, $resetUserId);
+                $updateUserStmt->execute();
+
+                $invalidateSql = "UPDATE password_reset_tokens SET used_at = NOW() WHERE token_hash = ? AND idUser = ?";
+                $invalidateStmt = $conexion->prepare($invalidateSql);
+                $invalidateStmt->bind_param('si', $tokenHash, $resetUserId);
+                $invalidateStmt->execute();
+
+                $conexion->commit();
+
+                $_SESSION['success'] = 'Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.';
+                header('Location: index.php');
+                exit();
+            } catch (Throwable $e) {
+                $conexion->rollback();
+                $pageMessage = 'No se pudo actualizar la contraseña. Intenta de nuevo.';
+                $pageMessageType = 'error';
+                $showResetForm = true;
+                error_log('Error al restablecer contraseña: ' . $e->getMessage());
+            }
+        }
+    } else {
+        $pageMessage = 'El enlace ya expiró o ya fue usado. Solicita uno nuevo.';
+        $pageMessageType = 'error';
+        $showResetForm = true;
+    }
+}
+
 // Revisar si hay cookie rememberMe y no hay sesión activa
-if (!isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
-    require_once __DIR__ . "/conection.php";
+if (!$showRecoveryForm && !$showResetForm && !isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
     $token = $_COOKIE['rememberMe'];
     $sql = "SELECT idUser FROM user_remember_tokens WHERE token = ? AND expires > NOW()";
     $stmt = $conexion->prepare($sql);
@@ -25,7 +413,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
             $_SESSION['role_description'] = $user['role_description'];
             $_SESSION['idRole'] = $user['idRole'];
             // Redirigir según el rol
-            if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] === 3) {
+            if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
                 header("Location: admin/dashboard.php");
             } else {
                 header("Location: teachers/dashboard.php");
@@ -36,7 +424,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
 }
 
 // Si el usuario ya está logueado, redirigirlo al dashboard correspondiente
-if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+if (!$showRecoveryForm && !$showResetForm && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'AD') {
         header("Location: admin/dashboard.php");
     } else {
@@ -359,6 +747,21 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             transform: none;
         }
 
+        .forgot-password-link {
+            display: inline-block;
+            margin-top: 14px;
+            color: var(--navy);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-password-link:hover {
+            color: var(--navy-dark);
+            text-decoration: underline;
+        }
+
         .loading-spinner {
             display: none;
             width: 16px;
@@ -438,6 +841,17 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             border: 1px solid rgba(220, 38, 38, 0.2);
             font-weight: 500;
         }
+
+        .php-success {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            margin-bottom: 24px;
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -451,53 +865,154 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         </div>
         
         <div class="login-section">
-            <h1 class="title">¡Bienvenido!</h1>
-            <p class="subtitle">Ingresa tus credenciales para acceder</p>
-            
-            <form id="loginForm" action="./admin/php/login.php" method="POST">
-                <!-- Mostrar errores PHP si existen -->
+            <h1 class="title">
                 <?php
-                if (isset($_SESSION['error'])) {
-                    echo '<div class="php-error">' . $_SESSION['error'] . '</div>';
-                    unset($_SESSION['error']);
+                if ($showResetForm) {
+                    echo 'Restablecer contraseña';
+                } elseif ($showRecoveryForm) {
+                    echo 'Recuperar contraseña';
+                } else {
+                    echo '¡Bienvenido!';
                 }
                 ?>
-                <div id="message" class="message"></div>
-                
-                <div class="form-group">
-                    <label for="username" class="form-label">Usuario</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        placeholder="Ingresa tu usuario"
-                        required
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <div class="password-wrapper">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-input" 
-                            placeholder="••••••••"
-                            required
-                        >
-                        <button type="button" class="password-toggle" id="togglePassword">
-                            <i class="fas fa-eye"></i>
+            </h1>
+            <p class="subtitle">
+                <?php
+                if ($showResetForm) {
+                    echo 'Crea una nueva contraseña para continuar';
+                } elseif ($showRecoveryForm) {
+                    echo 'Ingresa tu correo para enviarte un enlace de recuperación';
+                } else {
+                    echo 'Ingresa tus credenciales para acceder';
+                }
+                ?>
+            </p>
+
+            <?php
+            if (isset($_SESSION['error'])) {
+                echo '<div class="php-error">' . $_SESSION['error'] . '</div>';
+                unset($_SESSION['error']);
+            }
+            if (isset($_SESSION['success'])) {
+                echo '<div class="php-success">' . $_SESSION['success'] . '</div>';
+                unset($_SESSION['success']);
+            }
+            if ($pageMessage) {
+                $messageClass = $pageMessageType === 'success' ? 'php-success' : 'php-error';
+                echo '<div class="' . $messageClass . '">' . htmlspecialchars($pageMessage) . '</div>';
+            }
+            ?>
+
+            <div id="message" class="message"></div>
+
+            <?php if ($showResetForm): ?>
+                <form method="POST" action="index.php">
+                    <input type="hidden" name="token" value="<?php echo htmlspecialchars($resetToken, ENT_QUOTES, 'UTF-8'); ?>">
+
+                    <div class="form-group">
+                        <label for="new_password" class="form-label">Nueva contraseña</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="new_password"
+                                name="new_password"
+                                class="form-input"
+                                placeholder="Mínimo 6 caracteres"
+                                required
+                                minlength="6"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">Confirmar contraseña</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                class="form-input"
+                                placeholder="Repite la nueva contraseña"
+                                required
+                                minlength="6"
+                            >
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        <span id="buttonText">Actualizar contraseña</span>
+                    </button>
+
+                    <div style="text-align:center; margin-top: 12px;">
+                        <a class="forgot-password-link" href="index.php">Volver al inicio</a>
+                    </div>
+                </form>
+            <?php elseif ($showRecoveryForm): ?>
+                <form method="POST" action="index.php?action=recover">
+                    <div style="margin-top: 6px; padding: 20px; border: 1px solid var(--gray-200); border-radius: 12px; background: var(--gray-50);">
+                        <p style="font-size: 0.95rem; color: var(--gray-500); margin-bottom: 16px; text-align:center;">Escribe el correo registrado para enviarte un enlace temporal.</p>
+                        <div class="form-group">
+                            <label for="recovery_email" class="form-label">Correo electrónico</label>
+                            <input
+                                type="email"
+                                id="recovery_email"
+                                name="recovery_email"
+                                class="form-input"
+                                placeholder="correo@ejemplo.com"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="login-button">
+                            <div class="loading-spinner" id="loadingSpinner"></div>
+                            <span id="buttonText">Enviar enlace</span>
                         </button>
                     </div>
-                </div>
-                
-                <button type="submit" class="login-button">
-                    <div class="loading-spinner" id="loadingSpinner"></div>
-                    <span id="buttonText">Acceder</span>
-                </button>
-            </form>
+                    <div style="text-align:center; margin-top: 12px;">
+                        <a class="forgot-password-link" href="index.php">Volver al inicio de sesión</a>
+                    </div>
+                </form>
+            <?php else: ?>
+                <form id="loginForm" action="./admin/php/login.php" method="POST">
+                    <div class="form-group">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="form-input"
+                            placeholder="Ingresa tu usuario"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input"
+                                placeholder="••••••••"
+                                required
+                            >
+                            <button type="button" class="password-toggle" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        <span id="buttonText">Acceder</span>
+                    </button>
+
+                    <div style="text-align:center;">
+                        <a class="forgot-password-link" href="index.php?action=recover">¿Olvidaste tu contraseña?</a>
+                    </div>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -505,14 +1020,16 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         // Toggle password visibility
         const passwordInput = document.getElementById('password');
         const toggleButton = document.getElementById('togglePassword');
-        const toggleIcon = toggleButton.querySelector('i');
+        if (toggleButton && passwordInput) {
+            const toggleIcon = toggleButton.querySelector('i');
 
-        toggleButton.addEventListener('click', () => {
-            const isPassword = passwordInput.type === 'password';
-            passwordInput.type = isPassword ? 'text' : 'password';
-            toggleIcon.classList.toggle('fa-eye');
-            toggleIcon.classList.toggle('fa-eye-slash');
-        });
+            toggleButton.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                toggleIcon.classList.toggle('fa-eye');
+                toggleIcon.classList.toggle('fa-eye-slash');
+            });
+        }
 
         // Form validation and submission
         const form = document.getElementById('loginForm');
@@ -523,13 +1040,15 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         const buttonText = document.getElementById('buttonText');
 
         // Real-time validation
-        [usernameInput, passwordInput].forEach(input => {
-            input.addEventListener('input', () => {
-                validateField(input);
-                clearFieldErrors(); // Limpiar errores al escribir
+        if (usernameInput && passwordInput) {
+            [usernameInput, passwordInput].forEach(input => {
+                input.addEventListener('input', () => {
+                    validateField(input);
+                    clearFieldErrors(); // Limpiar errores al escribir
+                });
+                input.addEventListener('blur', () => validateField(input));
             });
-            input.addEventListener('blur', () => validateField(input));
-        });
+        }
 
         function validateField(field) {
             const value = field.value.trim();
@@ -545,50 +1064,67 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 
         // Función para limpiar errores cuando el usuario empiece a escribir
         function clearFieldErrors() {
-            usernameInput.classList.remove('invalid');
-            passwordInput.classList.remove('invalid');
+            if (usernameInput) {
+                usernameInput.classList.remove('invalid');
+            }
+            if (passwordInput) {
+                passwordInput.classList.remove('invalid');
+            }
             hideMessage();
         }
 
         // Form submission con validación JavaScript
-        form.addEventListener('submit', (e) => {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            hideMessage();
-            
-            // Validation
-            if (!username || !password) {
-                e.preventDefault(); // Prevenir envío
-                showMessage('Por favor completa todos los campos', 'error');
-                // Marcar campos vacíos como inválidos
-                if (!username) usernameInput.classList.add('invalid');
-                if (!password) passwordInput.classList.add('invalid');
-                return;
-            }
-            
-            // Limpiar estados de error antes de enviar
-            usernameInput.classList.remove('invalid');
-            passwordInput.classList.remove('invalid');
-            
-            // Mostrar loading (el formulario se enviará normalmente)
-            setLoading(true);
-        });
+        if (form && usernameInput && passwordInput && loginButton && loadingSpinner && buttonText) {
+            form.addEventListener('submit', (e) => {
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                hideMessage();
+
+                // Validation
+                if (!username || !password) {
+                    e.preventDefault(); // Prevenir envío
+                    showMessage('Por favor completa todos los campos', 'error');
+                    // Marcar campos vacíos como inválidos
+                    if (!username) usernameInput.classList.add('invalid');
+                    if (!password) passwordInput.classList.add('invalid');
+                    return;
+                }
+
+                // Limpiar estados de error antes de enviar
+                usernameInput.classList.remove('invalid');
+                passwordInput.classList.remove('invalid');
+
+                // Mostrar loading (el formulario se enviará normalmente)
+                setLoading(true);
+            });
+        }
 
         function showMessage(text, type) {
+            if (!messageDiv) {
+                return;
+            }
             messageDiv.textContent = text;
             messageDiv.className = `message ${type}`;
             messageDiv.style.display = 'block';
         }
 
         function hideMessage() {
-            messageDiv.style.display = 'none';
+            if (messageDiv) {
+                messageDiv.style.display = 'none';
+            }
         }
 
         function setLoading(loading) {
-            loginButton.disabled = loading;
-            loadingSpinner.style.display = loading ? 'inline-block' : 'none';
-            buttonText.textContent = loading ? 'Verificando...' : 'Ingresar';
+            if (loginButton) {
+                loginButton.disabled = loading;
+            }
+            if (loadingSpinner) {
+                loadingSpinner.style.display = loading ? 'inline-block' : 'none';
+            }
+            if (buttonText) {
+                buttonText.textContent = loading ? 'Verificando...' : 'Ingresar';
+            }
         }
     </script>
 </body>

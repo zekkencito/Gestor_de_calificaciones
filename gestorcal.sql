@@ -2,12 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: localhost:3306
--- Tiempo de generación: 14-07-2026 a las 23:11:42
--- Versión del servidor: 10.6.18-MariaDB-cll-lve
--- Versión de PHP: 8.1.34
-
--- USE gestor_bd;
+-- Servidor: localhost
+-- Tiempo de generación: 06-08-2026 a las 20:03:45
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `skyzeroz_ManagementSystem`
+-- Base de datos: `gestorcal`
 --
 
 -- --------------------------------------------------------
@@ -514,6 +512,27 @@ CREATE TABLE `limitDate` (
 
 INSERT INTO `limitDate` (`idLimitDate`, `limitDate`) VALUES
 (1, '2026-02-12');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `password_reset_tokens`
+--
+
+CREATE TABLE `password_reset_tokens` (
+  `idUser` int(11) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expires` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `password_reset_tokens`
+--
+
+INSERT INTO `password_reset_tokens` (`idUser`, `token_hash`, `expires`, `used_at`, `created_at`) VALUES
+(33, '3ce8f5deaa2944eec314cbc12bef1bfbecdb79b8136058f3041a6e20285d462e', '2026-08-06 12:56:33', NULL, '2026-08-06 11:56:33');
 
 -- --------------------------------------------------------
 
@@ -1034,6 +1053,13 @@ ALTER TABLE `limitDate`
   ADD PRIMARY KEY (`idLimitDate`);
 
 --
+-- Indices de la tabla `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  ADD PRIMARY KEY (`idUser`),
+  ADD UNIQUE KEY `token_hash_unique` (`token_hash`);
+
+--
 -- Indices de la tabla `reportCard`
 --
 ALTER TABLE `reportCard`
@@ -1309,15 +1335,6 @@ ALTER TABLE `usersInfo`
 --
 
 --
--- Filtros para la tabla `average`
---
-ALTER TABLE `average`
-  ADD CONSTRAINT `average_ibfk_2` FOREIGN KEY (`idStudent`) REFERENCES `students` (`idStudent`),
-  ADD CONSTRAINT `average_ibfk_3` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`),
-  ADD CONSTRAINT `fk_average_subject` FOREIGN KEY (`idSubject`) REFERENCES `subjects` (`idSubject`),
-  ADD CONSTRAINT `idSchoolQuarter` FOREIGN KEY (`idSchoolQuarter`) REFERENCES `schoolQuarter` (`idSchoolQuarter`);
-
---
 -- Filtros para la tabla `conductReports`
 --
 ALTER TABLE `conductReports`
@@ -1326,106 +1343,46 @@ ALTER TABLE `conductReports`
   ADD CONSTRAINT `conductReports_ibfk_3` FOREIGN KEY (`idDirector`) REFERENCES `director` (`idDirector`);
 
 --
--- Filtros para la tabla `director`
+-- Filtros para la tabla `password_reset_tokens`
 --
-ALTER TABLE `director`
-  ADD CONSTRAINT `director_ibfk_1` FOREIGN KEY (`idUserInfo`) REFERENCES `usersInfo` (`idUserInfo`),
-  ADD CONSTRAINT `director_ibfk_2` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`);
-
---
--- Filtros para la tabla `evaluationCriteria`
---
-ALTER TABLE `evaluationCriteria`
-  ADD CONSTRAINT `FK_evalCriteria_schoolQuarter` FOREIGN KEY (`idSchoolQuarter`) REFERENCES `schoolQuarter` (`idSchoolQuarter`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `FK_evalCriteria_schoolYear` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `evaluationCriteria_ibfk_1` FOREIGN KEY (`idSubject`) REFERENCES `subjects` (`idSubject`),
-  ADD CONSTRAINT `evaluationCriteria_ibfk_2` FOREIGN KEY (`idGroup`) REFERENCES `groups` (`idGroup`);
-
---
--- Filtros para la tabla `gradesSubject`
---
-ALTER TABLE `gradesSubject`
-  ADD CONSTRAINT `fk_school_quarter` FOREIGN KEY (`idSchoolQuarter`) REFERENCES `schoolQuarter` (`idSchoolQuarter`),
-  ADD CONSTRAINT `fk_school_year` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`),
-  ADD CONSTRAINT `gradesSubject_ibfk_1` FOREIGN KEY (`idStudent`) REFERENCES `students` (`idStudent`),
-  ADD CONSTRAINT `gradesSubject_ibfk_2` FOREIGN KEY (`idSubject`) REFERENCES `subjects` (`idSubject`),
-  ADD CONSTRAINT `gradesSubject_ibfk_3` FOREIGN KEY (`idEvalCriteria`) REFERENCES `evaluationCriteria` (`idEvalCriteria`);
-
---
--- Filtros para la tabla `kardex`
---
-ALTER TABLE `kardex`
-  ADD CONSTRAINT `kardex_ibfk_1` FOREIGN KEY (`idStudent`) REFERENCES `students` (`idStudent`),
-  ADD CONSTRAINT `kardex_ibfk_2` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`),
-  ADD CONSTRAINT `kardex_ibfk_3` FOREIGN KEY (`idLearningArea`) REFERENCES `learningArea` (`idLearningArea`);
-
---
--- Filtros para la tabla `reportCard`
---
-ALTER TABLE `reportCard`
-  ADD CONSTRAINT `reportCard_ibfk_1` FOREIGN KEY (`idGradeSubject`) REFERENCES `gradesSubject` (`idGradeSubject`);
-
---
--- Filtros para la tabla `schoolQuarter`
---
-ALTER TABLE `schoolQuarter`
-  ADD CONSTRAINT `schoolQuarter_ibfk_1` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`);
-
---
--- Filtros para la tabla `students`
---
-ALTER TABLE `students`
-  ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`idUserInfo`) REFERENCES `usersInfo` (`idUserInfo`),
-  ADD CONSTRAINT `students_ibfk_2` FOREIGN KEY (`idTutor`) REFERENCES `tutors` (`idTutor`),
-  ADD CONSTRAINT `students_ibfk_3` FOREIGN KEY (`schoolNum`) REFERENCES `schoolInfo` (`schoolNum`),
-  ADD CONSTRAINT `students_ibfk_4` FOREIGN KEY (`idGroup`) REFERENCES `groups` (`idGroup`),
-  ADD CONSTRAINT `students_ibfk_5` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`),
-  ADD CONSTRAINT `students_ibfk_6` FOREIGN KEY (`idStudentStatus`) REFERENCES `studentStatus` (`idStudentStatus`);
-
---
--- Filtros para la tabla `subjects`
---
-ALTER TABLE `subjects`
-  ADD CONSTRAINT `subjects_ibfk_1` FOREIGN KEY (`idLearningArea`) REFERENCES `learningArea` (`idLearningArea`);
-
---
--- Filtros para la tabla `teacherGroupsSubjects`
---
-ALTER TABLE `teacherGroupsSubjects`
-  ADD CONSTRAINT `teacherGroupsSubjects_ibfk_1` FOREIGN KEY (`idGroup`) REFERENCES `groups` (`idGroup`),
-  ADD CONSTRAINT `teacherGroupsSubjects_ibfk_2` FOREIGN KEY (`idTeacher`) REFERENCES `teachers` (`idTeacher`),
-  ADD CONSTRAINT `teacherGroupsSubjects_ibfk_3` FOREIGN KEY (`idSubject`) REFERENCES `subjects` (`idSubject`);
-
---
--- Filtros para la tabla `teachers`
---
-ALTER TABLE `teachers`
-  ADD CONSTRAINT `teachers_ibfk_1` FOREIGN KEY (`idTeacherStatus`) REFERENCES `teacherStatus` (`idTeacherStatus`),
-  ADD CONSTRAINT `teachers_ibfk_2` FOREIGN KEY (`idUserInfo`) REFERENCES `usersInfo` (`idUserInfo`),
-  ADD CONSTRAINT `teachers_ibfk_3` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`);
-
---
--- Filtros para la tabla `teacherSubject`
---
-ALTER TABLE `teacherSubject`
-  ADD CONSTRAINT `teacherSubject_ibfk_1` FOREIGN KEY (`idTeacher`) REFERENCES `teachers` (`idTeacher`),
-  ADD CONSTRAINT `teacherSubject_ibfk_2` FOREIGN KEY (`idSubject`) REFERENCES `subjects` (`idSubject`),
-  ADD CONSTRAINT `teacherSubject_ibfk_3` FOREIGN KEY (`idSchoolYear`) REFERENCES `schoolYear` (`idSchoolYear`);
-
---
--- Filtros para la tabla `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`idRole`) REFERENCES `roles` (`idRole`),
-  ADD CONSTRAINT `users_ibfk_2` FOREIGN KEY (`idUserInfo`) REFERENCES `usersInfo` (`idUserInfo`);
-
---
--- Filtros para la tabla `user_remember_tokens`
---
-ALTER TABLE `user_remember_tokens`
-  ADD CONSTRAINT `user_remember_tokens_ibfk_1` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`) ON DELETE CASCADE;
+ALTER TABLE `password_reset_tokens`
+  ADD CONSTRAINT `password_reset_tokens_ibfk_1` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- SQL Script to ensure password features work correctly in production
+-- Run this in your production database to create missing tables and columns
+
+-- 1. Ensure `users` table has all necessary password control columns
+ALTER TABLE `users` 
+  ADD COLUMN IF NOT EXISTS `raw_password` VARCHAR(255) NULL AFTER `password`,
+  ADD COLUMN IF NOT EXISTS `password_changed` TINYINT(1) DEFAULT 0 AFTER `raw_password`,
+  ADD COLUMN IF NOT EXISTS `password_change_date` DATETIME NULL AFTER `password_changed`;
+
+-- 2. Modify `password` column to be large enough for password_hash() (requires at least 60 chars)
+ALTER TABLE `users` MODIFY COLUMN `password` VARCHAR(255) NOT NULL;
+
+-- 3. Create `password_reset_tokens` table for password recovery feature
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+  `idUser` int(11) NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `expires` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`idUser`),
+  KEY `token_hash` (`token_hash`),
+  CONSTRAINT `fk_password_reset_user` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Create `user_remember_tokens` table for "Remember Me" functionality
+CREATE TABLE IF NOT EXISTS `user_remember_tokens` (
+    `idUser` INT(11) NOT NULL,
+    `token` VARCHAR(128) NOT NULL,
+    `expires` DATETIME NOT NULL,
+    PRIMARY KEY (`idUser`),
+    UNIQUE KEY `token_unique` (`token`),
+    CONSTRAINT `fk_remember_token_user` FOREIGN KEY (`idUser`) REFERENCES `users` (`idUser`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

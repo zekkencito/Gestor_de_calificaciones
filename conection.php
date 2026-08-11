@@ -2,12 +2,11 @@
     // Configurar zona horaria para México (GMT-6)
     date_default_timezone_set('America/Mexico_City');
     
-    $servidor="db";
+    $servidor='localhost';
     $port="3306";
     $user="root";
-    $password="root";
-    $db="gestor_bd";
-
+    $password="";
+    $db="gestornueva";
     $conexion= new mysqli($servidor,$user,$password,$db);
     if($conexion->connect_error){
         error_log("Error de conexión a la base de datos: " . $conexion->connect_error);
@@ -17,4 +16,3 @@
     
     // Configurar zona horaria de MySQL para México (GMT-6)
     $conexion->query("SET time_zone = '-06:00'");
-?>

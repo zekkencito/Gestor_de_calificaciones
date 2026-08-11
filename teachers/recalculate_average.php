@@ -14,9 +14,9 @@ $idSchoolYear = 1;
 $idSchoolQuarter = 1;
 
 // 1. Obtener las calificaciones actuales
-$sql = "SELECT gs.grade, ec.porcentage AS percentage 
+$sql = "SELECT gs.grade, ec.percentage 
         FROM gradesSubject gs
-        JOIN evaluationCriteria ec ON gs.idEvalCriteria = ec.idEvalCriteria
+        JOIN evaluation_criteria ec ON gs.idEvalCriteria = ec.idEvalCriteria
         WHERE gs.idStudent = ? AND gs.idSubject = ? AND gs.idSchoolYear = ? AND gs.idSchoolQuarter = ? 
         AND gs.status = 1";
 

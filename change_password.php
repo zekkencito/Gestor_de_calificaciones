@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Si no necesita cambio de contraseña, redirigir al dashboard
 if (!isset($_SESSION['force_password_change']) || $_SESSION['force_password_change'] !== true) {
-    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] === 3) {
+    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
         header("Location: admin/dashboard.php");
     } else {
         header("Location: teachers/dashboard.php");
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unset($_SESSION['force_password_change']);
                     
                     // Redirigir al dashboard
-                    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] === 3) {
+                    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
                         header("Location: admin/dashboard.php");
                     } else {
                         header("Location: teachers/dashboard.php");

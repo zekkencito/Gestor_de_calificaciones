@@ -55,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idUserInfo = $conexion->insert_id;
 
         // 2. Insertar en users
-        $sqlUser = "INSERT INTO users (username, password, raw_password, idRole, idUserInfo) 
-                   VALUES (?, ?, ?, (SELECT idRole FROM roles WHERE level_ = ?), ?)";
+        $sqlUser = "INSERT INTO users (username, password, raw_password, idRole, idUserInfo, password_changed) 
+                   VALUES (?, ?, ?, (SELECT idRole FROM roles WHERE level_ = ?), ?, 0)";
         $stmtUser = $conexion->prepare($sqlUser);
         $stmtUser->bind_param("ssssi", $username, $password, $rawPassword, $typeTeacher, $idUserInfo);
         $stmtUser->execute();

@@ -1,8 +1,9 @@
+
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
+// Debe ser lo PRIMERO en el archivo, sin espacios/blancos antes
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -94,7 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             
             // Redirigir según el rol
-            if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] === 3) {
+            if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
                 header("Location: ../dashboard.php");
             } else {
                 header("Location: ../../teachers/dashboard.php");

@@ -3,7 +3,7 @@ require_once "check_session.php";
 require_once "../force_password_check.php";
 include '../conection.php';
 // GRUPOS
-$sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+$sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
 $resultGroups1 = $conexion->query($sqlGroups); // Para el primer select
 $resultGroups2 = $conexion->query($sqlGroups); // Para el segundo select si lo necesitas
 // MATERIAS
@@ -105,7 +105,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                                             <select class="form-select border-secondary" id="filterGrupo">
                                                 <option value="">Todos los grupos</option>
                                                 <?php
-                                                $sqlGroupsFilter = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                                $sqlGroupsFilter = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                                 $resultGroupsFilter = $conexion->query($sqlGroupsFilter);
                                                 while($groupFilter = $resultGroupsFilter->fetch_assoc()) { ?>
                                                     <option value="<?php echo $groupFilter['idGroup']; ?>"><?php echo htmlspecialchars($groupFilter['grupo']); ?></option>
@@ -197,7 +197,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                         ui.names,
                         t.idTeacher
                     FROM teacherGroupsSubjects tgs
-                    INNER JOIN `groups` g ON tgs.idGroup = g.idGroup
+                    INNER JOIN groups g ON tgs.idGroup = g.idGroup
                     INNER JOIN subjects sub ON tgs.idSubject = sub.idSubject
                     INNER JOIN teachers t ON tgs.idTeacher = t.idTeacher
                     INNER JOIN users u ON t.idUser = u.idUser
@@ -587,7 +587,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                                         Grupo:
                                     </label>
                                     <?php
-                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                    $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                     $resultGroups = $conexion->query($sqlGroups);
                                     ?>
                                     <select class="form-select border-secondary" name="grupo">
@@ -967,7 +967,7 @@ $resultYears2 = $conexion->query($sqlYears1);
                                     Grupo:
                                 </label>
                                 <?php
-                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM `groups` ORDER BY grade, group_";
+                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
                                 $resultGroups = $conexion->query($sqlGroups);
                                 ?>
                                 <select class="form-select border-secondary" id="grupo" name="grupo" required>

@@ -53,7 +53,7 @@ FROM students s
 INNER JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
 LEFT JOIN users u ON ui.idUserInfo = u.idUserInfo
 INNER JOIN studentStatus ss ON s.idStudentStatus = ss.idStudentStatus
-LEFT JOIN `groups` g ON s.idGroup = g.idGroup
+LEFT JOIN groups g ON s.idGroup = g.idGroup
 LEFT JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
 LEFT JOIN tutors t ON s.idTutor = t.idTutor
 $where_sql $order_sql LIMIT 100";

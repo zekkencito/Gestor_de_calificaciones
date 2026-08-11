@@ -32,7 +32,7 @@ if (!$teacher_id) {
 $query = "SELECT DISTINCT s.idStudent, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_, a.average
           FROM students s
           JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
-          JOIN `groups` g ON s.idGroup = g.idGroup
+          JOIN groups g ON s.idGroup = g.idGroup
           JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup
           LEFT JOIN average a ON a.idStudent = s.idStudent 
               AND a.idSubject = tgs.idSubject

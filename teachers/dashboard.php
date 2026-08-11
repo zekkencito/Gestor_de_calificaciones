@@ -1,20 +1,24 @@
 <?php
 $preventCache = true;
 $sessionStarted = true;
-require_once "../admin/php/prevent_cache.php";
 require_once "check_session.php";
+require_once "../admin/php/prevent_cache.php";
 require_once "../force_password_check.php";
 require_once "../conection.php";
 
 $fechaLimite = null;
 $res = $conexion->query("SELECT limitDate FROM limitDate WHERE idLimitDate = 1 LIMIT 1");
-if ($row = $res->fetch_assoc()) {
-    $fechaLimite = $row['limitDate'];
+if ($res instanceof mysqli_result) {
+    if ($row = $res->fetch_assoc()) {
+        $fechaLimite = $row['limitDate'];
+    }
+} else {
+    error_log("Error al consultar la fecha límite en dashboard: " . $conexion->error);
 }
 
 // Si no hay sesión activa, redirigir al login
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-    header("Location: ../index.php");
+    header("Location: /Gestor_de_calificaciones/index.php");
     exit();
 }
 
@@ -75,7 +79,7 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
     // Contar alumnos del maestro
     $sqlAlumnos = "SELECT COUNT(DISTINCT s.idStudent) AS total
                   FROM students s
-                  JOIN `groups` g ON s.idGroup = g.idGroup
+                  JOIN groups g ON s.idGroup = g.idGroup
                   JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup
                   WHERE tgs.idTeacher = ?";
     
@@ -113,32 +117,27 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
     }
     
     $materiasInfo = $stmt->get_result();
+    if (!$materiasInfo) {
+        error_log("No se pudo obtener el resultado de materias en dashboard: " . $stmt->error);
+    }
 } else {
     // No se encontró el profesor
     $_SESSION['error'] = 'No tienes permisos para acceder a esta sección';
-    header('Location: ../index.php');
+    header('Location: /Gestor_de_calificaciones/index.php');
     exit();
 }
 
-// Contar docentes (solo colegas del mismo departamento o escuela)
-$sqlDocentes = "SELECT COUNT(DISTINCT t2.idTeacher) AS total 
-               FROM teachers t1
-               JOIN teachers t2 ON t1.typeTeacher = t2.typeTeacher AND t2.idTeacherStatus = 1
-               WHERE t1.idTeacher = ?";
-
-$stmt = $conexion->prepare($sqlDocentes);
-if (!$stmt) {
-    error_log("Error en consulta de docentes: " . $conexion->error);
-    $totalDocentes = 0;
-} else {
-    $stmt->bind_param("i", $teacher_id);
-    if (!$stmt->execute()) {
-        error_log("Error al ejecutar consulta de docentes: " . $stmt->error);
-        $totalDocentes = 0;
-    } else {
+// Contar docentes (todos, ya que no hay campo department)
+$totalDocentes = 0;
+try {
+    $sqlDocentes = "SELECT COUNT(idTeacher) AS total FROM teachers";
+    $stmt = $conexion->prepare($sqlDocentes);
+    if ($stmt && $stmt->execute()) {
         $resDocentes = $stmt->get_result();
         $totalDocentes = $resDocentes->fetch_assoc()['total'];
     }
+} catch (Throwable $e) {
+    error_log("Error en consulta de docentes: " . $e->getMessage());
 }
 
 ?>
@@ -255,7 +254,7 @@ if (!$stmt) {
                                 <div class="stats-icon mb-3">
                                     <i class="bi bi-check-circle text-info"></i>
                                 </div>
-                                <h3 class="stats-number text-info"><?php echo mysqli_num_rows($materiasInfo); ?></h3>
+                                <h3 class="stats-number text-info"><?php echo $materiasInfo ? mysqli_num_rows($materiasInfo) : 0; ?></h3>
                                 <p class="stats-label text-muted mb-0">Materias Únicas</p>
                             </div>
                         </div>

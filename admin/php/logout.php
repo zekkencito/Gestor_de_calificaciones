@@ -12,6 +12,6 @@ if (isset($_COOKIE['rememberMe'])) {
     setcookie('rememberMe', '', time() - 3600, '/');
 }
 session_destroy();
-header('Location: ../../index.php');
+header('Location: /Gestor_de_calificaciones/index.php');
 exit();
 ?>
