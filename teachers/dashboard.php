@@ -133,6 +133,32 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
     if (!$materiasInfo) {
         error_log("No se pudo obtener el resultado de materias en dashboard: " . $stmt->error);
     }
+
+    // Obtener los grupos asignados al docente para el año escolar actual
+    $groups = [];
+    $sqlGroups = "SELECT DISTINCT g.idGroup, g.grade, g.group_
+                  FROM teacherGroupsSubjects tgs
+                  JOIN groups g ON tgs.idGroup = g.idGroup
+                  WHERE tgs.idTeacher = ?
+                  AND EXISTS (
+                    SELECT 1 FROM students s 
+                    WHERE s.idGroup = g.idGroup 
+                    AND s.idSchoolYear = ?
+                  )
+                  GROUP BY g.idGroup, g.grade, g.group_
+                  ORDER BY g.grade, g.group_";
+
+    $stmtGroups = $conexion->prepare($sqlGroups);
+    if ($stmtGroups) {
+        $stmtGroups->bind_param("ii", $teacher_id, $currentSchoolYearId);
+        if ($stmtGroups->execute()) {
+            $resGroups = $stmtGroups->get_result();
+            while ($row = $resGroups->fetch_assoc()) {
+                $groups[] = $row;
+            }
+        }
+        $stmtGroups->close();
+    }
 } else {
     // No se encontró el profesor
     $_SESSION['error'] = 'No tienes permisos para acceder a esta sección';
@@ -242,6 +268,26 @@ try {
                         <p class="dash-stat__number"><?php echo $materiasInfo ? mysqli_num_rows($materiasInfo) : 0; ?></p>
                         <p class="dash-stat__label">Materias Únicas</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Mis Grupos -->
+            <div class="dash-panel dash-panel--groups" style="margin-bottom: var(--ds-space-5);">
+                <div class="dash-panel__header">
+                    <h2 class="dash-panel__title">Mis Grupos</h2>
+                </div>
+                <div class="dash-panel__body">
+                    <?php if (isset($groups) && count($groups) > 0): ?>
+                        <div class="d-flex flex-wrap gap-3">
+                            <?php foreach ($groups as $g): ?>
+                                <a href="list.php?grupo=<?php echo $g['idGroup']; ?>" class="btn btn-outline-primary fw-bold" style="min-width: 100px; border-radius: var(--ds-radius-md); font-family: var(--ds-font-family); padding: var(--ds-space-2) var(--ds-space-4);">
+                                    <?php echo htmlspecialchars($g['grade'] . ' ' . $g['group_']); ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-muted mb-0" style="font-size: var(--ds-text-sm);">No tienes grupos asignados con alumnos en el ciclo escolar actual.</p>
+                    <?php endif; ?>
                 </div>
             </div>
 
