@@ -1,0 +1,712 @@
+/* ==========================================================================
+   COMPONENTS — Gestor de Calificaciones
+   
+   Clases reutilizables con namespace `ds-` para evitar conflictos
+   con Bootstrap y CSS legacy. Usa tokens de design-system.css.
+   ========================================================================== */
+
+/* =========================================================================
+   BOTONES
+   
+   Jerarquía: primary > secondary > ghost > danger > icon-only
+   Padding con escala de spacing. Transiciones con easing físico.
+   ========================================================================= */
+
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  line-height: var(--ds-leading-tight);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-duration-fast) var(--ds-ease-out),
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ds-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
+}
+
+.ds-btn:disabled,
+.ds-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-btn i,
+.ds-btn .bi {
+  font-size: 1em;
+  line-height: 1;
+}
+
+/* — Primary — */
+.ds-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
+}
+
+.ds-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
+  color: var(--ds-white);
+}
+
+.ds-btn--primary:active {
+  background-color: var(--ds-primary-900);
+  border-color: var(--ds-primary-900);
+}
+
+/* — Secondary — */
+.ds-btn--secondary {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-700);
+}
+
+.ds-btn--secondary:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-400);
+  color: var(--ds-gray-800);
+}
+
+.ds-btn--secondary:active {
+  background-color: var(--ds-gray-100);
+}
+
+/* — Ghost — */
+.ds-btn--ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ds-primary-700);
+}
+
+.ds-btn--ghost:hover {
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-800);
+}
+
+.ds-btn--ghost:active {
+  background-color: var(--ds-primary-100);
+}
+
+/* — Danger — */
+.ds-btn--danger {
+  background-color: var(--ds-error);
+  border-color: var(--ds-error);
+  color: var(--ds-white);
+}
+
+.ds-btn--danger:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
+  color: var(--ds-white);
+}
+
+.ds-btn--danger:active {
+  background-color: #7f1d1d;
+}
+
+.ds-btn--danger:focus-visible {
+  box-shadow: var(--ds-shadow-focus-error);
+}
+
+/* — Icon Only — */
+.ds-btn--icon {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ds-gray-500);
+  padding: var(--ds-space-2);
+  border-radius: var(--ds-radius-sm);
+}
+
+.ds-btn--icon:hover {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-primary-700);
+}
+
+.ds-btn--icon:active {
+  background-color: var(--ds-gray-200);
+}
+
+/* — Sizes — */
+.ds-btn--sm {
+  padding: var(--ds-space-1) var(--ds-space-3);
+  font-size: var(--ds-text-xs);
+  gap: var(--ds-space-1);
+}
+
+.ds-btn--lg {
+  padding: var(--ds-space-3) var(--ds-space-6);
+  font-size: var(--ds-text-base);
+}
+
+/* =========================================================================
+   FORMULARIOS
+   
+   Inputs y selects con focus rings accesibles.
+   Labels con peso y tamaño consistentes.
+   ========================================================================= */
+
+.ds-label {
+  display: block;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-700);
+  margin-bottom: var(--ds-space-1);
+  line-height: var(--ds-leading-normal);
+}
+
+.ds-input,
+.ds-select {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-font-regular);
+  line-height: var(--ds-leading-normal);
+  color: var(--ds-gray-900);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-300);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ds-input::placeholder {
+  color: var(--ds-gray-400);
+  font-weight: var(--ds-font-light);
+}
+
+.ds-input:hover,
+.ds-select:hover {
+  border-color: var(--ds-gray-400);
+}
+
+.ds-input:focus,
+.ds-select:focus {
+  outline: none;
+  border-color: var(--ds-primary-500);
+  box-shadow: var(--ds-shadow-focus);
+}
+
+.ds-input--error,
+.ds-select--error {
+  border-color: var(--ds-error);
+}
+
+.ds-input--error:focus,
+.ds-select--error:focus {
+  box-shadow: var(--ds-shadow-focus-error);
+}
+
+.ds-input:disabled,
+.ds-select:disabled {
+  background-color: var(--ds-gray-50);
+  color: var(--ds-gray-400);
+  cursor: not-allowed;
+}
+
+/* Select arrow */
+.ds-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235a6070' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px 10px;
+  padding-right: 2.5rem;
+}
+
+/* Form group */
+.ds-form-group {
+  margin-bottom: var(--ds-space-4);
+}
+
+.ds-form-hint {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-gray-500);
+  margin-top: var(--ds-space-1);
+}
+
+.ds-form-error {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-error);
+  margin-top: var(--ds-space-1);
+}
+
+/* =========================================================================
+   TABLAS
+   
+   Legibilidad para datos tabulares. Row hover sutil, sin transform.
+   Headers en uppercase con peso visual claro.
+   ========================================================================= */
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+}
+
+.ds-table thead th {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-gray-500);
+  background-color: var(--ds-gray-50);
+  border-bottom: 2px solid var(--ds-gray-200);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ds-table tbody td {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  color: var(--ds-gray-800);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+  font-weight: var(--ds-font-regular);
+}
+
+.ds-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ds-table tbody tr:hover {
+  background-color: var(--ds-gray-50);
+}
+
+/* Row recientemente actualizado — flash verde que se desvanece */
+.ds-table tbody tr.ds-table--updated {
+  animation: ds-row-highlight 2s var(--ds-ease-out);
+}
+
+@keyframes ds-row-highlight {
+  from { background-color: var(--ds-success-bg); }
+  to   { background-color: transparent; }
+}
+
+/* Celda centrada (para acciones, badges) */
+.ds-table .ds-cell-center {
+  text-align: center;
+}
+
+/* =========================================================================
+   ALERTAS
+   
+   Comunicación de estado del sistema. Sin gradientes.
+   ========================================================================= */
+
+.ds-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  line-height: var(--ds-leading-normal);
+  border: 1px solid;
+  border-radius: var(--ds-radius-md);
+}
+
+.ds-alert i,
+.ds-alert .bi {
+  flex-shrink: 0;
+  font-size: var(--ds-text-lg);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.ds-alert--success {
+  background-color: var(--ds-success-bg);
+  border-color: var(--ds-success-border);
+  color: var(--ds-success);
+}
+
+.ds-alert--warning {
+  background-color: var(--ds-warning-bg);
+  border-color: var(--ds-warning-border);
+  color: var(--ds-warning);
+}
+
+.ds-alert--error {
+  background-color: var(--ds-error-bg);
+  border-color: var(--ds-error-border);
+  color: var(--ds-error);
+}
+
+.ds-alert--info {
+  background-color: var(--ds-info-bg);
+  border-color: var(--ds-info-border);
+  color: var(--ds-info);
+}
+
+/* =========================================================================
+   BADGES
+   
+   Indicadores de estado compactos. Color-coded semánticamente.
+   ========================================================================= */
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: 2px var(--ds-space-2);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  line-height: var(--ds-leading-normal);
+  border-radius: var(--ds-radius-sm);
+  white-space: nowrap;
+}
+
+.ds-badge--success {
+  background-color: var(--ds-success-bg);
+  color: var(--ds-success);
+}
+
+.ds-badge--warning {
+  background-color: var(--ds-warning-bg);
+  color: var(--ds-warning);
+}
+
+.ds-badge--error {
+  background-color: var(--ds-error-bg);
+  color: var(--ds-error);
+}
+
+.ds-badge--info {
+  background-color: var(--ds-info-bg);
+  color: var(--ds-info);
+}
+
+.ds-badge--neutral {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-gray-600);
+}
+
+.ds-badge--primary {
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-700);
+}
+
+/* =========================================================================
+   CARDS
+   
+   Contenedor genérico. Borde sutil, sin sombra exagerada.
+   Profundidad de contraste, no de elevación.
+   ========================================================================= */
+
+.ds-card {
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+}
+
+.ds-card__header {
+  padding: var(--ds-space-4) var(--ds-space-5);
+  border-bottom: 1px solid var(--ds-gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-card__title {
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-900);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.ds-card__body {
+  padding: var(--ds-space-5);
+}
+
+.ds-card__body--flush {
+  padding: 0;
+}
+
+.ds-card__footer {
+  padding: var(--ds-space-3) var(--ds-space-5);
+  border-top: 1px solid var(--ds-gray-100);
+  background-color: var(--ds-gray-50);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+}
+
+/* =========================================================================
+   PRELOADER
+   
+   Animación de entrada limpia. Logo con fade + scale sutil.
+   ========================================================================= */
+
+.ds-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ds-white);
+  transition: opacity var(--ds-duration-slow) var(--ds-ease-in);
+}
+
+.ds-preloader.ds-preloader--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ds-preloader__logo {
+  width: 64px;
+  height: 64px;
+  animation: ds-preloader-pulse 1.5s var(--ds-ease-in-out) infinite;
+}
+
+@keyframes ds-preloader-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.05); }
+}
+
+/* =========================================================================
+   MODAL OVERRIDES
+   
+   Mejoras para los modales de Bootstrap sin romper funcionalidad.
+   ========================================================================= */
+
+.ds-modal .modal-content {
+  border: none;
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-xl);
+  overflow: hidden;
+}
+
+.ds-modal .modal-header {
+  background-color: var(--ds-primary-800);
+  color: var(--ds-white);
+  border-bottom: none;
+  padding: var(--ds-space-4) var(--ds-space-5);
+}
+
+.ds-modal .modal-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-white);
+}
+
+.ds-modal .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.ds-modal .modal-header .btn-close:hover {
+  opacity: 1;
+}
+
+.ds-modal .modal-body {
+  padding: var(--ds-space-5);
+}
+
+.ds-modal .modal-footer {
+  padding: var(--ds-space-3) var(--ds-space-5);
+  border-top: 1px solid var(--ds-gray-100);
+  background-color: var(--ds-gray-50);
+}
+
+/* =========================================================================
+   TOAST NOTIFICATIONS
+   
+   Feedback no-intrusivo post-acción. Auto-dismiss con animación.
+   ========================================================================= */
+
+.ds-toast-container {
+  position: fixed;
+  top: var(--ds-space-4);
+  right: var(--ds-space-4);
+  z-index: var(--ds-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  pointer-events: none;
+}
+
+.ds-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-lg);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-800);
+  pointer-events: all;
+  animation: ds-toast-in var(--ds-duration-slow) var(--ds-ease-out);
+  max-width: 400px;
+}
+
+.ds-toast--leaving {
+  animation: ds-toast-out var(--ds-duration-normal) var(--ds-ease-in) forwards;
+}
+
+.ds-toast--success { border-left: 3px solid var(--ds-success); }
+.ds-toast--error   { border-left: 3px solid var(--ds-error); }
+.ds-toast--warning { border-left: 3px solid var(--ds-warning); }
+.ds-toast--info    { border-left: 3px solid var(--ds-info); }
+
+@keyframes ds-toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ds-toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+
+/* =========================================================================
+   LOADING STATE — Botón con spinner
+   ========================================================================= */
+
+.ds-btn--loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.ds-btn--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--ds-radius-full);
+  animation: ds-spinner 0.6s linear infinite;
+}
+
+.ds-btn--primary.ds-btn--loading::after {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-right-color: transparent;
+  border-top-color: var(--ds-white);
+}
+
+@keyframes ds-spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================================================
+   EMPTY STATE
+   ========================================================================= */
+
+.ds-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-12) var(--ds-space-6);
+  text-align: center;
+}
+
+.ds-empty-state__icon {
+  font-size: 2.5rem;
+  color: var(--ds-gray-300);
+  margin-bottom: var(--ds-space-4);
+}
+
+.ds-empty-state__title {
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-600);
+  margin-bottom: var(--ds-space-2);
+}
+
+.ds-empty-state__description {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  max-width: 320px;
+  margin-bottom: var(--ds-space-6);
+}
+
+/* =========================================================================
+   SECTION HEADER (dentro de página)
+   ========================================================================= */
+
+.ds-page-header {
+  margin-bottom: var(--ds-space-6);
+  padding-bottom: var(--ds-space-4);
+  border-bottom: 1px solid var(--ds-gray-200);
+}
+
+.ds-page-header__title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.ds-page-header__subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-500);
+  margin: 0;
+  font-weight: var(--ds-font-regular);
+}
+
+/* =========================================================================
+   UTILITY — Focus visible global
+   
+   Aplica un focus ring visible a cualquier elemento interactivo
+   que no tenga un focus explícito definido.
+   ========================================================================= */
+
+*:focus-visible {
+  outline: 2px solid var(--ds-primary-500);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   UTILITY — Screen reader only
+   ========================================================================= */
+
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -1,11 +1,12 @@
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 // Habilitar logging para depuración
 error_reporting(E_ALL);
 ini_set('log_errors', 1);
 ini_set('error_log', 'group_pdf_errors.log');
 
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 
 // --- VERIFICACIÓN DE FECHA LIMITE PARA DESCARGAS GRUPALES ---
 $fechaLimite = null;

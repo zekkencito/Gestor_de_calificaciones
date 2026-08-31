@@ -181,23 +181,27 @@ if ($selectedYear && $idSchoolQuarter) {
 }
 ?>
 <!DOCTYPE html>
-<!-- ANTIGRAVITY_VERSION: <?php echo date('YmdHis'); ?> -->
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Calificaciones de la Materia</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/styles.css">
+    <!-- Design System -->
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <!-- Page styles -->
     <link rel="stylesheet" href="../css/teacher/gradeSubject.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
+    <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="page-tch-gradesSubject">
 <div id="preloader">
     <img src="../img/logo.webp" alt="Cargando..." class="logo">
 </div>
@@ -205,132 +209,112 @@ if ($selectedYear && $idSchoolQuarter) {
 <?php include "../layouts/asideTeacher.php"; ?>
 <!-- END ASIDEBAR -->
 <!-- MAIN CONTENT -->
-<main class="flex-grow-1 p-0 w-100">
+<main class="ds-main">
     <?php include "../layouts/headerTeacher.php"; ?>
-    
-    <!-- Header de la página -->
-    <div class="container-fluid px-4 pt-5" style="padding-top: 4rem; height: auto;">
-        <div class="row">
-            <div class="col-12">
-                <div class="page-header mb-3">
-                    <h1 class="page-title">
-                        <i class="bi bi-book me-3"></i>
-                        <?php echo $subjectName ? htmlspecialchars($subjectName) : "Materia no encontrada"; ?>
-                    </h1>
-                    <p class="page-subtitle text-muted">
-                        Gestión de calificaciones por criterios de evaluación
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="page-content">
 
-    <!-- Contenido principal -->
-    <div class="container-fluid px-4">
+        <!-- Header de la página -->
+        <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h1 class="page-title mb-2">
+                    <i class="bi bi-book me-3"></i>
+                    <?php echo $subjectName ? htmlspecialchars($subjectName) : "Materia no encontrada"; ?>
+                </h1>
+                <p class="page-subtitle mb-0">
+                    Gestión de calificaciones por criterios de evaluación
+                </p>
+            </div>
+            <a href="subjects.php" class="tch-btn tch-btn--outline" style="text-decoration: none;">
+                <i class="bi bi-arrow-left me-2"></i>Volver a materias
+            </a>
+        </div>
+
         <!-- Panel de configuración -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="filter-card">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-gear me-2 text-primary"></i>
-                                Período Actual
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="alert alert-info mb-0">
-                                        <i class="bi bi-calendar-date me-2"></i>
-                                        <strong>Año Escolar:</strong> 
-                                        <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="alert alert-info mb-0">
-                                        <i class="bi bi-calendar3 me-2"></i>
-                                        <strong>Trimestre:</strong> 
-                                        <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
-                                    </div>
-                                </div>
-                                <div class="col-md-12 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button class="btn flex-fill" id="addColumnBtn">
-                                            <i class="bi bi-plus-lg me-2"></i>
-                                            Añadir Criterio
-                                        </button>
-                                        <button class="btn flex-fill" id="removeColumnBtn">
-                                            <i class="bi bi-trash3-fill me-2"></i>
-                                            Eliminar Criterio
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <div class="gsub-filters">
+            <div class="gsub-filters__header">
+                <i class="bi bi-gear"></i>
+                Período Actual
+            </div>
+            <div class="gsub-filters__body">
+                <div class="gsub-info-row">
+                    <div class="gra-info">
+                        <i class="bi bi-calendar-date"></i>
+                        <span class="gra-info__label">Año Escolar:</span>
+                        <span class="gra-info__value"><?php echo substr($currentSchoolYear['startDate'], 0, 4); ?></span>
                     </div>
+                    <div class="gra-info">
+                        <i class="bi bi-calendar3"></i>
+                        <span class="gra-info__label">Trimestre:</span>
+                        <span class="gra-info__value"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></span>
+                    </div>
+                </div>
+                <div class="gsub-actions">
+                    <button class="gra-btn gra-btn--outline" id="addColumnBtn">
+                        <i class="bi bi-plus-lg"></i>
+                        Añadir Criterio
+                    </button>
+                    <button class="gra-btn gra-btn--outline" id="removeColumnBtn">
+                        <i class="bi bi-trash3-fill"></i>
+                        Eliminar Criterio
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Tabla de calificaciones -->
-        <div class="row">
-            <div class="col-12">
-                <div class="table-card">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-table me-2 text-success"></i>
-                                Calificaciones por Criterios
-                            </h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="dataTable">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="fw-semibold text-center">No.</th>
-                                            <th class="fw-semibold text-center">Apellido Paterno</th>
-                                            <th class="fw-semibold text-center">Apellido Materno</th>
-                                            <th class="fw-semibold text-center">Nombres</th>
-                                            <?php
+        <div class="gra-table-wrap">
+            <div class="gra-table-header">
+                <h2 class="gra-table-title">
+                    <i class="bi bi-table"></i>
+                    Calificaciones por Criterios
+                </h2>
+            </div>
+            <div class="gra-table-responsive">
+                <table class="gra-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th class="text-center">No.</th>
+                            <th class="text-center">Apellido Paterno</th>
+                            <th class="text-center">Apellido Materno</th>
+                            <th class="text-center">Nombres</th>
+                            <?php
 $num_criterios = 3;
 for ($c = 1; $c <= $num_criterios; $c++):
 ?>
-                                            <th class="fw-semibold text-center criteria-header" data-col-index="<?php echo $c; ?>" style="cursor: pointer;" title="Doble clic para renombrar">
-                                                <span class="criteria-name">C<?php echo $c; ?></span>
-                                            </th>
-                                            <?php
+                            <th class="text-center criteria-header" data-col-index="<?php echo $c; ?>" style="cursor: pointer;" title="Doble clic para renombrar">
+                                <span class="criteria-name">C<?php echo $c; ?></span>
+                            </th>
+                            <?php
 endfor; ?>
-                                            <th class="fw-semibold text-center">Promedio</th>
-                                        </tr>
-                                        <tr id="percentageRow" class="bg-light">
-                                            <th colspan="4" class="fw-semibold text-primary">
-                                                <i class="bi bi-percent me-1"></i>
-                                                Porcentajes (%)
-                                            </th>
-                                            <?php for ($c = 1; $c <= $num_criterios; $c++): ?>
-                                            <th class="text-center">
-                                                <input type="number" min="0" max="100" class="form-control form-control-sm percentage-input" id="C<?php echo $c; ?>-percentage" placeholder="0" style="text-align: center;">
-                                            </th>
-                                            <?php
+                            <th class="text-center">Promedio</th>
+                        </tr>
+                        <tr id="percentageRow">
+                            <th colspan="4" class="percentage-row-label">
+                                <i class="bi bi-percent"></i>
+                                Porcentajes (%)
+                            </th>
+                            <?php for ($c = 1; $c <= $num_criterios; $c++): ?>
+                            <th class="text-center">
+                                <input type="number" min="0" max="100" class="percentage-input" id="C<?php echo $c; ?>-percentage" placeholder="0">
+                            </th>
+                            <?php
 endfor; ?>
-                                            <th class="text-center text-muted">-</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    <?php foreach ($students as $i => $student): ?>
-                                        <tr data-student-id="<?php echo htmlspecialchars($student['idStudent']); ?>">
-                                            <td class="text-center"><?php echo $i + 1; ?></td>
-                                            <td class="text-center"><?php echo htmlspecialchars($student['lastnamePa']); ?></td>
-                                            <td class="text-center"><?php echo htmlspecialchars($student['lastnameMa']); ?></td>
-                                            <td class="text-center"><?php echo htmlspecialchars($student['names']); ?></td>
-                                            <?php for ($c = 1; $c <= $num_criterios; $c++): ?>
-                                            <td class="text-center" style="width:10%"><input type="text" class="form-control form-control-sm grade-input text-center" data-col-index="<?php echo $c; ?>" data-criteria-id=""></td>
-                                            <?php
+                            <th class="text-center text-muted">-</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($students as $i => $student): ?>
+                        <tr data-student-id="<?php echo htmlspecialchars($student['idStudent']); ?>">
+                            <td class="text-center"><?php echo $i + 1; ?></td>
+                            <td class="text-center"><?php echo htmlspecialchars($student['lastnamePa']); ?></td>
+                            <td class="text-center"><?php echo htmlspecialchars($student['lastnameMa']); ?></td>
+                            <td class="text-center"><?php echo htmlspecialchars($student['names']); ?></td>
+                            <?php for ($c = 1; $c <= $num_criterios; $c++): ?>
+                            <td class="text-center"><input type="text" class="grade-input" data-col-index="<?php echo $c; ?>" data-criteria-id=""></td>
+                            <?php
     endfor; ?>
-                                            <td class="promedio-cell text-center fw-bold">
-                                                <?php
+                            <td class="promedio-cell text-center fw-bold">
+                                <?php
     $avg = isset($studentAverages[$student['idStudent']]) ? $studentAverages[$student['idStudent']] : null;
     if ($avg !== null && $avg !== '') {
         $avgValue = number_format($avg, 1);
@@ -341,42 +325,34 @@ endfor; ?>
         echo '<span class="text-muted">-</span>';
     }
 ?>
-                                            </td>
-                                        </tr>
-                                    <?php
+                            </td>
+                        </tr>
+                    <?php
 endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <!-- Estado vacío -->
-                            <div id="emptyState" class="text-center py-5" style="display: none;">
-                                <div class="mb-3">
-                                    <i class="bi bi-inbox display-4 text-muted"></i>
-                                </div>
-                                <h5 class="text-muted">No hay estudiantes registrados</h5>
-                                <p class="text-muted">Selecciona un año y trimestre para ver los estudiantes</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Panel de acciones -->
-                        <div class="card-footer bg-light border-0 d-flex justify-content-end">
-                            <button type="button" id="guardar" class="btn btn-primary btn-lg px-4" onclick="event.preventDefault(); validarYGuardar();">
-                                Guardar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Estado vacío -->
+            <div id="emptyState" class="gra-empty" style="display: none;">
+                <i class="bi bi-inbox gra-empty__icon"></i>
+                <h5 class="gra-empty__title">No hay estudiantes registrados</h5>
+                <p class="gra-empty__text">Selecciona un año y trimestre para ver los estudiantes</p>
+            </div>
+
+            <!-- Panel de acciones -->
+            <div class="gra-table-footer">
+                <button type="button" id="guardar" class="gra-btn gra-btn--primary" onclick="event.preventDefault(); validarYGuardar();">
+                    Guardar
+                </button>
             </div>
         </div>
+
     </div>
 </main>
 <!-- END MAIN CONTENT -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="../js/chartScript.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -403,8 +379,7 @@ endforeach; ?>
         input.type = 'number';
         input.min = '0';
         input.max = '100';
-        input.className = 'form-control form-control-sm percentage-input';
-        input.style.textAlign = 'center';
+        input.className = 'percentage-input';
         input.placeholder = '0';
         input.addEventListener('change', validatePercentages);
         input.addEventListener('input', validatePercentages);
@@ -465,10 +440,9 @@ endforeach; ?>
         bodyRows.forEach(row => {
             const newCell = document.createElement('td');
             newCell.className = 'text-center';
-            newCell.style.width = '10%';
             const input = document.createElement('input');
             input.type = 'text';
-            input.className = 'form-control form-control-sm grade-input text-center';
+            input.className = 'grade-input';
             input.setAttribute('data-col-index', newColIndex);
             input.setAttribute('data-criteria-id', '');
             newCell.appendChild(input);
@@ -528,16 +502,74 @@ endforeach; ?>
         if (!headerToRemove) return;
         const headerIndex = Array.from(headerRow.children).indexOf(headerToRemove);
 
+        // Offset: header row has fixed cols (4) + criteria; percentage row has colspan label (1) + criteria + "-"
+        const headerChildren = Array.from(headerRow.children);
+        const percentageChildren = Array.from(percentageRow.children);
+        const firstHeaderCriteriaIdx = headerChildren.findIndex(th => th.getAttribute('data-col-index'));
+        const firstPercentageCriteriaIdx = percentageChildren.findIndex(cell => cell.querySelector('.percentage-input'));
+        const percentageChildIndex = headerIndex - (firstHeaderCriteriaIdx - firstPercentageCriteriaIdx);
+
         headerRow.removeChild(headerToRemove);
-        if (percentageRow.children[headerIndex]) percentageRow.removeChild(percentageRow.children[headerIndex]);
+        if (percentageChildIndex >= 0 && percentageChildIndex < percentageChildren.length) {
+            percentageRow.removeChild(percentageChildren[percentageChildIndex]);
+        }
         bodyRows.forEach(row => { if (row.children[headerIndex]) row.removeChild(row.children[headerIndex]); });
 
+        reindexCriteriaColumns();
+    }
+
+    function reindexCriteriaColumns() {
+        const table = document.getElementById('dataTable');
+        const headerRow = table.querySelector('thead tr:first-child');
+        const percentageRow = document.getElementById('percentageRow');
+        const bodyRows = table.querySelectorAll('tbody tr');
+
+        const criteriaHeaders = Array.from(headerRow.children).filter(th => th.getAttribute('data-col-index'));
+
+        criteriaHeaders.forEach((th, idx) => {
+            const newIndex = idx + 1;
+            const oldIndex = th.getAttribute('data-col-index');
+            th.setAttribute('data-col-index', newIndex);
+            const nameSpan = th.querySelector('.criteria-name');
+            if (nameSpan && nameSpan.textContent.trim() === `C${oldIndex}`) {
+                nameSpan.textContent = `C${newIndex}`;
+            }
+        });
+
+        const percentageChildren = Array.from(percentageRow.children);
+        const firstPercentageCriteriaIdx = percentageChildren.findIndex(cell => cell.querySelector('.percentage-input'));
+
+        criteriaHeaders.forEach((th, idx) => {
+            const newIndex = idx + 1;
+            const cell = percentageChildren[firstPercentageCriteriaIdx + idx];
+            if (!cell) return;
+            const input = cell.querySelector('.percentage-input');
+            if (input) {
+                input.id = `C${newIndex}-percentage`;
+                input.setAttribute('data-col-index', newIndex);
+            }
+        });
+
+        bodyRows.forEach(row => {
+            const gradeInputs = row.querySelectorAll('.grade-input');
+            gradeInputs.forEach((input, idx) => {
+                input.setAttribute('data-col-index', idx + 1);
+            });
+        });
+
+        document.querySelectorAll('.percentage-input').forEach(input => {
+            input.removeEventListener('change', validatePercentages);
+            input.removeEventListener('input', validatePercentages);
+            input.addEventListener('change', validatePercentages);
+            input.addEventListener('input', validatePercentages);
+        });
+
         validatePercentages();
-        asignarCriteriaIdInputs();
+        document.querySelectorAll('#dataTable tbody tr').forEach(row => calcularPromedioFila(row));
     }
 
     // -- CARGAR ESTUDIANTES --
-    function loadStudentsForCurrentPeriod() {
+    function loadStudentsForCurrentPeriod(callback) {
         const idSubject = <?php echo $idSubject; ?>;
         if (currentSchoolQuarterId && currentSchoolYearId) {
             fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${currentSchoolYearId}`)
@@ -561,7 +593,7 @@ endforeach; ?>
                                 <td class="text-center">${student.names}</td>
                             `;
                             for (let i = 1; i <= Math.max(numCriterias, 3); i++) {
-                                rowHTML += `<td class="text-center" style="width:10%"><input type="text" class="form-control form-control-sm grade-input text-center" data-col-index="${i}" data-criteria-id=""></td>`;
+                                rowHTML += `<td class="text-center"><input type="text" class="grade-input" data-col-index="${i}" data-criteria-id=""></td>`;
                             }
                             rowHTML += `<td class="promedio-cell text-center fw-bold">-</td>`;
                             row.innerHTML = rowHTML;
@@ -569,10 +601,13 @@ endforeach; ?>
                         });
                         agregarValidacionCalificaciones();
                     }
-                });
+                    if (typeof callback === 'function') callback();
+                })
+                .catch(() => { if (typeof callback === 'function') callback(); });
         } else {
             const tbody = document.querySelector('#dataTable tbody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="100%" class="text-center">No hay período escolar configurado.</td></tr>';
+            if (typeof callback === 'function') callback();
         }
     }
 
@@ -665,9 +700,11 @@ endforeach; ?>
     document.addEventListener('DOMContentLoaded', function() {
         const idSubject = <?php echo $idSubject; ?>;
         if (idSubject > 0 && currentSchoolYearId && currentSchoolQuarterId) {
-            loadStudentsForCurrentPeriod();
-            loadEvaluationCriteria(idSubject, currentSchoolYearId, currentSchoolQuarterId, function() {
-                loadGrades(idSubject, currentSchoolYearId, currentSchoolQuarterId);
+            loadStudentsForCurrentPeriod(function() {
+                loadEvaluationCriteria(idSubject, currentSchoolYearId, currentSchoolQuarterId, function() {
+                    loadGrades(idSubject, currentSchoolYearId, currentSchoolQuarterId);
+                    reindexCriteriaColumns();
+                });
             });
         }
     });
@@ -715,7 +752,9 @@ endforeach; ?>
 
         return fetch('saveEvaluationCriteria.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/json' },
             body: JSON.stringify({ idSubject, idSchoolYear, idSchoolQuarter, criterias })
         }).then(response => response.json())
         .then(data => {
@@ -787,9 +826,29 @@ endforeach; ?>
         guardarCriteriosEvaluacion(idSubject, idSchoolYear, idSchoolQuarter)
             .then(res => {
                 if (!res.success) throw new Error(res.message);
+                // Sync data-criteria-id from server response (handles new criteria IDs)
+                if (res.data && Array.isArray(res.data)) {
+                    const criteriaMap = {};
+                    res.data.forEach(c => { criteriaMap[c.name.toLowerCase().trim()] = c.idEvalCriteria; });
+                    document.querySelectorAll('.criteria-header').forEach(header => {
+                        const nameSpan = header.querySelector('.criteria-name');
+                        const name = nameSpan ? nameSpan.textContent.trim().toLowerCase() : '';
+                        const colIndex = header.getAttribute('data-col-index');
+                        const idEvalCriteria = criteriaMap[name];
+                        if (idEvalCriteria) {
+                            const pctInput = document.getElementById('C' + colIndex + '-percentage');
+                            if (pctInput) pctInput.setAttribute('data-criteria-id', idEvalCriteria);
+                            document.querySelectorAll('.grade-input[data-col-index="' + colIndex + '"]').forEach(inp => {
+                                inp.setAttribute('data-criteria-id', idEvalCriteria);
+                            });
+                        }
+                    });
+                }
                 return fetch('saveGrades.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                headers: {
+
+                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         idSubject, idSchoolYear, idSchoolQuarter,
                         grades: recolectarCalificaciones()
@@ -829,13 +888,14 @@ endforeach; ?>
                 const colIndex = input.getAttribute('data-col-index');
                 const valor = input.value.trim();
                 if (valor !== '') {
-                    const select = document.getElementById(`C${colIndex}-percentage`);
-                    const idEvalCriteria = input.getAttribute('data-criteria-id');
-                    if (select && select.value && idEvalCriteria) {
+                    const percentageInput = document.getElementById(`C${colIndex}-percentage`);
+                    const percentageValue = percentageInput ? percentageInput.value : '';
+                    const idEvalCriteria = input.getAttribute('data-criteria-id') || null;
+                    if (percentageValue !== '') {
                         studentGrades.grades[`C${colIndex}`] = {
                             grade: valor,
                             idEvalCriteria,
-                            percentage: select.value
+                            percentage: percentageValue
                         };
                     }
                 }
@@ -876,13 +936,7 @@ endforeach; ?>
     }
 
     function asignarCriteriaIdInputs() {
-        document.querySelectorAll('.percentage-input').forEach((input, idx) => {
-            const idEvalCriteria = input.getAttribute('data-criteria-id');
-            const colIndex = idx + 1;
-            document.querySelectorAll(`.grade-input[data-col-index='${colIndex}']`).forEach(gradeInput => {
-                if (idEvalCriteria) gradeInput.setAttribute('data-criteria-id', idEvalCriteria);
-            });
-        });
+        reindexCriteriaColumns();
     }
 
     // --- PROMEDIO DINÁMICO ---

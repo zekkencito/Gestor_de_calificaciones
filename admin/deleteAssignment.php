@@ -1,6 +1,7 @@
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $idTeacher = isset($_POST['idTeacher']) ? intval($_POST['idTeacher']) : null;

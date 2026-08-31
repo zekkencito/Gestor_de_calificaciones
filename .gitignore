@@ -1,0 +1,29 @@
+# Environment / secrets
+.env
+.env.local
+.env.production
+mail.env
+
+# Backups / sensitive copies
+*.bak
+*.sql.bak
+conection.remote.php.bak
+reset_admin.php
+
+# SQL files
+*.sql
+
+# Temp / Test / Logs
+*.log
+cookie*.txt
+test_*.php
+test_*.sh
+test_*.py
+scratch/
+g2/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

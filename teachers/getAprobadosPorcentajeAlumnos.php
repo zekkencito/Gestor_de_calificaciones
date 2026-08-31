@@ -1,6 +1,6 @@
 <?php
+require_once 'check_session.php';
 require_once '../conection.php';
-session_start();
 $user_id = $_SESSION['user_id'];
 
 // Obtener idTeacher

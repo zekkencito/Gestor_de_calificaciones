@@ -12,7 +12,7 @@ try {
     require_once "../force_password_check.php";
     echo "4. force_password_check.php cargado<br>";
     
-    include '../conection.php';
+    require_once '../conection.php';
     echo "5. Conexión incluida<br>";
     
     if (!$conexion) {

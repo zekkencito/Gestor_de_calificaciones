@@ -1,405 +1,753 @@
-/* Los estilos específicos para el contenido de estudiantes, NO afectar el sidebar */
-main {
-    box-sizing: border-box;
-    font-family: "League Spartan", sans-serif !important;
-}
+/* ==========================================================================
+   STUDENTS PAGE — Gestor de Calificaciones
+   
+   design-taste-frontend: Operate mode, density 7, variance 3, motion 2
+   impeccable: scanability-first, table is king, no decoration
+   emil-design-eng: ease-out entries, scale(0.97) press
+   
+   Scoped to body.page-students to avoid affecting teacher/list.php
+   which also loads this file.
+   
+   Design decisions (aligned with dashboard):
+   - No gradients, no shadows, no glassmorphism
+   - Border-radius: --ds-radius-md (6px) everywhere
+   - Table is the primary element — compact, scannable
+   - Filters are functional, not decorative
+   - Action hierarchy: primary (Inscribir) > secondary (Descargar)
+   ========================================================================== */
 
-/* Header de página moderno */
-.page-header {
-    text-align: center;
-    padding: 1.5rem 0 1rem 0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 15px;
-    margin-top: 4rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.page-title {
-    font-size: 2.5rem !important;
-    font-weight: 600 !important;
-    margin-bottom: 0.5rem;
-    align-items: center;
-    font-family: "League Spartan", sans-serif !important;
-}
-
-.page-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 0;
-}
-
-/* Tarjeta de filtros moderna */
-.filter-card .card {
-    border-radius: 15px;
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-
-.filter-card .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
-}
-
-.filter-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
-}
-
-.filter-card .card-body {
-    padding: 1.5rem;
-    background: white;
-}
-
-.filter-card .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.filter-card .form-select:focus {
-    border-color: #192E4E;
-    box-shadow: 0 0 0 0.2rem rgba(25, 46, 78, 0.25);
-}
-
-.filter-card .form-label {
-    color: #495057;
-    margin-bottom: 0.5rem;
-}
-
-/* Botones modernos */
-.btn {
-    border-radius: 10px;
-    padding: 0.6rem 1.2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: none;
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    border: none;
-}
-
-.btn-success:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-}
-
-.btn-danger {
-    background: linear-gradient(135deg, #dc3545, #fd7e14);
-    border: none;
-}
-
-.btn-danger:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #192E4E, #2C5695);
-    border: none;
-}
-
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
-}
-
-/* Tarjeta de tabla moderna */
-.table-card .card {
-    border-radius: 15px;
-    overflow: visible;
-    transition: all 0.3s ease;
-}
-
-.table-card .card:hover {
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
-}
-
-.table-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
-}
-
-.table-card .card-body {
-    padding: 0;
-}
-
-.table-responsive {
-    overflow-x: visible !important;
-    overflow-y: visible !important;
-}
-
-.table-card .table {
-    margin-bottom: 0;
-}
-
-.table-card .table thead th {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: none;
-    padding: 1rem;
-    font-weight: 600;
-    color: #495057;
-    text-transform: uppercase;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
-}
-
-.table-card .table tbody tr {
-    transition: all 0.3s ease;
-}
-
-.table-card .table tbody tr:hover {
-    background-color: rgba(25, 46, 78, 0.05);
-    transform: scale(1.01);
-}
-
-.table-card .table tbody td {
-    padding: 1rem;
-    border: none;
-    border-bottom: 1px solid #f1f3f4;
-    vertical-align: middle;
-    font-weight: 500;
-}
-
-.table-card .card-footer {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    padding: 1.25rem;
-}
-
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
-}
-
-.btn-outline-info:hover {
-    transform: scale(1.1);
-}
-
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
-}
-
-/* Botones de acción en tabla */
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
-}
-
-.btn-outline-primary:hover,
-.btn-outline-info:hover,
-.btn-outline-warning:hover {
-    transform: scale(1.1);
-}
-
-/* Estado vacío */
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .page-title {
-        font-size: 2rem;
-    }
+/* =========================================================================
+   PAGE CONTENT WRAPPER
     
-    .filter-card .row > div {
-        margin-bottom: 1rem;
-    }
+    Replaces container-fluid. Controlled max-width, centered.
+    ========================================================================== */
+
+.page-content {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
-/* ETIQUETAS LEGACY (mantener compatibilidad) */
-#labelAlumno, #labelCiclo {
-    font-size: 22px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-bottom: 8px;
-    display: block;
+/* =========================================================================
+   PAGE HEADER
+   
+   Minimal. Title + subtitle. No card, no gradient, no shadow.
+   Underline accent as identity marker (same as dashboard).
+   Scoped to .page-students to avoid affecting teacher/list.php.
+   ========================================================================== */
+
+.page-students .page-header {
+  margin-bottom: var(--ds-space-5);
 }
 
-/* BOTONES */
-.buttonInscribir {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 20px;
-    width: auto; /* Ancho automático en lugar del 100% */
-    justify-content: center;
+.page-students .page-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: inline-block;
+  position: relative;
 }
 
-/* Contenedor del botón */
-.button-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 28px; /* Ajuste para alinear con los inputs */
-}
-/* Asegurar que las columnas tengan el mismo espaciado */
-.col-md-6 {
-    padding: 0 15px; /* Espaciado estándar de Bootstrap */
-}
-.align-items-center {
-    align-items: center;
-}
-#button {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    font-size: 20px;
-    height: 5.5vh;
+.page-students .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 40px;
+  height: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 2px;
 }
 
-.botonCancelar, .botonEnter {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    font-size: 18px;
-    height: 6.5vh;
+.page-students .page-subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: var(--ds-space-2) 0 0 0;
+  font-weight: var(--ds-font-regular);
 }
 
-#botonVer {
-    border: none;
-    background: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* =========================================================================
+   FILTER SECTION
+   
+   Inline bar. Controls + actions in one row. No card wrapper.
+   ========================================================================== */
+
+.stu-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  margin-bottom: var(--ds-space-4);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
-/* ICONOS */
-#iBuscar {
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.stu-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  flex: 1;
+  min-width: 160px;
+  position: relative;
 }
 
-#iconoAdd {
-    color: white;
-    font-size: 1.5rem;
+.stu-filter__label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
 }
 
-/* TABLA */
-#listaAlumnos {
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    margin-left: 35px;
+.stu-filter__input,
+.stu-filter__select {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-300);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  outline: none;
 }
 
-.contenedorTabla {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.stu-filter__input::placeholder {
+  color: var(--ds-gray-400);
 }
 
-th {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+.stu-filter__input:focus,
+.stu-filter__select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: var(--ds-shadow-focus);
 }
 
-td {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+.stu-actions {
+  display: flex;
+  gap: var(--ds-space-2);
+  align-items: flex-end;
+  flex-shrink: 0;
 }
 
-/* MODALES */
-#tituloModal {
-    font-family: "League Spartan", sans-serif;
-    font-weight: 800;
-    font-size: 30px;
-    margin: 0;
+/* =========================================================================
+   BUTTONS — Refined component design
+   
+   Hierarchy:
+   - Primary (Inscribir/Imprimir): solid, dominant
+   - Secondary (Cancelar/Cerrar/Descargar): outline, recedes
+   - Destructive (Eliminar): solid, clear intent
+   - Ghost (table actions): icon-only, always visible, semantic color per action
+   
+   All tokens from design system. No Bootstrap classes. No gradients.
+   emil-design-eng: scale(0.97) on :active, ease-out transitions
+   ========================================================================== */
+
+.stu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out),
+    transform 100ms var(--ds-ease-out);
+  outline: none;
+  text-decoration: none;
 }
-.form-group {
-    display: flex;
+
+.stu-btn:active {
+  transform: scale(0.97);
+}
+
+.stu-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-500);
+}
+
+/* --- Primary --- */
+.stu-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
+}
+
+.stu-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
+}
+
+.stu-btn--primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-400);
+}
+
+/* --- Outline (secondary) --- */
+.stu-btn--outline {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-600);
+}
+
+.stu-btn--outline:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-400);
+  color: var(--ds-gray-800);
+}
+
+/* --- Success (download) --- */
+.stu-btn--success {
+  background-color: var(--ds-success);
+  border-color: var(--ds-success);
+  color: var(--ds-white);
+}
+
+.stu-btn--success:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+/* --- Danger (destructive) --- */
+.stu-btn--danger {
+  background-color: var(--ds-error);
+  border-color: var(--ds-error);
+  color: var(--ds-white);
+}
+
+.stu-btn--danger:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
+}
+
+/* --- Disabled --- */
+.stu-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* --- Small (table actions) --- */
+.stu-btn--sm {
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  gap: 4px;
+}
+
+.stu-btn--sm i {
+  font-size: 0.85rem;
+}
+
+/* =========================================================================
+   TABLE — The most important element on this page
+   
+   Compact, scannable. Headers are metadata. Rows are content.
+   ========================================================================== */
+
+.stu-table-wrap {
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+}
+
+.stu-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+.stu-table-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stu-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stu-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
+}
+
+.stu-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-gray-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  white-space: nowrap;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.stu-table thead th.text-center {
+  text-align: center;
+}
+
+.stu-table tbody tr {
+  transition: background-color 120ms var(--ds-ease-out);
+}
+
+.stu-table tbody tr:hover {
+  background-color: rgba(25, 46, 78, 0.03);
+}
+
+.stu-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+}
+
+.stu-table tbody td.text-center {
+  text-align: center;
+}
+
+.stu-table tbody td ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stu-table tbody td ul li {
+  text-align: left;
+  margin-bottom: 2px;
+}
+
+/* Table action buttons — always visible, semantic color per action */
+.stu-table .stu-btn--sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ds-radius-sm);
+  background-color: transparent;
+  color: var(--ds-gray-500);
+  font-size: 0.9rem;
+  transition:
+    background-color 120ms var(--ds-ease-out),
+    color 120ms var(--ds-ease-out);
+}
+
+.stu-table .stu-btn--sm:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-gray-100);
+}
+
+.stu-table .stu-btn--sm:active {
+  transform: scale(0.95);
+}
+
+/* Ver / Editar — neutral/secondary, primary accent on hover */
+.stu-table .stu-btn--sm.btn-ver:hover,
+.stu-table .stu-btn--sm.btn-editar:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
+}
+
+/* Boleta — institutional primary, no green */
+.stu-table .stu-btn--sm[data-bs-target="#modalCamposFormativos"]:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
+}
+
+/* Eliminar — destructive, red accent on hover */
+.stu-table .stu-btn--sm.btn-eliminar:hover {
+  color: var(--ds-error);
+  background-color: var(--ds-error-bg);
+}
+
+/* =========================================================================
+   STATUS BADGES
+   
+   Functional, not decorative. Color carries meaning.
+   ========================================================================== */
+
+.stu-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--ds-space-2);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  border-radius: var(--ds-radius-sm);
+  line-height: var(--ds-leading-normal);
+  white-space: nowrap;
+}
+
+.stu-badge--active {
+  background-color: var(--ds-success-bg);
+  color: var(--ds-success);
+}
+
+.stu-badge--inactive {
+  background-color: var(--ds-error-bg);
+  color: var(--ds-error);
+}
+
+.stu-badge--warning {
+  background-color: var(--ds-warning-bg);
+  color: var(--ds-warning);
+}
+
+.stu-badge--info {
+  background-color: var(--ds-info-bg);
+  color: var(--ds-info);
+}
+
+.stu-badge--secondary {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-gray-600);
+}
+
+.stu-badge--dark {
+  background-color: var(--ds-gray-800);
+  color: var(--ds-white);
+}
+
+/* =========================================================================
+   EMPTY STATE
+   
+   Functional. Not decorated.
+   ========================================================================== */
+
+.stu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-10) var(--ds-space-4);
+  text-align: center;
+}
+
+.stu-empty__icon {
+  font-size: 2.5rem;
+  color: var(--ds-gray-300);
+  margin-bottom: var(--ds-space-3);
+}
+
+.stu-empty__title {
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  margin: 0 0 var(--ds-space-1) 0;
+}
+
+.stu-empty__desc {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: 0;
+}
+
+/* =========================================================================
+   MODALS — Coherent with dashboard visual language
+   
+   Dashboard uses: white surfaces, --ds-gray-200 borders, minimal shadows,
+   --ds-primary-800 as text accent (not as fill), clean typography.
+   
+   Modals follow the same principles:
+   - White surface, subtle border, rounded corners
+   - Header: white bg, primary-800 text, clean bottom rule
+   - Body: generous whitespace, clear form hierarchy
+   - Footer: separated by rule, white bg, right-aligned
+   - No dark headers, no heavy shadows, no Bootstrap artifacts
+   ========================================================================== */
+
+.stu-modal .modal-content {
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: visible;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Header — white surface, primary text, clean rule */
+.stu-modal .modal-header {
+  background-color: var(--ds-white) !important;
+  border-bottom: 1px solid var(--ds-gray-200);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stu-modal .modal-title {
+  font-family: var(--ds-font-family) !important;
+  font-size: var(--ds-text-base) !important;
+  font-weight: var(--ds-font-bold) !important;
+  color: var(--ds-primary-800) !important;
+  letter-spacing: 0;
+  margin: 0 !important;
+}
+
+.stu-modal .btn-close {
+  filter: none;
+  opacity: 0.4;
+  transition: opacity 150ms var(--ds-ease-out);
+  padding: 8px;
+  margin: -4px -4px -4px auto;
+  background-size: 0.8em;
+}
+
+.stu-modal .btn-close:hover {
+  opacity: 0.8;
+}
+
+/* Body — generous whitespace */
+.stu-modal .modal-body {
+  padding: 24px;
+}
+
+/* Footer — clean separation */
+.stu-modal .modal-footer {
+  border-top: 1px solid var(--ds-gray-100);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background-color: var(--ds-white);
+}
+
+/* --- Modal form sections --- */
+.stu-modal .modal-body h6 {
+  font-family: var(--ds-font-family);
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+/* Form labels — metadata style, same as table headers */
+.stu-modal .form-label {
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Inputs — clean, refined borders, consistent with filter inputs */
+.stu-modal .form-control,
+.stu-modal .form-select {
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-gray-200);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-regular);
+  padding: 8px 12px;
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  transition:
+    border-color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out);
+}
+
+.stu-modal .form-control::placeholder {
+  color: var(--ds-gray-400);
+}
+
+.stu-modal .form-control:focus,
+.stu-modal .form-select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: 0 0 0 3px rgba(25, 46, 78, 0.06);
+  outline: none;
+}
+
+/* Textarea */
+.stu-modal textarea.form-control {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* Read-only fields (show modal) — subtle, not boxed */
+.stu-modal .form-control-plaintext {
+  border: 1px solid var(--ds-gray-100);
+  border-radius: var(--ds-radius-sm);
+  padding: 8px 12px;
+  background-color: var(--ds-gray-50);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-700);
+  font-family: var(--ds-font-family);
+  margin: 0;
+}
+
+/* Validation feedback */
+.stu-modal .valid-feedback {
+  font-size: 0.7rem;
+  color: var(--ds-success, #16a34a);
+  margin-top: 2px;
+}
+
+.stu-modal .invalid-feedback {
+  font-size: 0.7rem;
+  color: var(--ds-error, #dc2626);
+  margin-top: 2px;
+}
+
+/* Delete modal — clean centered layout */
+.stu-modal--delete .modal-body {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.stu-modal--delete .modal-body .display-1 {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.stu-modal--delete .modal-body h5 {
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-800);
+  margin-bottom: 4px;
+}
+
+.stu-modal--delete .modal-body p {
+  color: var(--ds-gray-400);
+  font-size: var(--ds-text-sm);
+  margin: 0;
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet (< 992px)
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .stu-filters {
     flex-direction: column;
-}
-.labelAgregar{
-    font-size: 17px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 600;
-    margin-top: 7px;
-}
-.botonCancelar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.botonEnter:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.buttonInscribir:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
+    align-items: stretch;
+  }
+
+  .stu-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  .stu-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
-/* Estilos de Modal Headers */
-.modal-header {
-    background-color: #192E4E !important;
+/* =========================================================================
+   RESPONSIVE — Mobile (< 768px)
+   
+   Key: selects must be able to open native dropdowns without clipping.
+   overflow: hidden on ancestors breaks native <select> dropdowns.
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: var(--ds-space-4);
+  }
+
+  .page-students .page-title {
+    font-size: var(--ds-text-xl);
+  }
+
+  .stu-filters {
+    padding: var(--ds-space-3);
+    gap: var(--ds-space-3);
+    overflow: visible;
+  }
+
+  .stu-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  .stu-filter__select,
+  .stu-filter__input {
+    width: 100%;
+    min-height: 40px;
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+
+  .stu-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  .stu-actions .stu-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stu-table-header {
+    padding: var(--ds-space-2) var(--ds-space-3);
+  }
+
+  .stu-table thead th,
+  .stu-table tbody td {
+    padding: var(--ds-space-2);
+    font-size: var(--ds-text-xs);
+  }
+
+  .stu-modal .modal-body {
+    padding: var(--ds-space-3);
+  }
+
+  .stu-modal .modal-content {
+    overflow: visible;
+  }
 }
 
-.modal-title {
-    font-family: "League Spartan", sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 1.5rem !important;
-    color: white !important;
-}
+/* =========================================================================
+   REDUCED MOTION
+   ========================================================================== */
 
-.btn-close {
-    filter: brightness(0) invert(1);
-}
-
-/* Botón Eliminar en Modal */
-#eliminar:hover {
-    background-color: #1a2847 !important;
-    color: white !important;
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3) !important;
-    transform: translateY(-1px);
+@media (prefers-reduced-motion: reduce) {
+  .stu-btn,
+  .stu-table tbody tr,
+  .stu-table .stu-btn--sm {
+    transition: none;
+  }
 }

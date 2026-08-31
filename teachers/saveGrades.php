@@ -1,5 +1,6 @@
 
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 file_put_contents(__DIR__ . '/debug_grades.txt', 'ENTRO AL SCRIPT' . PHP_EOL, FILE_APPEND);
 // Mostrar todos los errores para depuración
 ini_set('display_errors', 1);

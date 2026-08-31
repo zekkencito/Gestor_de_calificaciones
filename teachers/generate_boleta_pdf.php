@@ -42,7 +42,12 @@ if (!$descargasHabilitadas) {
 
 // Funciones auxiliares
 function utf8_decode_safe($text) {
-    return iconv('UTF-8', 'ISO-8859-1//IGNORE', $text);
+    if (function_exists('mb_convert_encoding')) {
+        return mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
+    } elseif (function_exists('iconv')) {
+        return iconv('UTF-8', 'ISO-8859-1//IGNORE', $text);
+    }
+    return utf8_decode($text);
 }
 
 // Función para generar PDF programáticamente (para uso desde otros archivos)
@@ -373,6 +378,20 @@ if (!defined('CALLED_FROM_INCLUDE')) {
     if (!$idStudent || !$idSchoolYear || !$idSchoolQuarter) {
         die("Parámetros faltantes para generar la boleta. Student: $idStudent, Year: $idSchoolYear, Quarter: $idSchoolQuarter");
     }
+
+    // IDOR check: verify that the student belongs to a group assigned to this teacher
+    $stmtIdor = $conexion->prepare("SELECT s.idStudent FROM students s
+                                    JOIN groups g ON s.idGroup = g.idGroup
+                                    JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup
+                                    JOIN teachers t ON t.idTeacher = tgs.idTeacher
+                                    WHERE s.idStudent = ? AND t.idUser = ?");
+    $stmtIdor->bind_param("ii", $idStudent, $_SESSION['user_id']);
+    $stmtIdor->execute();
+    if ($stmtIdor->get_result()->num_rows === 0) {
+        http_response_code(403);
+        die("Error de autorización: El alumno solicitado no pertenece a sus grupos asignados.");
+    }
+    $stmtIdor->close();
 
     try {
         // Usar la función para generar el PDF

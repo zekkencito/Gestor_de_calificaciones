@@ -1,6 +1,7 @@
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Obtener datos del formulario

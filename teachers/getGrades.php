@@ -13,15 +13,39 @@ try {
     $idSchoolYear = intval($_GET['idSchoolYear']);
     $idSchoolQuarter = intval($_GET['idSchoolQuarter']);
 
-    // Obtener las calificaciones
+    // Obtener el ID del docente desde la sesión
+    $user_id = $_SESSION['user_id'];
+    $sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
+    $stmtTeacher = $conexion->prepare($sqlTeacher);
+    $stmtTeacher->bind_param("i", $user_id);
+    $stmtTeacher->execute();
+    $resTeacher = $stmtTeacher->get_result();
+    $rowTeacher = $resTeacher->fetch_assoc();
+    $teacher_id = $rowTeacher ? $rowTeacher['idTeacher'] : null;
+    $stmtTeacher->close();
+
+    if (!$teacher_id) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Error de autorización: Profesor no encontrado']);
+        exit;
+    }
+
+    // Obtener las calificaciones, filtrando solo para estudiantes asignados a este profesor en esta materia
     $query = "SELECT gs.grade, gs.idStudent, gs.idEvalCriteria
               FROM gradesSubject gs
               WHERE gs.idSubject = ? 
               AND gs.idSchoolYear = ? 
-              AND gs.idSchoolQuarter = ?";
+              AND gs.idSchoolQuarter = ?
+              AND EXISTS (
+                  SELECT 1 FROM teacherGroupsSubjects tgs 
+                  JOIN students s ON s.idGroup = tgs.idGroup
+                  WHERE tgs.idSubject = gs.idSubject 
+                  AND tgs.idTeacher = ?
+                  AND s.idStudent = gs.idStudent
+              )";
 
     $stmt = $conexion->prepare($query);
-    $stmt->bind_param("iii", $idSubject, $idSchoolYear, $idSchoolQuarter);
+    $stmt->bind_param("iiii", $idSubject, $idSchoolYear, $idSchoolQuarter, $teacher_id);
     $stmt->execute();
     $result = $stmt->get_result();
 

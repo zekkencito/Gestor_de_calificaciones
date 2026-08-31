@@ -1,0 +1,175 @@
+/* ==========================================================================
+   DESIGN SYSTEM — Gestor de Calificaciones
+   Escuela Gregorio Torres Quintero No. 2308
+   
+   Solo variables CSS. Cero clases.
+   Todos los componentes y layouts referencian estos tokens.
+   ========================================================================== */
+
+:root {
+  /* -----------------------------------------------------------------------
+     COLOR — Primario (Azul Marino Institucional)
+     Base: #192E4E — conservado como identidad de la escuela.
+     Escala generada a partir de HSL(213, 53%, 20%).
+     ----------------------------------------------------------------------- */
+  --ds-primary-950: #0c1624;
+  --ds-primary-900: #112038;
+  --ds-primary-800: #192E4E; /* — BASE — */
+  --ds-primary-700: #213d68;
+  --ds-primary-600: #2a4e85;
+  --ds-primary-500: #3562a3;
+  --ds-primary-400: #5580b8;
+  --ds-primary-300: #7fa2cc;
+  --ds-primary-200: #adc4df;
+  --ds-primary-100: #d6e2ef;
+  --ds-primary-50:  #edf2f8;
+
+  /* -----------------------------------------------------------------------
+     COLOR — Neutros
+     Warm-grays con un toque azulado para armonizar con el primario.
+     ----------------------------------------------------------------------- */
+  --ds-gray-950: #0b0d11;
+  --ds-gray-900: #1a1d24;
+  --ds-gray-800: #2c3038;
+  --ds-gray-700: #40454f;
+  --ds-gray-600: #5a6070;
+  --ds-gray-500: #747b8a;
+  --ds-gray-400: #9ba1ad;
+  --ds-gray-300: #c0c4cd;
+  --ds-gray-200: #dddfe4;
+  --ds-gray-100: #eeeff2;
+  --ds-gray-50:  #f7f8fa;
+  --ds-white:    #ffffff;
+
+  /* -----------------------------------------------------------------------
+     COLOR — Semánticos
+     Colores reservados exclusivamente para comunicar estado.
+     Cada semántico tiene un foreground (texto/icono) y un background.
+     ----------------------------------------------------------------------- */
+  --ds-success:     #1a7f4b;
+  --ds-success-bg:  #ecfdf5;
+  --ds-success-border: #a7f3d0;
+
+  --ds-warning:     #92600a;
+  --ds-warning-bg:  #fffbeb;
+  --ds-warning-border: #fde68a;
+
+  --ds-error:       #b91c1c;
+  --ds-error-bg:    #fef2f2;
+  --ds-error-border: #fecaca;
+
+  --ds-info:        #1d6fa5;
+  --ds-info-bg:     #eff8ff;
+  --ds-info-border: #bfdbfe;
+
+  /* -----------------------------------------------------------------------
+     TIPOGRAFÍA
+     League Spartan como fuente principal. Escala modular ratio ~1.25.
+     ----------------------------------------------------------------------- */
+  --ds-font-family: 'League Spartan', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --ds-text-xs:   0.75rem;    /* 12px — captions, badges, meta */
+  --ds-text-sm:   0.875rem;   /* 14px — labels, secondary text */
+  --ds-text-base: 1rem;       /* 16px — body, table cells */
+  --ds-text-lg:   1.125rem;   /* 18px — card titles, subheadings */
+  --ds-text-xl:   1.25rem;    /* 20px — section headers */
+  --ds-text-2xl:  1.5rem;     /* 24px — page titles */
+  --ds-text-3xl:  1.875rem;   /* 30px — solo hero/login */
+
+  --ds-font-light:    300;
+  --ds-font-regular:  400;
+  --ds-font-medium:   500;
+  --ds-font-semibold: 600;
+  --ds-font-bold:     700;
+
+  --ds-leading-tight:  1.25;
+  --ds-leading-normal: 1.5;
+  --ds-leading-relaxed: 1.625;
+
+  /* -----------------------------------------------------------------------
+     SPACING
+     Escala de 4px base. Usada para margin, padding, gap.
+     ----------------------------------------------------------------------- */
+  --ds-space-0:  0;
+  --ds-space-1:  0.25rem;  /*  4px */
+  --ds-space-2:  0.5rem;   /*  8px */
+  --ds-space-3:  0.75rem;  /* 12px */
+  --ds-space-4:  1rem;     /* 16px */
+  --ds-space-5:  1.25rem;  /* 20px */
+  --ds-space-6:  1.5rem;   /* 24px */
+  --ds-space-8:  2rem;     /* 32px */
+  --ds-space-10: 2.5rem;   /* 40px */
+  --ds-space-12: 3rem;     /* 48px */
+  --ds-space-16: 4rem;     /* 64px */
+
+  /* -----------------------------------------------------------------------
+     BORDER RADIUS
+     Contenido, no decorativo. Más pequeño = más serio/profesional.
+     ----------------------------------------------------------------------- */
+  --ds-radius-sm:   4px;    /* inputs, badges, pills */
+  --ds-radius-md:   6px;    /* buttons, cards */
+  --ds-radius-lg:   8px;    /* modals, panels */
+  --ds-radius-xl:   12px;   /* login container, feature cards */
+  --ds-radius-full: 9999px; /* avatars, circular icons */
+
+  /* -----------------------------------------------------------------------
+     SOMBRAS
+     Sutiles. La profundidad viene del contraste y bordes, no de sombras.
+     ----------------------------------------------------------------------- */
+  --ds-shadow-sm:    0 1px 2px rgba(0, 0, 0, 0.04);
+  --ds-shadow-md:    0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ds-shadow-lg:    0 4px 12px rgba(0, 0, 0, 0.08);
+  --ds-shadow-xl:    0 8px 24px rgba(0, 0, 0, 0.1);  /* solo modales */
+  --ds-shadow-focus: 0 0 0 2px var(--ds-primary-100), 0 0 0 4px var(--ds-primary-500);
+  --ds-shadow-focus-error: 0 0 0 2px var(--ds-error-bg), 0 0 0 4px var(--ds-error);
+
+  /* -----------------------------------------------------------------------
+     TRANSICIONES
+     Duraciones y easing reutilizables. Físicas, no lineales.
+     ----------------------------------------------------------------------- */
+  --ds-duration-fast:   120ms;
+  --ds-duration-normal: 200ms;
+  --ds-duration-slow:   300ms;
+  --ds-duration-slower: 450ms;
+
+  /* ease-out para entradas, ease-in para salidas, ease-in-out para movimiento */
+  --ds-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);    /* entradas, apariciones */
+  --ds-ease-in:     cubic-bezier(0.55, 0, 1, 0.45);   /* salidas */
+  --ds-ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);   /* movimiento continuo */
+  --ds-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* rebote sutil */
+
+  /* -----------------------------------------------------------------------
+     Z-INDEX
+     Escala centralizada para prevenir z-index wars.
+     ----------------------------------------------------------------------- */
+  --ds-z-base:     1;
+  --ds-z-dropdown: 100;
+  --ds-z-sticky:   200;
+  --ds-z-header:   300;
+  --ds-z-overlay:  400;
+  --ds-z-modal:    500;
+  --ds-z-toast:    600;
+  --ds-z-tooltip:  700;
+
+  /* -----------------------------------------------------------------------
+     LAYOUT
+     Dimensiones del shell (sidebar + header + main).
+     ----------------------------------------------------------------------- */
+  --ds-sidebar-width:     200px;
+  --ds-sidebar-collapsed: 64px;
+  --ds-header-height:     64px;
+  --ds-breakpoint-mobile: 768px;
+}
+
+/* =========================================================================
+   REDUCED MOTION
+   Respeta prefers-reduced-motion globalmente.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ds-duration-fast:   0ms;
+    --ds-duration-normal: 0ms;
+    --ds-duration-slow:   0ms;
+    --ds-duration-slower: 0ms;
+  }
+}

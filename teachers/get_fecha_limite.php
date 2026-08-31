@@ -1,4 +1,5 @@
 <?php
+require_once 'check_session.php';
 header('Content-Type: application/json');
 require_once "../conection.php";
 $res = $conexion->query("SELECT limitDate FROM limitDate WHERE idLimitDate = 1 LIMIT 1");

@@ -1,0 +1,469 @@
+/* =========================================================================
+   LOGIN — Gestor de Calificaciones
+   
+   Composition-first layout for the full-viewport login screen.
+   Two-panel split: left (identity) + right (form card).
+   100vh, no scroll, no empty space.
+   
+   Visual language matches change_password.php + admin/dashboard.php.
+   ========================================================================= */
+
+/* ---- Page reset ---- */
+.login-layout,
+.login-layout *,
+.login-layout *::before,
+.login-layout *::after {
+  box-sizing: border-box;
+}
+
+body.login-layout {
+  margin: 0;
+}
+
+/* =========================================================================
+   VIEWPORT-LOCKED SHELL
+   100vw × 100vh. No scroll. No gap below.
+   ========================================================================= */
+
+.login-layout {
+  display: flex;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* =========================================================================
+   LEFT PANEL — Institutional identity
+   Solid background. Vertically centered content. No decoration.
+   ========================================================================= */
+
+.login-layout__brand {
+  flex: 0 0 320px;
+  background-color: var(--ds-primary-800);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-10) var(--ds-space-8);
+}
+
+/* ---- Logo ---- */
+.login-brand__logo {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-white);
+  padding: var(--ds-space-2);
+  object-fit: contain;
+  margin-bottom: var(--ds-space-6);
+}
+
+.login-brand__fallback {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--ds-radius-lg);
+  background: rgba(255, 255, 255, .12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--ds-space-6);
+}
+
+.login-brand__fallback .bi {
+  font-size: 40px;
+  color: var(--ds-white);
+}
+
+/* ---- Brand text ---- */
+.login-brand__title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-white);
+  text-align: center;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--ds-space-2);
+  max-width: 260px;
+}
+
+.login-brand__subtitle {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  color: rgba(255, 255, 255, .7);
+  text-align: center;
+  margin: 0;
+  line-height: var(--ds-leading-relaxed);
+  max-width: 240px;
+}
+
+/* =========================================================================
+   RIGHT PANEL — Form area
+   Light background. Centered card. No extraneous content above card.
+   ========================================================================= */
+
+.login-layout__main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-8);
+  background-color: var(--ds-gray-50);
+}
+
+/* =========================================================================
+   CARD
+   Shared across all three views (login, recover, reset).
+   Matches change_password.css card pattern exactly.
+   ========================================================================= */
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--ds-shadow-lg);
+  animation: login-fade-up 0.3s var(--ds-ease-out) both;
+}
+
+@keyframes login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Card Header ---- */
+.login-card__header {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+.login-card__header h5 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.login-card__header h5 .bi {
+  color: var(--ds-primary-600);
+  font-size: var(--ds-text-lg);
+}
+
+/* ---- Card Body ---- */
+.login-card__body {
+  padding: var(--ds-space-6);
+}
+
+/* =========================================================================
+   FORM — Consistent with change_password forms
+   ========================================================================= */
+
+.login-form .ds-form-group {
+  margin-bottom: var(--ds-space-4);
+}
+
+.login-form .ds-label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+}
+
+.login-input-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-input-wrapper .ds-input {
+  width: 100%;
+  padding: 13px 16px;
+  padding-right: 2.75rem;
+  height: 44px;
+}
+
+/* ---- Eye toggle ---- */
+.login-eye-toggle {
+  position: absolute;
+  right: 1px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: var(--ds-space-1) var(--ds-space-2);
+  cursor: pointer;
+  color: var(--ds-gray-400);
+  font-size: var(--ds-text-base);
+  line-height: 1;
+  border-radius: var(--ds-radius-sm);
+  transition:
+    color var(--ds-duration-fast) var(--ds-ease-out),
+    background-color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.login-eye-toggle:hover {
+  color: var(--ds-gray-600);
+  background-color: var(--ds-gray-100);
+}
+
+.login-eye-toggle:focus-visible {
+  outline: 2px solid var(--ds-primary-500);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   ALERTS
+   ========================================================================= */
+
+.login-alert {
+  margin-bottom: var(--ds-space-5);
+  animation: login-fade-up 0.2s var(--ds-ease-out) both;
+}
+
+.login-alert--hidden {
+  display: none;
+}
+
+/* =========================================================================
+   RECOVERY — Description text above form
+   ========================================================================= */
+
+.login-recovery-desc {
+  margin-bottom: var(--ds-space-5);
+}
+
+.login-recovery-desc p {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-500);
+  margin: 0;
+  line-height: var(--ds-leading-relaxed);
+}
+
+/* =========================================================================
+   PASSWORD REQUIREMENTS — Live checklist
+   ========================================================================= */
+
+.login-requirements {
+  background: var(--ds-gray-50);
+  border: 1px solid var(--ds-gray-100);
+  border-radius: var(--ds-radius-md);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  margin-bottom: var(--ds-space-5);
+}
+
+.login-requirements__title {
+  font-family: var(--ds-font-family);
+  font-size: 11px;
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 var(--ds-space-2);
+}
+
+.login-requirements__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+.login-requirements__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-gray-400);
+  transition: color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.login-requirements__item.met {
+  color: var(--ds-success);
+}
+
+.login-requirements__item .bi {
+  font-size: 13px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+/* =========================================================================
+   SUBMIT BUTTON — Primary, full-width, solid. No shimmer/glow.
+   ========================================================================= */
+
+.login-submit {
+  width: 100%;
+  height: 48px;
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-font-bold);
+  letter-spacing: 0.01em;
+}
+
+/* =========================================================================
+   LINK ROW — Password recovery below form
+   ========================================================================= */
+
+.login-link-row {
+  text-align: center;
+  margin-top: var(--ds-space-5);
+  padding-top: var(--ds-space-4);
+  border-top: 1px solid var(--ds-gray-100);
+}
+
+.login-link-row a {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-primary-500);
+  text-decoration: none;
+  transition: color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.login-link-row a:hover {
+  color: var(--ds-primary-800);
+}
+
+.login-link-row a:focus-visible {
+  outline: 2px solid var(--ds-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
+/* =========================================================================
+   BACK LINK — "Volver" below card forms
+   ========================================================================= */
+
+.login-back {
+  text-align: center;
+  margin-top: var(--ds-space-5);
+}
+
+.login-back a {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-500);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  transition: color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.login-back a:hover {
+  color: var(--ds-primary-700);
+}
+
+.login-back a:focus-visible {
+  outline: 2px solid var(--ds-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
+.login-back--spaced {
+  margin-top: var(--ds-space-6);
+}
+
+/* =========================================================================
+   TOKEN ERROR — Invalid/expired link state
+   ========================================================================= */
+
+.login-token-error {
+  text-align: center;
+  padding: var(--ds-space-6) 0;
+}
+
+.login-token-error__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-error-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--ds-space-5);
+}
+
+.login-token-error__icon .bi {
+  font-size: 28px;
+  color: var(--ds-error);
+}
+
+.login-token-error h5 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-2);
+}
+
+.login-token-error p {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-500);
+  margin: 0;
+  line-height: var(--ds-leading-relaxed);
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet (brand panel hides, card centers)
+   ========================================================================= */
+
+@media (max-width: 991px) {
+  .login-layout__brand {
+    display: none;
+  }
+
+  .login-layout__main {
+    padding: var(--ds-space-8);
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE — Mobile (tighter padding, top-aligned on small screens)
+   ========================================================================= */
+
+@media (max-width: 575px) {
+  .login-layout__main {
+    padding: var(--ds-space-8);
+    align-items: flex-start;
+    padding-top: var(--ds-space-8);
+  }
+
+  .login-card {
+    border-radius: var(--ds-radius-md);
+  }
+
+  .login-card__header,
+  .login-card__body {
+    padding-left: var(--ds-space-5);
+    padding-right: var(--ds-space-5);
+  }
+}
+
+/* =========================================================================
+   REDUCED MOTION
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card {
+    animation: none;
+  }
+}

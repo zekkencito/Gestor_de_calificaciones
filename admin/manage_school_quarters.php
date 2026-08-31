@@ -1,4 +1,5 @@
 <?php
+require_once 'check_session.php';
 require_once '../conection.php';
 header('Content-Type: application/json');
 $action = $_POST['action'] ?? '';

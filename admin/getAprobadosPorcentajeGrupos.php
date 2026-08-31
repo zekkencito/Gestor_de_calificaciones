@@ -1,4 +1,5 @@
 <?php
+require_once 'check_session.php';
 require_once '../conection.php';
 // Para el dashboard admin: porcentaje de grupos aprobados (promedio >= 7 o >= 70)
 $sqlGroups = "SELECT idGroup FROM groups";

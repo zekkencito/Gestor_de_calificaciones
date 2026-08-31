@@ -76,12 +76,25 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
     $resMaterias = $stmt->get_result();
     $totalMaterias = $resMaterias->fetch_assoc()['total'];
     
+    // Obtener el ciclo escolar actual
+    $currentYear = date('Y');
+    $sqlCurrentYear = "SELECT idSchoolYear FROM schoolYear WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? ORDER BY startDate DESC LIMIT 1";
+    $stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
+    $stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
+    $stmtCurrentYear->execute();
+    $resCY = $stmtCurrentYear->get_result();
+    $currentSchoolYearId = 0; // fallback
+    if ($rowCY = $resCY->fetch_assoc()) {
+        $currentSchoolYearId = $rowCY['idSchoolYear'];
+    }
+    $stmtCurrentYear->close();
+
     // Contar alumnos del maestro
     $sqlAlumnos = "SELECT COUNT(DISTINCT s.idStudent) AS total
                   FROM students s
                   JOIN groups g ON s.idGroup = g.idGroup
                   JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup
-                  WHERE tgs.idTeacher = ?";
+                  WHERE tgs.idTeacher = ? AND s.idSchoolYear = ?";
     
     $stmt = $conexion->prepare($sqlAlumnos);
     if (!$stmt) {
@@ -89,7 +102,7 @@ if ($teacherData = $resTeacher->fetch_assoc()) {
         die("Error al cargar la información de alumnos.");
     }
     
-    $stmt->bind_param("i", $teacher_id);
+    $stmt->bind_param("ii", $teacher_id, $currentSchoolYearId);
     if (!$stmt->execute()) {
         error_log("Error al ejecutar consulta de alumnos: " . $stmt->error);
         die("Error al procesar la información de alumnos.");
@@ -142,31 +155,28 @@ try {
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración</title>
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
+    <title>Panel Docente</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/styles.css">
+    <!-- Design System -->
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/admin/dashboard.css">
+    <!-- External libs -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
-    <link rel="stylesheet" href="../css/teacher/dashboard.css">
-    <!-- TIPOGRAFIA -->
+    <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-
-    <!-- TIPOGRAFIA -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    
-
-    
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="page-tch-dashboard">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -178,243 +188,93 @@ try {
     ?>
     <!-- END ASIDEBAR -->
     <!-- MAIN CONTENT -->
-     <main class="flex-grow-1 col-9 p-0 ">
+     <main class="ds-main">
         <?php
             include "../layouts/headerTeacher.php"; 
         ?>
         
-        <!-- Header del Dashboard -->
-        <div class="container-fluid px-4" style="padding-top: 8rem; height: auto;">
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-header mb-3">
-                        <h1 class="page-title">
-                            <i class="bi bi-speedometer2 me-3"></i>
-                            Panel de Control
-                        </h1>
-                        <p class="page-subtitle text-muted">
-                            Bienvenido. Aquí tiene un resumen de su actividad docente.
-                        </p>
+        <div class="dash-content">
+
+            <!-- Page Header -->
+            <div class="dash-header">
+                <h1 class="dash-header__title">Panel Docente</h1>
+                <p class="dash-header__subtitle">Bienvenido. Aquí tiene un resumen de su actividad académica.</p>
+            </div>
+
+            <!-- Deadline Notice -->
+            <div class="dash-deadline">
+                <div class="dash-deadline__icon">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <div class="dash-deadline__text">
+                    <span class="dash-deadline__label">Fecha límite de calificaciones</span>
+                    <span class="dash-deadline__date" id="fechaLimiteDashboard">Cargando...</span>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="dash-stats">
+                <div class="dash-stat">
+                    <div class="dash-stat__icon">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </div>
+                    <div class="dash-stat__data">
+                        <p class="dash-stat__number"><?php echo $totalMaterias; ?></p>
+                        <p class="dash-stat__label">Materias Asignadas</p>
+                    </div>
+                </div>
+
+                <div class="dash-stat">
+                    <div class="dash-stat__icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="dash-stat__data">
+                        <p class="dash-stat__number"><?php echo $totalAlumnos; ?></p>
+                        <p class="dash-stat__label">Alumnos a mi cargo</p>
+                    </div>
+                </div>
+
+                <div class="dash-stat">
+                    <div class="dash-stat__icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="dash-stat__data">
+                        <p class="dash-stat__number"><?php echo $materiasInfo ? mysqli_num_rows($materiasInfo) : 0; ?></p>
+                        <p class="dash-stat__label">Materias Únicas</p>
                     </div>
                 </div>
             </div>
+
+            <!-- Calendar + Chart Grid -->
+            <div class="dash-grid">
+                <!-- Calendar Panel -->
+                <div class="dash-panel dash-panel--calendar">
+                    <div class="dash-panel__body dash-panel__body--flush">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+                <!-- Chart Panel -->
+                <div class="dash-panel dash-panel--chart">
+                    <div class="dash-panel__header">
+                        <h2 class="dash-panel__title">Alumnos Aprobados</h2>
+                    </div>
+                    <div class="dash-panel__body">
+                        <div class="dash-chart-wrap">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-
-        <!-- Contenido principal -->
-        <div class="container-fluid px-4">
-            <!-- Alerta de fecha límite -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-info border-0 shadow-sm" style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); border-radius: 15px;">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-calendar-event fs-4 me-3 text-info"></i>
-                            <div>
-                                <h6 class="mb-0 fw-bold">Fecha límite de calificaciones</h6>
-                                <strong id="fechaLimiteDashboard" class="text-dark">Cargando...</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tarjetas de estadísticas -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="stats-card">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <div class="stats-icon mb-3">
-                                    <i class="bi bi-journal-bookmark text-primary"></i>
-                                </div>
-                                <h3 class="stats-number text-primary"><?php echo $totalMaterias; ?></h3>
-                                <p class="stats-label text-muted mb-0">Materias Asignadas</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6">
-                    <div class="stats-card">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <div class="stats-icon mb-3">
-                                    <i class="bi bi-people text-success"></i>
-                                </div>
-                                <h3 class="stats-number text-success"><?php echo $totalAlumnos; ?></h3>
-                                <p class="stats-label text-muted mb-0">Alumnos a mi cargo</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6">
-                    <div class="stats-card">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <div class="stats-icon mb-3">
-                                    <i class="bi bi-check-circle text-info"></i>
-                                </div>
-                                <h3 class="stats-number text-info"><?php echo $materiasInfo ? mysqli_num_rows($materiasInfo) : 0; ?></h3>
-                                <p class="stats-label text-muted mb-0">Materias Únicas</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gráficas y contenido -->
-        <div class="container-fluid px-4">
-            <div class="row g-4">
-                <!-- Calendario -->
-                <div class="col-lg-6">
-                    <div class="chart-card">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-calendar-event me-2 text-primary"></i>
-                                    Calendario de Eventos
-                                </h5>
-                            </div>
-                            <div class="card-body p-2">
-                                <div id="calendar"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráfica de Porcentajes -->
-                <div class="col-lg-6">
-                    <div class="chart-card">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-pie-chart me-2 text-success"></i>
-                                    Porcentaje de Alumnos Aprobados
-                                </h5>
-                            </div>
-                            <div class="card-body d-flex justify-content-center align-items-center">
-                                <div class="chart-container">
-                                    <canvas id="chartCategorias" width="400" height="400"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Estilos CSS personalizados -->
-        <style>
-            /* Estilos para el header */
-            .page-header {
-                text-align: center;
-                padding: 1.5rem 0 1rem 0;
-                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                border-radius: 15px;
-                margin-bottom: 1.5rem;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            
-            .page-title {
-                color: #192E4E;
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin-bottom: 0.3rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .page-subtitle {
-                font-size: 1.1rem;
-                margin-bottom: 0;
-                opacity: 0.8;
-            }
-
-            /* Tarjetas de estadísticas */
-            .stats-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-            
-            .stats-card:hover {
-                transform: translateY(-5px);
-            }
-            
-            .stats-card .card {
-                border-radius: 15px;
-                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-            }
-            
-            .stats-icon i {
-                font-size: 2.5rem;
-            }
-            
-            .stats-number {
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin: 0.5rem 0;
-            }
-            
-            .stats-label {
-                font-size: 0.9rem;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-
-            /* Tarjetas de gráficas */
-            .chart-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-            
-            .chart-card:hover {
-                transform: translateY(-2px);
-            }
-            
-            .chart-card .card {
-                border-radius: 15px;
-                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-                min-height: 500px;
-            }
-            
-            .chart-card .card-header {
-                border-radius: 15px 15px 0 0;
-                border-bottom: 1px solid #e9ecef;
-            }
-            
-            .chart-container {
-                max-width: 400px;
-                max-height: 400px;
-            }
-
-            /* Responsividad */
-            @media (max-width: 768px) {
-                .page-title {
-                    font-size: 2rem;
-                }
-                
-                .page-header {
-                    padding: 1rem 0 0.75rem 0;
-                    margin-bottom: 1rem;
-                }
-                
-                .stats-number {
-                    font-size: 2rem;
-                }
-                
-                .chart-card .card {
-                    min-height: 400px;
-                }
-            }
-        </style>
     </main>
-
-     </main>
-    <!-- END MAIN CONTENT --> 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/chartScript.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/locale/es.js"></script>
     <script>
         // Mostrar la fecha límite en el dashboard (SIEMPRE desde la base de datos, en español)
         function mostrarFechaLimiteDashboard(fechaLimite = null) {
@@ -467,30 +327,33 @@ try {
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('get_fecha_limite.php')
+            fetch('../api/get_calendar_events.php')
                 .then(response => response.json())
                 .then(data => {
-                    const fechaLimite = data.fechaLimite;
-                    const eventos = [];
-                    if (fechaLimite) {
-                        eventos.push({
-                            id: 'cierre-calificaciones',
-                            title: 'Cierre de calificaciones',
-                            start: fechaLimite,
-                            color: '#e74c3c'
-                        });
-                    }
-                    const calendarEl = document.getElementById('calendar');
-                    window.calendar = new FullCalendar.Calendar(calendarEl, {
-                        locale: 'es',
-                        headerToolbar: {
-                            left: 'prev,next',
-                            center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                        },
-                        events: eventos
-                    });
-                    window.calendar.render();
+                    const calendar = new FullCalendar.Calendar(
+                        document.getElementById('calendar'),
+                        {
+                            locale: 'es',
+                            buttonText: {
+                                today: 'Hoy',
+                                month: 'Mes',
+                                week: 'Semana',
+                                day: 'Día'
+                            },
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                            },
+                            events: data.events || [],
+                            height: 'auto',
+                            dayHeaders: true,
+                            navLinks: false,
+                            editable: false,
+                            nowIndicator: true
+                        }
+                    );
+                    calendar.render();
                 });
         });
     </script>

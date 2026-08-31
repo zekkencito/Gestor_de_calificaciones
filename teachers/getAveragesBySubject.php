@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'check_session.php';
 require_once '../conection.php';
 
 // Verificar que el usuario esté logueado
@@ -10,7 +10,6 @@ if (!isset($_SESSION['user_id'])) {
 
 // Habilitar CORS si es necesario
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 
 $idSubject = isset($_GET['idSubject']) ? intval($_GET['idSubject']) : 0;
 $idSchoolYear = isset($_GET['idSchoolYear']) ? intval($_GET['idSchoolYear']) : 0;

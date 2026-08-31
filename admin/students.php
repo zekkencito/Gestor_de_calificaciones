@@ -1,7 +1,7 @@
 <?php
 require_once "check_session.php";
 require_once "../force_password_check.php";
-include '../conection.php';
+require_once '../conection.php';
 
 // --- FECHA LIMITE GLOBAL PARA DESCARGAS ---
 $fechaLimite = null;
@@ -14,7 +14,7 @@ $descargasHabilitadas = ($fechaLimite && $hoy > date('Y-m-d', strtotime($fechaLi
 
 // Obtener los ciclos escolares disponibles
 $schoolYears = [];
-$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate, description 
+$sqlSchoolYears = "SELECT idSchoolYear, startDate, endDate
                    FROM schoolYear 
                    ORDER BY startDate DESC";
 $resultSchoolYears = $conexion->query($sqlSchoolYears);
@@ -97,41 +97,29 @@ if (!$resultado) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <style>
-        .table td, .table th {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .table tbody tr td {
-            padding: 1rem;
-        }
-        .table tbody tr td ul {
-            margin: 0;
-            padding: 0;
-        }
-        .table tbody tr td ul li {
-            text-align: left;
-            margin-bottom: 0.25rem;
-        }
-    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Alumnos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin/time.css">
     <link rel="stylesheet" href="../css/admin/student.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
     
     <!-- TIPOGRAFIA -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     
     <link rel="icon" href="../img/logo.ico">
 
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="page-students">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -142,150 +130,94 @@ if (!$resultado) {
 
     
     <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 col-9 p-0">
+    <main class="ds-main">
         <?php include "../layouts/header.php"; ?>
         
         <!-- Header de la página -->
-        <div class="container-fluid px-4 pt-5">
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-header mb-3">
-                        <h1 class="page-title">
-                            <i class="bi bi-people me-3"></i>
-                            Gestión de Estudiantes
-                        </h1>
-                        <p class="page-subtitle">
-                            Administra la información de los estudiantes del sistema
-                        </p>
-                    </div>
-                </div>
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Gestión de Estudiantes</h1>
+                <p class="page-subtitle">Administra la información de los estudiantes del sistema</p>
             </div>
-        </div>
 
-        <!-- Contenido principal -->
-        <div class="container-fluid px-4">
-            <!-- Panel de filtros -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="filter-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-funnel me-2 text-primary"></i>
-                                    Filtros de Búsqueda
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <!-- BUSCAR POR ALUMNO -->
-                                        <div class="search-container">
-                                            <label for="alumno" class="form-label fw-semibold">
-                                                <i class="bi bi-person-search me-1"></i>
-                                                Buscar por Alumno:
-                                            </label>
-                                            <input type="text" class="form-control form-control-lg border-secondary border-3" id="alumno" placeholder="Buscar alumno...">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <!-- BUSCAR POR AÑO ESCOLAR -->
-                                        <div class="search-container">
-                                            <label for="schoolYear" class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-date me-1"></i>
-                                                Año Escolar:
-                                            </label>
-                                            <select class="form-select border-secondary border-3" id="schoolYear" name="schoolYear">
-                                                <option value="">Todos los años</option>
-                                                <?php
-                                                $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
-                                                $resultYears = $conexion->query($sqlYears);
-                                                while ($year = $resultYears->fetch_assoc()) {
-                                                    $selected = (isset($_GET['year']) && $_GET['year'] == $year['idSchoolYear']) ? 'selected' : '';
-                                                    echo "<option value='" . $year['idSchoolYear'] . "' $selected>" . $year['year'] . "</option>";
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
+            <!-- Filtros + Acciones -->
+            <div class="stu-filters">
+                <!-- BUSCAR POR ALUMNO -->
+                <div class="stu-filter">
+                    <label for="alumno" class="stu-filter__label">Buscar por Alumno</label>
+                    <input type="text" class="stu-filter__input" id="alumno" placeholder="Nombre del alumno...">
+                </div>
+                
+                <!-- BUSCAR POR AÑO ESCOLAR -->
+                <div class="stu-filter">
+                    <label for="schoolYear" class="stu-filter__label">Año Escolar</label>
+                    <select class="stu-filter__select" id="schoolYear" name="schoolYear">
+                        <option value="">Todos los años</option>
+                        <?php
+                        $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                        $resultYears = $conexion->query($sqlYears);
+                        while ($year = $resultYears->fetch_assoc()) {
+                            $selected = (isset($_GET['year']) && $_GET['year'] == $year['idSchoolYear']) ? 'selected' : '';
+                            echo "<option value='" . $year['idSchoolYear'] . "' $selected>" . $year['year'] . "</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
 
-                                    <div class="col-md-4">
-                                        <!-- BUSCAR POR GRUPO -->
-                                        <div class="search-container">
-                                            <label for="grupo" class="form-label fw-semibold">
-                                                <i class="bi bi-collection me-1"></i>
-                                                Buscar por Grupo:
-                                            </label>
-                                            <select class="form-select border-secondary border-3" id="grupo" name="grupo">
-                                                <option value="">Todos los grupos</option>
-                                                <?php
-                                                $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
-                                                $resultGroups = $conexion->query($sqlGroups);
-                                                while ($group = $resultGroups->fetch_assoc()) {
-                                                    $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
-                                                    echo "<option value='" . $group['idGroup'] . "' $selected>" . $group['grupo'] . "</option>";
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                <!-- BUSCAR POR GRUPO -->
+                <div class="stu-filter">
+                    <label for="grupo" class="stu-filter__label">Grupo</label>
+                    <select class="stu-filter__select" id="grupo" name="grupo">
+                        <option value="">Todos los grupos</option>
+                        <?php
+                        $sqlGroups = "SELECT idGroup, CONCAT(grade, group_) as grupo FROM groups ORDER BY grade, group_";
+                        $resultGroups = $conexion->query($sqlGroups);
+                        while ($group = $resultGroups->fetch_assoc()) {
+                            $selected = (isset($_GET['group']) && $_GET['group'] == $group['idGroup']) ? 'selected' : '';
+                            echo "<option value='" . $group['idGroup'] . "' $selected>" . $group['grupo'] . "</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
 
-                                <div class="row g-3 mt-2">
-                                    <!-- Segunda fila con botones de acción -->
-                                    <div class="col-md-12 d-flex align-items-end">
-                                        <!-- Botones de acción -->
-                                        <div class="d-flex gap-2 w-100">
-                                            <!-- Botón para descargar PDFs del grupo (oculto por defecto) -->
-                                            <button id="btnDescargarGrupo" 
-                                                    class="btn <?php echo $descargasHabilitadas ? 'btn-success' : 'btn-secondary'; ?> d-none flex-fill" 
-                                                    <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
-                                                <i class="bi bi-download me-2"></i> 
-                                                <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
-                                            </button>
-                                            
-                                            <button class="btn flex-fill" style="background-color: #192E4E; border-color: #192E4E; color: white;" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                                                <i class="bi bi-plus-lg me-2"></i>
-                                                Inscribir alumno
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Acciones -->
+                <div class="stu-actions">
+                    <button id="btnDescargarGrupo" 
+                            class="stu-btn stu-btn--success d-none" 
+                            <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
+                        <i class="bi bi-download"></i>
+                        <?php echo $descargasHabilitadas ? 'Descargar PDFs' : 'Descarga después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
+                    </button>
+                    
+                    <button class="stu-btn stu-btn--primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="bi bi-plus-lg"></i>
+                        Inscribir alumno
+                    </button>
                 </div>
             </div>
 
             <!-- Tabla de estudiantes -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="table-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-table me-2 text-success"></i>
-                                    Lista de Alumnos
-                                </h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th class="fw-semibold">No.</th>
-                                                <th class="fw-semibold">A. Paterno</th>
-                                                <th class="fw-semibold">A. Materno</th>
-                                                <th class="fw-semibold">Nombres</th>
-                                                <th class="fw-semibold">Grupo</th>
-                                                <th class="fw-semibold">Año Escolar</th>
-                                                <th class="fw-semibold">Estado</th>
-                                                <th class="fw-semibold text-center">Boleta</th>
-                                                <th class="fw-semibold text-center">Ver</th>
-                                                <th class="fw-semibold text-center">Editar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="alumnosBody">
+            <div class="stu-table-wrap">
+                <div class="stu-table-header">
+                    <h2 class="stu-table-title">Lista de Alumnos</h2>
+                </div>
+                <div class="stu-table-responsive">
+                    <table class="stu-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>A. Paterno</th>
+                                <th>A. Materno</th>
+                                <th>Nombres</th>
+                                <th>Grupo</th>
+                                <th>Año Escolar</th>
+                                <th>Estado</th>
+                                <th class="text-center">Boleta</th>
+                                <th class="text-center">Ver</th>
+                                <th class="text-center">Editar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alumnosBody">
                     <?php while ($row = $resultado->fetch_assoc()) { ?>
                         <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear']); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup']); ?>">
                             <td><?php echo htmlspecialchars($row['idStudent']); ?></td>
@@ -296,25 +228,25 @@ if (!$resultado) {
                             <td><?php echo htmlspecialchars($row['schoolYear']); ?></td>
                             <td><?php
                                 if ($row['nomenclature'] == 'AC') {
-                                    echo '<span class="badge bg-success">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--active">' . $row['status'] . '</span>';
                                 } elseif ($row['nomenclature'] == 'BA') {
-                                    echo '<span class="badge bg-danger">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--inactive">' . $row['status'] . '</span>';
                                 } elseif ($row['nomenclature'] == 'RE') {
-                                    echo '<span class="badge bg-warning">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--warning">' . $row['status'] . '</span>';
                                 }elseif ($row['nomenclature'] == 'EG') {
-                                    echo '<span class="badge bg-primary">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--info">' . $row['status'] . '</span>';
                                 }elseif ($row['nomenclature'] == 'IN') {
-                                    echo '<span class="badge bg-secondary">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--secondary">' . $row['status'] . '</span>';
                                 }elseif ($row['nomenclature'] == 'TR') {
-                                    echo '<span class="badge bg-info">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--info">' . $row['status'] . '</span>';
                                 }elseif ($row['nomenclature'] == 'RC') {
-                                    echo '<span class="badge bg-dark">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--dark">' . $row['status'] . '</span>';
                                 }elseif ($row['nomenclature'] == 'EX') {
-                                    echo '<span class="badge bg-light">' . $row['status'] . '</span>';
+                                    echo '<span class="stu-badge stu-badge--secondary">' . $row['status'] . '</span>';
                                 }
                             ?></td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary" 
+                                <button class="stu-btn stu-btn--sm" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalCamposFormativos"
                                     data-id="<?php echo $row['idStudent']; ?>"
@@ -328,7 +260,7 @@ if (!$resultado) {
                                 </button>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-info btn-ver" 
+                                <button class="stu-btn stu-btn--sm btn-ver" 
                                 data-id="<?php echo isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : ''; ?>"
                                 data-nombres="<?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?>"
                                 data-paterno="<?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?>"
@@ -356,7 +288,7 @@ if (!$resultado) {
                             </button>
                             </td>
                             <td class="text-center">
-                            <button class="btn btn-sm btn-outline-warning btn-editar"    
+                            <button class="stu-btn stu-btn--sm btn-editar"    
                                 data-id="<?php echo isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : ''; ?>"
                                 data-nombres="<?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?>"
                                 data-paterno="<?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?>"
@@ -384,47 +316,35 @@ if (!$resultado) {
                             </td>
                         </tr>
                     <?php } ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <!-- Estado vacío -->
-                                <div id="emptyState" class="text-center py-5" style="display: none;">
-                                    <div class="mb-3">
-                                        <i class="bi bi-inbox display-4 text-muted"></i>
-                                    </div>
-                                    <h5 class="text-muted">No hay estudiantes registrados</h5>
-                                    <p class="text-muted">Agrega estudiantes usando el botón "Inscribir alumno"</p>
-                                </div>
-                            </div>
-                        </div>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Estado vacío -->
+                <div id="emptyState" class="stu-empty" style="display: none;">
+                    <div class="stu-empty__icon">
+                        <i class="bi bi-inbox"></i>
                     </div>
+                    <p class="stu-empty__title">No hay estudiantes registrados</p>
+                    <p class="stu-empty__desc">Agrega estudiantes usando el botón "Inscribir alumno"</p>
                 </div>
             </div>
         </div>
     </main>
-                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-    <!-- END MAIN CONTENT -->
     
     <!-- MODAL AGREGAR ALUMNO -->
-    <div class="modal fade modal-lg" id="addStudentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade modal-lg stu-modal" id="addStudentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h1 id="tituloModal" class="modal-title fs-5 text-white fw-bold" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem !important;">
-                        <i class="bi bi-person-plus me-2"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 id="tituloModal" class="modal-title">
                         Inscribir Alumno
                     </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="addStudent.php" id="formInscribir" method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                         <!-- Información Personal -->
                         <div class="mb-4">
                             <h6 class="text-black border-bottom pb-2 mb-3">
@@ -645,13 +565,12 @@ if (!$resultado) {
                             Favor de llenar todos los campos correctamente
                         </div>
 
-                        <div class="modal-footer border-0 bg-light mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-2"></i>
+                        <div class="modal-footer mt-4">
+                            <button type="button" class="stu-btn stu-btn--outline" data-bs-dismiss="modal">
                                 Cancelar
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>
+                            <button type="submit" class="stu-btn stu-btn--primary">
+                                <i class="bi bi-check-circle"></i>
                                 Inscribir Alumno
                             </button>
                         </div>
@@ -663,12 +582,11 @@ if (!$resultado) {
 
     <!-- MODAL VER ALUMNO -->
     <!-- Modal para mostrar detalles del estudiante -->
-    <div class="modal fade modal-lg" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+    <div class="modal fade modal-lg stu-modal" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="showModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
-                        <i class="bi bi-person-circle me-2"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="showModalLabel">
                         Información del Estudiante
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -692,7 +610,7 @@ if (!$resultado) {
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-muted">Estado:</label>
-                            <div class="border rounded px-3 py-2 bg-light d-flex align-items-center" id="show_status">-</div>
+                            <div id="show_status" class="stu-badge stu-badge--active">-</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-muted">Apellido Paterno:</label>
@@ -784,13 +702,12 @@ if (!$resultado) {
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-1"></i>
+                <div class="modal-footer">
+                    <button type="button" class="stu-btn stu-btn--outline" data-bs-dismiss="modal">
                         Cerrar
                     </button>
-                    <button type="button" class="btn" style="background-color: #192E4E; color: white; border: none;" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                        <i class="bi bi-trash me-1"></i>
+                    <button type="button" class="stu-btn stu-btn--danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i>
                         Eliminar
                     </button>
                 </div>
@@ -799,18 +716,18 @@ if (!$resultado) {
     </div>
 
     <!-- Modal para editar estudiante -->
-    <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade modal-lg stu-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="editModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
-                        <i class="bi bi-pencil me-2"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">
                         Editar Estudiante
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="updateStudent.php" method="POST" class="needs-validation" novalidate id="formEditStudent">
+                        <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                         <input type="hidden" name="studentId" id="studentId">
                         <div class="row g-3">
                             <!-- Información Personal -->
@@ -1029,13 +946,12 @@ if (!$resultado) {
                                 <div class="invalid-feedback">Por favor ingrese la dirección del tutor.</div>
                             </div>
                         </div>
-                        <div class="modal-footer border-0 bg-light mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-2"></i>
+                        <div class="modal-footer mt-4">
+                            <button type="button" class="stu-btn stu-btn--outline" data-bs-dismiss="modal">
                                 Cancelar
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>
+                            <button type="submit" class="stu-btn stu-btn--primary">
+                                <i class="bi bi-check-circle"></i>
                                 Actualizar Estudiante
                             </button>
                         </div>
@@ -1046,12 +962,11 @@ if (!$resultado) {
     </div>
 
 
-     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+     <div class="modal fade stu-modal" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="deleteModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
                         Confirmar Eliminación
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1063,66 +978,25 @@ if (!$resultado) {
                         <p class="text-muted" id="delete-teacher-info">Esta acción no se puede deshacer.</p>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-2"></i>
+                <div class="modal-footer">
+                    <button type="button" class="stu-btn stu-btn--outline" data-bs-dismiss="modal">
                         Cancelar
                     </button>
-                    <button type="button" class="btn" id="eliminar" style="background-color: #192E4E; color: white; border: none;">
-                        <i class="bi bi-trash me-2"></i>
+                    <button type="button" class="stu-btn stu-btn--danger" id="eliminar">
+                        <i class="bi bi-trash"></i>
                         Eliminar Estudiante
                     </button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- MODAL ELIMINAR ALUMNO 
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5">¿Desea eliminar este alumno?</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-footer">
-                    <button class="botonCancelar" type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#showModal">Cancelar
-                        <i id="iconoAdd" class="bi bi-x-circle-fill"></i>
-                    </button>
-                    <button class="botonEnter" type="submit" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">Eliminar
-                        <i id="iconoAdd" class="bi bi-trash3-fill"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>-->
-
-    <!-- MODAL CONFIRMAR ELIMINACIÃ“N 
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5">¿Está seguro que desea eliminar este alumno?</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-footer">
-                    <button class="botonCancelar" type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#showModal">Cambié de opinión
-                        <i id="iconoAdd" class="bi bi-x-circle-fill"></i>
-                    </button>
-                    <button class="botonEnter" type="submit" class="btn btn-primary btnEliminar" id="eliminar">Eliminar
-                        <i class="bi bi-trash3-fill"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>-->
 
     <!-- MODAL BOLETA -->
-    <div class="modal fade" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
+    <div class="modal fade stu-modal" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="modalCamposFormativosLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
-                        <i class="bi bi-file-earmark-text me-2"></i>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCamposFormativosLabel">
                         Boleta
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -1171,11 +1045,12 @@ if (!$resultado) {
                         </ul>
                     </div>
                 </div>
+                </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="stu-btn stu-btn--outline" data-bs-dismiss="modal">Cerrar</button>
                     <button id="btnVerDetalles" type="button" 
-                            class="btn"
-                            style="background-color: #192E4E; color: white; border: none; <?php echo !$descargasHabilitadas ? 'opacity: 0.6;' : ''; ?>"
+                            class="stu-btn stu-btn--primary"
+                            <?php echo !$descargasHabilitadas ? 'style="opacity: 0.6;"' : ''; ?>
                             <?php if(!$descargasHabilitadas) echo 'title="Disponible después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                         <?php echo $descargasHabilitadas ? 'Imprimir boleta' : 'Boleta disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                     </button>
@@ -1185,9 +1060,6 @@ if (!$resultado) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../js/chartScript.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.js"></script>
 
     <!-- Scripts para manejar la carga dinámica de boletas -->
@@ -1637,11 +1509,14 @@ if (!$resultado) {
                 // Abrir el PDF en una nueva ventana
                 window.open(pdfUrl, '_blank');
             } else {
-                alert('Por favor, seleccione un año escolar y un trimestre para ver los detalles.');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos requeridos',
+                    text: 'Seleccione un año escolar y un trimestre para ver los detalles.',
+                    confirmButtonColor: '#192E4E'
+                });
             }
         });
-    </script>
-       
     </script>
     <script>
         // Hide preloader when page is fully loaded
@@ -1897,7 +1772,9 @@ if (!$resultado) {
                 // Realizar la petición
                 fetch('generate_group_pdfs.php', {
                     method: 'POST',
-                    headers: {
+                headers: {
+
+                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content,
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: `idSchoolYear=${yearSelected}&idGroup=${groupSelected}`
@@ -1990,11 +1867,14 @@ if (!$resultado) {
                 const statusElement = document.getElementById('show_status');
                 if (statusElement) {
                     if (data.status === 'Activo') {
-                        statusElement.innerHTML = '<span class="badge bg-success">Activo</span>';
+                        statusElement.className = 'stu-badge stu-badge--active';
+                        statusElement.textContent = data.status;
                     } else if (data.status === 'Inactivo') {
-                        statusElement.innerHTML = '<span class="badge bg-danger">Inactivo</span>';
+                        statusElement.className = 'stu-badge stu-badge--inactive';
+                        statusElement.textContent = data.status;
                     } else {
-                        statusElement.innerHTML = '<span class="badge bg-secondary">' + (data.status || 'No especificado') + '</span>';
+                        statusElement.className = 'stu-badge stu-badge--secondary';
+                        statusElement.textContent = data.status || 'No especificado';
                     }
                 }
                 
@@ -2120,6 +2000,9 @@ document.getElementById('formEditStudent').addEventListener('submit', function(e
     const formData = new FormData(this);
     fetch('updateStudent.php', {
         method: 'POST',
+                headers: {
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
         body: formData
     })
     .then(response => {
@@ -2186,7 +2069,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Realizar la petición AJAX para eliminar
         fetch('deleteStudent.php', {
             method: 'POST',
-            headers: {
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content,
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: 'studentId=' + encodeURIComponent(studentIdToDelete)

@@ -1,137 +1,964 @@
-html {
-    overflow-x: hidden;
-    overflow-y: auto;
+/* ==========================================================================
+   TEACHER LIST PAGE — Gestor de Calificaciones
+   
+   design-taste-frontend: Operate mode, density 7, variance 3, motion 2
+   impeccable: scanability-first, table is king, no decoration
+   emil-design-eng: ease-out entries, scale(0.97) press, stagger 60ms
+   
+   Scoped to body.page-tch-list to avoid affecting other teacher pages.
+   
+   Design decisions:
+   - Same system as admin/student.css, adapted for teacher list view
+   - No gradients, no shadows, no glassmorphism
+   - Border-radius: --ds-radius-md (6px) everywhere
+   - Table is the primary element — compact, scannable
+   - Filters are functional, not decorative
+   ========================================================================== */
+
+/* =========================================================================
+   PAGE CONTENT WRAPPER
+   ========================================================================== */
+body.page-tch-list .page-content {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
-body{
+/* =========================================================================
+   PAGE HEADER
+   ========================================================================== */
+body.page-tch-list .page-header {
+  margin-bottom: var(--ds-space-5);
+}
+
+body.page-tch-list .page-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: inline-block;
+  position: relative;
+}
+
+body.page-tch-list .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 40px;
+  height: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 2px;
+}
+
+body.page-tch-list .page-subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: var(--ds-space-2) 0 0 0;
+  font-weight: var(--ds-font-regular);
+}
+
+/* =========================================================================
+   FILTER SECTION — Inline bar, no card wrapper
+   ========================================================================== */
+body.page-tch-list .tch-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  margin-bottom: var(--ds-space-4);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+body.page-tch-list .tch-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  flex: 1;
+  min-width: 160px;
+}
+
+body.page-tch-list .tch-filter__label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+body.page-tch-list .tch-filter__select {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-300);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  outline: none;
+}
+
+body.page-tch-list .tch-filter__select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: var(--ds-shadow-focus);
+}
+
+body.page-tch-list .tch-filter--info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  flex: 1;
+}
+
+body.page-tch-list .tch-filter__info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background-color: var(--ds-success-bg);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+}
+
+body.page-tch-list .tch-filter__info-bar i {
+  color: var(--ds-success);
+  margin-right: var(--ds-space-1);
+}
+
+body.page-tch-list .tch-filter__info-bar strong {
+  font-weight: var(--ds-font-semibold);
+}
+
+body.page-tch-list .tch-actions {
+  display: flex;
+  gap: var(--ds-space-2);
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   BUTTONS — tch-btn (mirrors stu-btn from student.css)
+   ========================================================================== */
+body.page-tch-list .tch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out),
+    transform 100ms var(--ds-ease-out);
+  outline: none;
+  text-decoration: none;
+}
+
+body.page-tch-list .tch-btn:active {
+  transform: scale(0.97);
+}
+
+body.page-tch-list .tch-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-500);
+}
+
+/* Primary */
+body.page-tch-list .tch-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
+}
+
+/* Outline (secondary) */
+body.page-tch-list .tch-btn--outline {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-600);
+}
+
+body.page-tch-list .tch-btn--outline:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-400);
+  color: var(--ds-gray-800);
+}
+
+/* Success (download) */
+body.page-tch-list .tch-btn--success {
+  background-color: var(--ds-success);
+  border-color: var(--ds-success);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-btn--success:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+/* Danger (destructive) */
+body.page-tch-list .tch-btn--danger {
+  background-color: var(--ds-error);
+  border-color: var(--ds-error);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-btn--danger:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
+}
+
+/* Disabled */
+body.page-tch-list .tch-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Small (table actions) */
+body.page-tch-list .tch-btn--sm {
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  gap: 4px;
+}
+
+body.page-tch-list .tch-btn--sm i {
+  font-size: 0.85rem;
+}
+
+/* Full width */
+body.page-tch-list .tch-btn--full {
+  width: 100%;
+}
+
+/* =========================================================================
+   TABLE — Primary element, compact, scannable
+   ========================================================================== */
+body.page-tch-list .tch-table-wrap {
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+}
+
+body.page-tch-list .tch-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+body.page-tch-list .tch-table-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+body.page-tch-list .tch-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.page-tch-list .tch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
+}
+
+body.page-tch-list .tch-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-gray-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  white-space: nowrap;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+body.page-tch-list .tch-table thead th.text-center {
+  text-align: center;
+}
+
+body.page-tch-list .tch-table tbody tr {
+  transition: background-color 120ms var(--ds-ease-out);
+}
+
+body.page-tch-list .tch-table tbody tr:hover {
+  background-color: rgba(25, 46, 78, 0.03);
+}
+
+body.page-tch-list .tch-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+}
+
+body.page-tch-list .tch-table tbody td.text-center {
+  text-align: center;
+}
+
+/* Table action buttons */
+body.page-tch-list .tch-table .tch-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ds-radius-sm);
+  background-color: transparent;
+  color: var(--ds-gray-500);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ds-ease-out),
+    color 120ms var(--ds-ease-out);
+}
+
+body.page-tch-list .tch-table .tch-btn--icon:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-gray-100);
+}
+
+body.page-tch-list .tch-table .tch-btn--icon:active {
+  transform: scale(0.95);
+}
+
+body.page-tch-list .tch-table .tch-btn--icon.btn-boleta:hover,
+body.page-tch-list .tch-table .tch-btn--icon.btn-info:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
+}
+
+body.page-tch-list .tch-table .tch-btn--icon.btn-reporte:hover {
+  color: var(--ds-warning);
+  background-color: var(--ds-warning-bg);
+}
+
+body.page-tch-list .tch-table .tch-btn--icon.btn-danger:hover {
+  color: var(--ds-error);
+  background-color: var(--ds-error-bg);
+}
+
+/* =========================================================================
+   STATUS BADGES — Functional, not decorative
+   ========================================================================== */
+body.page-tch-list .tch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--ds-space-2);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  border-radius: var(--ds-radius-sm);
+  line-height: var(--ds-leading-normal);
+  white-space: nowrap;
+}
+
+body.page-tch-list .tch-badge--success {
+  background-color: var(--ds-success-bg);
+  color: var(--ds-success);
+}
+
+body.page-tch-list .tch-badge--danger {
+  background-color: var(--ds-error-bg);
+  color: var(--ds-error);
+}
+
+body.page-tch-list .tch-badge--warning {
+  background-color: var(--ds-warning-bg);
+  color: var(--ds-warning);
+}
+
+body.page-tch-list .tch-badge--info {
+  background-color: var(--ds-info-bg);
+  color: var(--ds-info);
+}
+
+body.page-tch-list .tch-badge--secondary {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-gray-600);
+}
+
+body.page-tch-list .tch-badge--dark {
+  background-color: var(--ds-gray-800);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-badge--primary {
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-800);
+}
+
+/* Grade badges (for boleta modal) */
+body.page-tch-list .tch-badge--grade-good {
+  background-color: var(--ds-success);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-badge--grade-mid {
+  background-color: var(--ds-warning);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-badge--grade-low {
+  background-color: var(--ds-error);
+  color: var(--ds-white);
+}
+
+body.page-tch-list .tch-badge--pill {
+  border-radius: var(--ds-radius-full);
+  padding: 0.15em 0.65em;
+}
+
+body.page-tch-list .tch-badge--neutral {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-gray-600);
+}
+
+/* =========================================================================
+   EMPTY STATE
+   ========================================================================== */
+body.page-tch-list .tch-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-10) var(--ds-space-4);
+  text-align: center;
+}
+
+body.page-tch-list .tch-empty__icon {
+  font-size: 2.5rem;
+  color: var(--ds-gray-300);
+  margin-bottom: var(--ds-space-3);
+}
+
+body.page-tch-list .tch-empty__title {
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  margin: 0 0 var(--ds-space-1) 0;
+}
+
+body.page-tch-list .tch-empty__desc {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: 0;
+}
+
+/* =========================================================================
+   MODALS — Coherent with dashboard / student.css visual language
+   ========================================================================== */
+body.page-tch-list .tch-modal .modal-content {
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: visible;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+body.page-tch-list .tch-modal .modal-header {
+  background-color: var(--ds-white) !important;
+  border-bottom: 1px solid var(--ds-gray-200);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+body.page-tch-list .tch-modal .modal-title {
+  font-family: var(--ds-font-family) !important;
+  font-size: var(--ds-text-base) !important;
+  font-weight: var(--ds-font-bold) !important;
+  color: var(--ds-primary-800) !important;
+  letter-spacing: 0;
+  margin: 0 !important;
+}
+
+body.page-tch-list .tch-modal .btn-close {
+  filter: none;
+  opacity: 0.4;
+  transition: opacity 150ms var(--ds-ease-out);
+  padding: 8px;
+  margin: -4px -4px -4px auto;
+  background-size: 0.8em;
+}
+
+body.page-tch-list .tch-modal .btn-close:hover {
+  opacity: 0.8;
+}
+
+body.page-tch-list .tch-modal .modal-body {
+  padding: 24px;
+}
+
+body.page-tch-list .tch-modal .modal-footer {
+  border-top: 1px solid var(--ds-gray-100);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background-color: var(--ds-white);
+}
+
+/* Modal form labels */
+body.page-tch-list .tch-modal .form-label {
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Modal section header */
+body.page-tch-list .tch-modal .modal-section-title {
+  font-family: var(--ds-font-family);
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+/* Modal read-only field values */
+body.page-tch-list .tch-modal .field-value {
+  display: block;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  padding: 6px 0;
+}
+
+/* Modal info bar (student info in boleta) */
+body.page-tch-list .tch-modal .modal-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background-color: var(--ds-success-bg);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  margin-bottom: var(--ds-space-4);
+}
+
+body.page-tch-list .tch-modal .modal-info-bar strong {
+  font-weight: var(--ds-font-semibold);
+}
+
+/* Modal form inputs */
+body.page-tch-list .tch-modal .form-control,
+body.page-tch-list .tch-modal .form-select {
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-gray-200);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-regular);
+  padding: 8px 12px;
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  transition:
+    border-color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out);
+}
+
+body.page-tch-list .tch-modal .form-control::placeholder {
+  color: var(--ds-gray-400);
+}
+
+body.page-tch-list .tch-modal .form-control:focus,
+body.page-tch-list .tch-modal .form-select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: 0 0 0 3px rgba(25, 46, 78, 0.06);
+  outline: none;
+}
+
+body.page-tch-list .tch-modal textarea.form-control {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* Read-only fields (show modals) — styled as subtle input boxes */
+body.page-tch-list .tch-modal .form-control-plaintext {
+  border: 1px solid var(--ds-gray-100);
+  border-radius: var(--ds-radius-sm);
+  padding: 8px 12px;
+  background-color: var(--ds-gray-50);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-700);
+  font-family: var(--ds-font-family);
+  margin: 0;
+}
+
+/* =========================================================================
+   BOLETA GRADES TABLE (inside modal)
+   ========================================================================== */
+body.page-tch-list .tch-grades-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+}
+
+body.page-tch-list .tch-grades-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-primary-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  text-align: left;
+}
+
+body.page-tch-list .tch-grades-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+}
+
+body.page-tch-list .tch-grades-table tbody td.area-cell {
+  font-weight: var(--ds-font-semibold);
+  text-align: center;
+  background-color: var(--ds-gray-50);
+}
+
+body.page-tch-list .tch-grades-table tbody td.grade-cell {
+  text-align: center;
+}
+
+/* General average bar */
+body.page-tch-list .tch-avg-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-weight: var(--ds-font-bold);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-700);
+  background-color: var(--ds-gray-50);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-sm);
+  margin-bottom: var(--ds-space-4);
+}
+
+/* =========================================================================
+   REPORT TABLE (inside modal)
+   ========================================================================== */
+body.page-tch-list .tch-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
+}
+
+body.page-tch-list .tch-report-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-gray-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  text-align: left;
+}
+
+body.page-tch-list .tch-report-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+}
+
+body.page-tch-list .tch-report-table .tch-report-table__area-cell {
+  text-align: center;
+  font-weight: var(--ds-font-bold);
+  background-color: var(--ds-gray-50);
+}
+
+/* Report action buttons */
+body.page-tch-list .tch-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body.page-tch-list .tch-report-actions .tch-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 32px;
+  padding: 0 10px;
+  gap: 4px;
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-sm);
+  background-color: var(--ds-white);
+  color: var(--ds-gray-600);
+  font-size: 0.75rem;
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-semibold);
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ds-ease-out),
+    color 120ms var(--ds-ease-out),
+    border-color 120ms var(--ds-ease-out);
+}
+
+body.page-tch-list .tch-report-actions .tch-btn--icon:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-800);
+}
+
+body.page-tch-list .tch-report-actions .tch-btn--icon.btn-pdf:hover {
+  color: var(--ds-error);
+  border-color: var(--ds-error);
+  background-color: var(--ds-error-bg);
+}
+
+body.page-tch-list .tch-report-actions .tch-btn--icon.btn-view:hover {
+  color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
+}
+
+/* =========================================================================
+   ALERT (boleta section)
+   ========================================================================== */
+body.page-tch-list .tch-alert-info {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  color: var(--ds-info);
+  background-color: var(--ds-info-bg);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  border-radius: var(--ds-radius-sm);
+  text-align: center;
+}
+
+body.page-tch-list .tch-alert-danger {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  color: var(--ds-error);
+  background-color: var(--ds-error-bg);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--ds-radius-sm);
+}
+
+body.page-tch-list .tch-alert-warning {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  color: var(--ds-warning);
+  background-color: var(--ds-warning-bg);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  border-radius: var(--ds-radius-sm);
+}
+
+body.page-tch-list .tch-alert-summary {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  font-family: var(--ds-font-family);
+  text-align: center;
+  margin-bottom: var(--ds-space-4);
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-800);
+  border: 1px solid rgba(25, 46, 78, 0.15);
+  border-radius: var(--ds-radius-sm);
+}
+
+/* =========================================================================
+   LOADING SPINNER
+   ========================================================================== */
+body.page-tch-list .tch-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-6) 0;
+  gap: var(--ds-space-3);
+}
+
+body.page-tch-list .tch-spinner__ring {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--ds-gray-200);
+  border-top-color: var(--ds-primary-800);
+  border-radius: 50%;
+  animation: tch-spin 0.7s linear infinite;
+}
+
+@keyframes tch-spin {
+  to { transform: rotate(360deg); }
+}
+
+body.page-tch-list .tch-spinner__text {
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-400);
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet (< 992px)
+   ========================================================================== */
+@media (max-width: 992px) {
+  body.page-tch-list .tch-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.page-tch-list .tch-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  body.page-tch-list .tch-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE — Mobile (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  body.page-tch-list .page-content {
+    padding: var(--ds-space-4);
+  }
+
+  body.page-tch-list .page-title {
+    font-size: var(--ds-text-xl);
+  }
+
+  body.page-tch-list .tch-filters {
+    padding: var(--ds-space-3);
+    gap: var(--ds-space-3);
+  }
+
+  body.page-tch-list .tch-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  body.page-tch-list .tch-filter__select {
     width: 100%;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-sizing: border-box;
-    font-family: "League Spartan", sans-serif !important;
-    font-weight: 300 !important;
-}
+    min-height: 40px;
+    font-size: 16px;
+  }
 
-.input-group .form-control {
-    height: 40px; /* Ajusta la altura según lo necesario */
-    padding: 5px 10px; /* Ajusta el padding si es necesario */
-    font-size: 10px; /* Ajusta el tamaño de la fuente si se ve muy grande */
-}
-.input-group-text {
-    height: 40px; /* Igual a la altura del input */
-    display: flex;
-    align-items: center;
+  body.page-tch-list .tch-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  body.page-tch-list .tch-actions .tch-btn {
+    width: 100%;
     justify-content: center;
-}
-#labelDocente{
-    font-size: 22px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-top: 16px;
-}
-#iBuscar{
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-h1{
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 25px;
-    margin-left: 30px;
-}
-#button{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    gap: 20px;
-    font-size: 20px;
-    width: fit-content;
-    height: 5.5vh;
-    margin-top: 23px;
-}
-#iconoAdd{
-    color: white;
-    font-size: 1.5rem;
+  }
+
+  body.page-tch-list .tch-table-header {
+    padding: var(--ds-space-2) var(--ds-space-3);
+  }
+
+  body.page-tch-list .tch-table thead th,
+  body.page-tch-list .tch-table tbody td {
+    padding: var(--ds-space-2);
+    font-size: var(--ds-text-xs);
+  }
+
+  body.page-tch-list .tch-modal .modal-body {
+    padding: var(--ds-space-3);
+  }
+
+  body.page-tch-list .tch-modal .modal-content {
+    overflow: visible;
+  }
 }
 
-#iVer{
-    margin-right:-17px;
-}
-option{
-    font-size: 15px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-}
-#subject{
-    font-size: 15px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-}
+/* =========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  body.page-tch-list .tch-btn,
+  body.page-tch-list .tch-table tbody tr,
+  body.page-tch-list .tch-table .tch-btn--icon,
+  body.page-tch-list .tch-filter__select,
+  body.page-tch-list .tch-report-actions .tch-btn--icon {
+    transition: none;
+  }
 
-/* Estilos para botones de acciones en la tabla */
-.botonVer, #botonVer {
-    border: none !important;
-    background-color: transparent !important;
-    cursor: pointer !important;
-    font-size: 1.5rem !important;
-    color: black !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    transition: all 0.2s ease !important;
-    padding: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 auto !important;
-}
-
-.botonVer:hover, #botonVer:hover {
-    color: #192E4E !important;
-    transform: none;
-}
-
-/* Estilos para el botón de reporte */
-.botonReporte {
-    border: none !important;
-    background-color: transparent !important;
-    cursor: pointer !important;
-    font-size: 1.5rem !important;
-    color: black !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    transition: all 0.2s ease !important;
-    padding: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 auto !important;
-}
-
-.botonReporte:hover {
-    color: #192E4E !important;
-    transform: none;
-}
-
-.botonReporte i {
-    font-size: 1.5rem !important;
-    display: block !important;
-}
-
-/* Asegurar que las celdas de la tabla estén visibles */
-table#tabla td {
-    display: table-cell !important;
-    visibility: visible !important;
+  body.page-tch-list .tch-spinner__ring {
+    animation: none;
+  }
 }

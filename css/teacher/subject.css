@@ -1,69 +1,352 @@
-html {
-    overflow-x: hidden;
-    overflow-y: auto;
+/* ==========================================================================
+   SUBJECTS PAGE — Gestor de Calificaciones (Teacher)
+   
+   Scoped to body.page-tch-subjects.
+   Same design system as admin pages. No gradients, no shadows, no hover-lift.
+   
+   Key decisions:
+   - Card grid replaces Bootstrap row/col
+   - Cards: white, border, radius-md. Header = subject name. Body = metadata.
+   - Buttons: same visual language as admin (stu-btn / asn-btn)
+   - Metadata: label/value pairs, compact, scannable
+   ========================================================================== */
+
+/* =========================================================================
+   PAGE CONTENT WRAPPER
+   ========================================================================== */
+
+.page-tch-subjects .page-content {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
-body {
-    width: 100%;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-sizing: border-box;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-}
-#titulo{
-    font-size: 30px;
-    font-weight: bold;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    margin-top: 150px;
-    margin-left: 50px
-}
-#button{
-    background-color: white;
-    color: black;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    width: 150px;
-}
-.buttonClose{
-    background-color: white;
-    color: black;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    width: 100px;
-}
-.buttonClose.btn-secondary {
-    cursor: not-allowed !important;
-    opacity: 0.85;
-}
-.card-title{
-    font-size: 30px;
-    font-weight: bold;
-    color: white;
-} 
-.card-body {
-    transition: transform 0.3s ease-in-out;
+/* =========================================================================
+   PAGE HEADER
+   Underline accent as identity marker (same as dashboard + admin)
+   ========================================================================== */
+
+.page-tch-subjects .page-header {
+  margin-bottom: var(--ds-space-5);
 }
 
-.card-body:hover {
-    transform: scale(1.1);
+.page-tch-subjects .page-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: inline-block;
+  position: relative;
 }
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
+
+.page-tch-subjects .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 40px;
+  height: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 2px;
+}
+
+.page-tch-subjects .page-subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: var(--ds-space-2) 0 0 0;
+  font-weight: var(--ds-font-regular);
+}
+
+/* =========================================================================
+   SUBJECT CARD GRID
+   
+   Auto-fill, min 320px. Consistent gap.
+   ========================================================================== */
+
+.page-tch-subjects .sub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--ds-space-4);
+}
+
+/* =========================================================================
+   SUBJECT CARD
+   
+   Clean, flat. White background, border, radius-md.
+   No gradients, no shadows, no hover-lift.
+   ========================================================================== */
+
+.page-tch-subjects .sub-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+  transition: border-color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.page-tch-subjects .sub-card:hover {
+  border-color: var(--ds-gray-300);
+}
+
+/* — Card Header — */
+.page-tch-subjects .sub-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-4);
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+.page-tch-subjects .sub-card__title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0;
+  line-height: var(--ds-leading-tight);
+}
+
+.page-tch-subjects .sub-card__group {
+  display: inline;
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-primary-600);
+  margin-left: var(--ds-space-2);
+}
+
+/* — Badge (Especial) — */
+.page-tch-subjects .sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-family: var(--ds-font-family);
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: var(--ds-radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.page-tch-subjects .sub-badge--special {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* — Card Body — */
+.page-tch-subjects .sub-card__body {
+  padding: var(--ds-space-4);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.page-tch-subjects .sub-card__desc {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-500);
+  margin: 0;
+  line-height: var(--ds-leading-normal);
+}
+
+/* — Metadata — */
+.page-tch-subjects .sub-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.page-tch-subjects .sub-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-2) 0;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+.page-tch-subjects .sub-meta:last-child {
+  border-bottom: none;
+}
+
+.page-tch-subjects .sub-meta__label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.page-tch-subjects .sub-meta__value {
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-800);
+  text-align: right;
+  min-width: 0;
+}
+
+/* — Card Footer — */
+.page-tch-subjects .sub-card__footer {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border-top: 1px solid var(--ds-gray-100);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  align-items: stretch;
+}
+
+.page-tch-subjects .sub-card__hint {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-gray-400);
+  text-align: center;
+}
+
+/* =========================================================================
+   BUTTONS
+   
+   Same visual language as admin (stu-btn / asn-btn).
+   Primary: solid, institutional. Outline: recedes.
+   ========================================================================== */
+
+.page-tch-subjects .sub-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 20px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out),
+    transform 100ms var(--ds-ease-out);
+  outline: none;
+}
+
+.page-tch-subjects .sub-btn:active {
+  transform: scale(0.97);
+}
+
+.page-tch-subjects .sub-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-500);
+}
+
+/* Primary */
+.page-tch-subjects .sub-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
+}
+
+.page-tch-subjects .sub-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
+}
+
+/* Outline (disabled state) */
+.page-tch-subjects .sub-btn--outline {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-500);
+}
+
+.page-tch-subjects .sub-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* =========================================================================
+   EMPTY STATE
+   ========================================================================== */
+
+.page-tch-subjects .sub-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--ds-space-8) var(--ds-space-4);
+}
+
+.page-tch-subjects .sub-empty__icon {
+  font-size: 3rem;
+  color: var(--ds-gray-300);
+  margin-bottom: var(--ds-space-3);
+}
+
+.page-tch-subjects .sub-empty__title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-600);
+  margin: 0 0 var(--ds-space-2) 0;
+}
+
+.page-tch-subjects .sub-empty__text {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: 0;
+  max-width: 360px;
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet (< 992px)
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .page-tch-subjects .sub-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE — Mobile (< 768px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .page-tch-subjects .page-content {
+    padding: var(--ds-space-4) var(--ds-space-4);
+  }
+
+  .page-tch-subjects .page-title {
+    font-size: var(--ds-text-xl);
+  }
+
+  .page-tch-subjects .sub-grid {
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-3);
+  }
+
+  .page-tch-subjects .sub-card__header {
+    padding: var(--ds-space-3);
+  }
+
+  .page-tch-subjects .sub-card__body {
+    padding: var(--ds-space-3);
+  }
+
+  .page-tch-subjects .sub-card__footer {
+    padding: var(--ds-space-3);
+  }
 }

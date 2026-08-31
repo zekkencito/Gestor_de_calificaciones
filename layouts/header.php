@@ -17,14 +17,23 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user_data = $result->fetch_assoc();
 ?>
+<!-- Design System -->
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/layout.css">
 <link rel="icon" href="../img/logo.ico">
-<header class="p-4" style="background-color: #192E4E; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; min-height: 90px;">
-    <div>                    
-        <h5 style="margin: 0; color: white; padding: 0 20px;">Escuela Gregorio Torres Quintero No. 2308</h5>
-    </div>                    
-    <div style="display: flex; align-items: center; padding-right: 20px; z-index: 1001;">
-        <div class="dropdown">
-            <button style="color: white; text-decoration: none; background: none; border: none; cursor: pointer; font-size: 1rem;" class="dropdown-toggle" id="userDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+<header class="ds-header">
+    <!-- Hamburger toggle (mobile only) -->
+    <button class="ds-header__toggle" id="ds-sidebar-toggle" aria-label="Abrir menú">
+        <i class="bi bi-list"></i>
+    </button>
+    <!-- Left: School name -->
+    <div class="ds-header__title">                    
+        <h5>Escuela Gregorio Torres Quintero No. 2308</h5>
+    </div>
+    <!-- Right: User + Logout -->
+    <div class="ds-header__user-area">
+        <span class="ds-header__user-name">
             <?php
                 if ($user_data) {
                     echo htmlspecialchars($user_data['names'] . ' ' . $user_data['lastnamePa']);
@@ -32,13 +41,9 @@ $user_data = $result->fetch_assoc();
                     echo "Administrador";
                 }
             ?>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                <li>
-                    <a href="../admin/php/logout.php" class="dropdown-item">
-                        <i class="bi bi-box-arrow-left"></i>&nbsp;&nbsp;Cerrar Sesión</a>
-                </li>
-            </ul>
-        </div>
+        </span>
+        <a href="../admin/php/logout.php" class="ds-header__logout" title="Cerrar Sesión">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
     </div>
 </header>

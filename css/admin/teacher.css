@@ -1,413 +1,628 @@
-/* Los estilos específicos para el contenido de estudiantes, NO afectar el sidebar */
-main {
-    box-sizing: border-box;
-    font-family: "League Spartan", sans-serif !important;
+/* ==========================================================================
+   TEACHERS PAGE — Gestor de Calificaciones
+   
+   design-taste-frontend: Operate mode, density 7, variance 3, motion 2
+   impeccable: scanability-first, table is king, no decoration
+   emil-design-eng: ease-out entries, scale(0.97) press, stagger 60ms
+   
+   Scoped to body.page-teachers to avoid affecting other pages.
+   Loads AFTER time.css (same load order pattern as student.css).
+   
+   Design decisions (aligned with dashboard & students):
+   - No gradients, no shadows, no glassmorphism
+   - Border-radius: --ds-radius-md (6px) everywhere
+   - Table is the primary element — compact, scannable
+   - Filters are functional, not decorative
+   - Modals: white surface, primary text accent, clean borders
+   ========================================================================== */
+
+/* PAGE CONTENT WRAPPER */
+
+.page-teachers .page-content {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
-/* Header de página moderno */
-.page-header {
-    text-align: center;
-    padding: 1.5rem 0 1rem 0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 15px;
-    margin-top: 4rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+/* PAGE HEADER */
+
+.page-teachers .page-header {
+  margin-bottom: var(--ds-space-5);
 }
 
-.page-title {
-    font-size: 2.5rem !important;
-    font-weight: 600 !important;
-    margin-bottom: 0.5rem;
-    align-items: center;
-    font-family: "League Spartan", sans-serif !important;
+.page-teachers .page-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: inline-block;
+  position: relative;
 }
 
-.page-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 0;
+.page-teachers .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 40px;
+  height: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 2px;
 }
 
-/* Tarjeta de filtros moderna */
-.filter-card .card {
-    border-radius: 15px;
-    transition: all 0.3s ease;
-    overflow: hidden;
+.page-teachers .page-subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: var(--ds-space-2) 0 0 0;
+  font-weight: var(--ds-font-regular);
 }
 
-.filter-card .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+/* FILTER SECTION */
+
+.page-teachers .tch-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  margin-bottom: var(--ds-space-4);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
-.filter-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
-    display: flex;
-    align-items: center;
+.page-teachers .tch-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  flex: 1;
+  min-width: 160px;
+  position: relative;
 }
 
-.filter-card .card-header .bi {
-    font-size: 1.5rem;
-    margin-right: 0.75rem;
+.page-teachers .tch-filter__label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
 }
 
-.filter-card .card-header .card-title {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0;
+.page-teachers .tch-filter__input {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-300);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  outline: none;
 }
 
-.filter-card .card-body {
-    padding: 1.5rem;
-    background: white;
+.page-teachers .tch-filter__input::placeholder {
+  color: var(--ds-gray-400);
 }
 
-.filter-card .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: 500;
+.page-teachers .tch-filter__input:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: var(--ds-shadow-focus);
 }
 
-.filter-card .form-select:focus {
-    border-color: #192E4E;
-    box-shadow: 0 0 0 0.2rem rgba(25, 46, 78, 0.25);
+.page-teachers .tch-actions {
+  display: flex;
+  gap: var(--ds-space-2);
+  align-items: flex-end;
+  flex-shrink: 0;
 }
 
-.filter-card .form-label {
-    color: #495057;
-    margin-bottom: 0.5rem;
+/* BUTTONS */
+
+.page-teachers .tch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out),
+    transform 100ms var(--ds-ease-out);
+  outline: none;
+  text-decoration: none;
 }
 
-/* Botones modernos */
-.btn {
-    border-radius: 10px;
-    padding: 0.6rem 1.2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: none;
+.page-teachers .tch-btn:active {
+  transform: scale(0.97);
 }
 
-.btn-success {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    border: none;
+.page-teachers .tch-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-500);
 }
 
-.btn-success:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+.page-teachers .tch-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
 }
 
-.btn-danger {
-    background: linear-gradient(135deg, #dc3545, #fd7e14);
-    border: none;
+.page-teachers .tch-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
 }
 
-.btn-danger:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+.page-teachers .tch-btn--outline {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-600);
 }
 
-.btn-primary {
-    background: #192E4E !important;
-    border: none !important;
-    color: white !important;
+.page-teachers .tch-btn--outline:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-400);
+  color: var(--ds-gray-800);
 }
 
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3) !important;
-    background: #1a2847 !important;
-    color: white !important;
+.page-teachers .tch-btn--danger {
+  background-color: var(--ds-error);
+  border-color: var(--ds-error);
+  color: var(--ds-white);
 }
 
-/* Tarjeta de tabla moderna */
-.table-card .card {
-    border-radius: 15px;
-    overflow: hidden;
-    transition: all 0.3s ease;
+.page-teachers .tch-btn--danger:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
 }
 
-.table-card .card:hover {
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+.page-teachers .tch-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.table-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
+.page-teachers .tch-btn--sm {
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  gap: 4px;
 }
 
-.table-card .table {
-    margin-bottom: 0;
+.page-teachers .tch-btn--sm i {
+  font-size: 0.85rem;
 }
 
-.table-card .table thead th {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: none;
-    padding: 1rem;
-    font-weight: 600;
-    color: #495057;
-    text-transform: uppercase;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
+/* TABLE */
+
+.page-teachers .tch-table-wrap {
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
 }
 
-.table-card .table tbody tr {
-    transition: all 0.3s ease;
+.page-teachers .tch-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ds-gray-100);
 }
 
-.table-card .table tbody tr:hover {
-    background-color: rgba(25, 46, 78, 0.05);
-    transform: scale(1.01);
+.page-teachers .tch-table-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.table-card .table tbody td {
-    padding: 1rem;
-    border: none;
-    border-bottom: 1px solid #f1f3f4;
-    vertical-align: middle;
-    font-weight: 500;
+.page-teachers .tch-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.table-card .card-footer {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    padding: 1.25rem;
+.page-teachers .tch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
 }
 
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
+.page-teachers .tch-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-gray-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  white-space: nowrap;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-.btn-outline-info:hover {
-    transform: scale(1.1);
+.page-teachers .tch-table thead th.text-center {
+  text-align: center;
 }
 
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
+.page-teachers .tch-table tbody tr {
+  transition: background-color 120ms var(--ds-ease-out);
 }
 
-/* Botones de acción en tabla */
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
+.page-teachers .tch-table tbody tr:hover {
+  background-color: rgba(25, 46, 78, 0.03);
 }
 
-.btn-outline-primary:hover,
-.btn-outline-info:hover,
-.btn-outline-warning:hover {
-    transform: scale(1.1);
+.page-teachers .tch-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
 }
 
-/* Estado vacío */
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
+.page-teachers .tch-table tbody td.text-center {
+  text-align: center;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .page-title {
-        font-size: 2rem;
-    }
-    
-    .filter-card .row > div {
-        margin-bottom: 1rem;
-    }
+/* Table action buttons — always visible */
+.page-teachers .tch-table .tch-btn--sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ds-radius-sm);
+  background-color: transparent;
+  color: var(--ds-gray-500);
+  font-size: 0.9rem;
+  transition:
+    background-color 120ms var(--ds-ease-out),
+    color 120ms var(--ds-ease-out);
 }
 
-/* ETIQUETAS LEGACY (mantener compatibilidad) */
-#labelAlumno, #labelCiclo {
-    font-size: 22px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-bottom: 8px;
-    display: block;
+.page-teachers .tch-table .tch-btn--sm:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-gray-100);
 }
 
-/* BOTONES */
-.buttonInscribir {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 20px;
-    width: auto; /* Ancho automático en lugar del 100% */
-    justify-content: center;
+.page-teachers .tch-table .tch-btn--sm:active {
+  transform: scale(0.95);
 }
 
-/* Contenedor del botón */
-.button-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 28px; /* Ajuste para alinear con los inputs */
-}
-/* Asegurar que las columnas tengan el mismo espaciado */
-.col-md-6 {
-    padding: 0 15px; /* Espaciado estándar de Bootstrap */
-}
-.align-items-center {
-    align-items: center;
-}
-#button {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    font-size: 20px;
-    height: 5.5vh;
+.page-teachers .tch-table .tch-btn--sm.btn-ver:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
 }
 
-.botonCancelar, .botonEnter {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    font-size: 18px;
-    height: 6.5vh;
+.page-teachers .tch-table .tch-btn--sm.btn-editar:hover {
+  color: var(--ds-primary-800);
+  background-color: var(--ds-primary-50);
 }
 
-#botonVer {
-    border: none;
-    background: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.page-teachers .tch-table .tch-btn--sm.btn-eliminar:hover {
+  color: var(--ds-error);
+  background-color: var(--ds-error-bg);
 }
 
-/* ICONOS */
-#iBuscar {
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* BADGES */
+
+.page-teachers .tch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--ds-space-2);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  border-radius: var(--ds-radius-sm);
+  line-height: var(--ds-leading-normal);
+  white-space: nowrap;
 }
 
-#iconoAdd {
-    color: white;
-    font-size: 1.5rem;
+.page-teachers .tch-badge--active {
+  background-color: var(--ds-success-bg);
+  color: var(--ds-success);
 }
 
-/* TABLA */
-#listaAlumnos {
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    margin-left: 35px;
+.page-teachers .tch-badge--inactive {
+  background-color: var(--ds-error-bg);
+  color: var(--ds-error);
 }
 
-.contenedorTabla {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.page-teachers .tch-badge--info {
+  background-color: var(--ds-info-bg);
+  color: var(--ds-info);
 }
 
-th {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+.page-teachers .tch-badge--institutional {
+  background-color: var(--ds-primary-800);
+  color: var(--ds-white);
 }
 
-td {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+.page-teachers .tch-badge--clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  position: relative;
 }
 
-/* MODALES */
-#tituloModal {
-    font-family: "League Spartan", sans-serif;
-    font-weight: 800;
-    font-size: 30px;
-    margin: 0;
+.page-teachers .tch-badge--clickable:hover {
+  background-color: var(--ds-primary-600);
+  transform: scale(1.03);
 }
-.form-group {
-    display: flex;
+
+.page-teachers .tch-badge__edit {
+  font-size: 0.65rem;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.page-teachers .tch-badge--clickable:hover .tch-badge__edit {
+  opacity: 0.7;
+}
+
+/* MODALS */
+
+.page-teachers .tch-modal .modal-content {
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: visible;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.page-teachers .tch-modal .modal-header {
+  background-color: var(--ds-white) !important;
+  border-bottom: 1px solid var(--ds-gray-200);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-teachers .tch-modal .modal-title {
+  font-family: var(--ds-font-family) !important;
+  font-size: var(--ds-text-base) !important;
+  font-weight: var(--ds-font-bold) !important;
+  color: var(--ds-primary-800) !important;
+  letter-spacing: 0;
+  margin: 0 !important;
+}
+
+.page-teachers .tch-modal .btn-close {
+  filter: none;
+  opacity: 0.4;
+  transition: opacity 150ms var(--ds-ease-out);
+  padding: 8px;
+  margin: -4px -4px -4px auto;
+  background-size: 0.8em;
+}
+
+.page-teachers .tch-modal .btn-close:hover {
+  opacity: 0.8;
+}
+
+.page-teachers .tch-modal .modal-body {
+  padding: 24px;
+}
+
+.page-teachers .tch-modal .modal-footer {
+  border-top: 1px solid var(--ds-gray-100);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background-color: var(--ds-white);
+}
+
+.page-teachers .tch-modal .modal-body h6 {
+  font-family: var(--ds-font-family);
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ds-gray-100);
+}
+
+.page-teachers .tch-modal .form-label {
+  font-size: 0.65rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.page-teachers .tch-modal .form-control,
+.page-teachers .tch-modal .form-select {
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-gray-200);
+  font-size: var(--ds-text-sm);
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-regular);
+  padding: 8px 12px;
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  transition:
+    border-color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out);
+}
+
+.page-teachers .tch-modal .form-control::placeholder {
+  color: var(--ds-gray-400);
+}
+
+.page-teachers .tch-modal .form-control:focus,
+.page-teachers .tch-modal .form-select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: 0 0 0 3px rgba(25, 46, 78, 0.06);
+  outline: none;
+}
+
+.page-teachers .tch-modal textarea.form-control {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.page-teachers .tch-modal .form-control-plaintext {
+  border: 1px solid var(--ds-gray-100);
+  border-radius: var(--ds-radius-sm);
+  padding: 8px 12px;
+  background-color: var(--ds-gray-50);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-700);
+  font-family: var(--ds-font-family);
+  margin: 0;
+}
+
+.page-teachers .tch-modal .valid-feedback {
+  font-size: 0.7rem;
+  color: var(--ds-success);
+  margin-top: 2px;
+}
+
+.page-teachers .tch-modal .invalid-feedback {
+  font-size: 0.7rem;
+  color: var(--ds-error);
+  margin-top: 2px;
+}
+
+.page-teachers .tch-modal--delete .modal-body {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.page-teachers .tch-modal--delete .modal-body .display-1 {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.page-teachers .tch-modal--delete .modal-body h5 {
+  font-family: var(--ds-font-family);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-800);
+  margin-bottom: 4px;
+}
+
+.page-teachers .tch-modal--delete .modal-body p {
+  color: var(--ds-gray-400);
+  font-size: var(--ds-text-sm);
+  margin: 0;
+}
+
+/* RESPONSIVE — Tablet */
+
+@media (max-width: 992px) {
+  .page-teachers .tch-filters {
     flex-direction: column;
-}
-.labelAgregar{
-    font-size: 17px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 600;
-    margin-top: 7px;
-}
-.botonCancelar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.botonEnter:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.buttonInscribir:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
+    align-items: stretch;
+  }
+
+  .page-teachers .tch-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  .page-teachers .tch-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
-/* Estilos de Modal Headers */
-.modal-header {
-    background-color: #192E4E !important;
+/* RESPONSIVE — Mobile */
+
+@media (max-width: 768px) {
+  .page-teachers .page-content {
+    padding: var(--ds-space-4);
+  }
+
+  .page-teachers .page-title {
+    font-size: var(--ds-text-xl);
+  }
+
+  .page-teachers .tch-filters {
+    padding: var(--ds-space-3);
+    gap: var(--ds-space-3);
+    overflow: visible;
+  }
+
+  .page-teachers .tch-filter {
+    min-width: 0;
+    flex: none;
+  }
+
+  .page-teachers .tch-filter__input {
+    width: 100%;
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .page-teachers .tch-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  .page-teachers .tch-actions .tch-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-teachers .tch-table-header {
+    padding: var(--ds-space-2) var(--ds-space-3);
+  }
+
+  .page-teachers .tch-table thead th,
+  .page-teachers .tch-table tbody td {
+    padding: var(--ds-space-2);
+    font-size: var(--ds-text-xs);
+  }
+
+  .page-teachers .tch-modal .modal-body {
+    padding: var(--ds-space-3);
+  }
+
+  .page-teachers .tch-modal .modal-content {
+    overflow: visible;
+  }
 }
 
-.modal-title {
-    font-family: "League Spartan", sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 1.5rem !important;
-    color: white !important;
-}
+/* REDUCED MOTION */
 
-.btn-close {
-    filter: brightness(0) invert(1);
+@media (prefers-reduced-motion: reduce) {
+  .page-teachers .tch-btn,
+  .page-teachers .tch-table tbody tr,
+  .page-teachers .tch-table .tch-btn--sm {
+    transition: none;
+  }
 }
-
-/* Botón Eliminar en Modal */
-#confirm-delete:hover {
-    background-color: #1a2847 !important;
-    color: white !important;
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3) !important;
-    transform: translateY(-1px);
-}
-

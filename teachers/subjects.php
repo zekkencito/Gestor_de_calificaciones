@@ -106,265 +106,118 @@ if ($teacher_id && $currentSchoolYear && $currentQuarter) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Materias</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/styles.css">
+    <!-- Design System -->
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <!-- Page styles -->
     <link rel="stylesheet" href="../css/teacher/subject.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
+    <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="page-tch-subjects">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
     </div>
     <?php include "../layouts/asideTeacher.php"; ?>
-    <main class="flex-grow-1 col-9 p-0 ">
+    <main class="ds-main">
         <?php include "../layouts/headerTeacher.php"; ?>
         
-        <!-- Título mejorado -->
-        <div class="container-fluid px-4" style="padding-top: 8rem; height: auto;">
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-header mb-3">
-                        <h1 class="page-title">
-                            <i class="bi bi-journal-bookmark me-3"></i>
-                            Mis Materias
-                        </h1>
-                        <p class="page-subtitle text-muted">
-                            Gestiona y accede a todas tus materias asignadas
-                        </p>
-                    </div>
-                </div>
+        <div class="page-content">
+
+            <!-- Header de la página -->
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="bi bi-journal-bookmark me-3"></i>
+                    Mis Materias
+                </h1>
+                <p class="page-subtitle">
+                    Gestiona y accede a todas tus materias asignadas
+                </p>
             </div>
-        </div>
-        
-        <!-- Contenedor principal de las materias -->
-        <div class="container-fluid px-4">
-            <div class="row justify-content-center">
-                <div class="col-12">
-                    <div class="subjects-grid">
-                        <?php foreach ($subjects as $subject): ?>
-                        <div class="subject-card">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-header bg-primary text-white">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="card-title mb-0 fw-bold">
-                                            <i class="bi bi-book me-2"></i>
-                                            <?php echo htmlspecialchars($subject['name']); ?>
-                                            <?php if($subject['specialSubject'] && $subject['groupInfo']): ?>
-                                                <small class="text-warning fw-normal ms-2"><?php echo htmlspecialchars($subject['groupInfo']); ?></small>
-                                            <?php endif; ?>
-                                        </h5>
-                                        <?php if($subject['specialSubject']): ?>
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-star-fill"></i> Especial
-                                        </span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                
-                                <div class="card-body d-flex flex-column">
-                                    <div class="subject-description mb-3">
-                                        <p class="text-muted mb-2">
-                                            <i class="bi bi-file-text me-2"></i>
-                                            <?php echo htmlspecialchars($subject['description']); ?>
-                                        </p>
-                                    </div>
-                                    
-                                    <div class="subject-details mb-3">
-                                        <div class="row g-2">
-                                            <div class="col-12">
-                                                <div class="detail-item">
-                                                    <i class="bi bi-diagram-3 text-info me-2"></i>
-                                                    <span class="fw-semibold">Campo Formativo:</span>
-                                                    <span class="ms-1"><?php echo htmlspecialchars($subject['learningAreaName']); ?></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="detail-item">
-                                                    <i class="bi bi-calendar3 text-warning me-2"></i>
-                                                    <span class="fw-semibold">Trimestre:</span>
-                                                    <span class="ms-1"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="detail-item">
-                                                    <i class="bi bi-calendar-range text-success me-2"></i>
-                                                    <span class="fw-semibold">Ciclo Escolar:</span>
-                                                    <span class="ms-1"><?php echo substr($currentSchoolYear['startDate'], 0, 4)  ?></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Botón de acción -->
-                                    <div class="mt-auto">
-                                        <?php if($fueraDePlazo): ?>
-                                        <button class="btn btn-secondary w-100 btn-lg disabled" disabled>
-                                            <i class="bi bi-lock me-2"></i>
-                                            Fuera de plazo
-                                        </button>
-                                        <small class="text-muted mt-2 d-block text-center">
-                                            <i class="bi bi-info-circle me-1"></i>
-                                            Disponible hasta el <?php echo date('d/m/Y', strtotime($fechaLimite)); ?>
-                                        </small>
-                                        <?php else: ?>
-                                        <a href="./gradesSubject.php?idSubject=<?php echo $subject['idSubject']; ?>" 
-                                           class="btn btn-primary w-100 btn-lg btn-access">
-                                            <i class="bi bi-arrow-right-circle me-2"></i>
-                                            Ingresar a la materia
-                                        </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
+
+            <!-- Grid de materias -->
+            <div class="sub-grid">
+                <?php foreach ($subjects as $subject): ?>
+                <div class="sub-card">
+                    <div class="sub-card__header">
+                        <h5 class="sub-card__title">
+                            <?php echo htmlspecialchars($subject['name']); ?>
+                            <?php if($subject['specialSubject'] && $subject['groupInfo']): ?>
+                                <span class="sub-card__group"><?php echo htmlspecialchars($subject['groupInfo']); ?></span>
+                            <?php endif; ?>
+                        </h5>
+                        <?php if($subject['specialSubject']): ?>
+                        <span class="sub-badge sub-badge--special">
+                            <i class="bi bi-star-fill"></i> Especial
+                        </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="sub-card__body">
+                        <p class="sub-card__desc">
+                            <?php echo htmlspecialchars($subject['description']); ?>
+                        </p>
+
+                        <div class="sub-card__meta">
+                            <div class="sub-meta">
+                                <span class="sub-meta__label">Campo Formativo</span>
+                                <span class="sub-meta__value"><?php echo htmlspecialchars($subject['learningAreaName']); ?></span>
+                            </div>
+                            <div class="sub-meta">
+                                <span class="sub-meta__label">Trimestre</span>
+                                <span class="sub-meta__value"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></span>
+                            </div>
+                            <div class="sub-meta">
+                                <span class="sub-meta__label">Ciclo Escolar</span>
+                                <span class="sub-meta__value"><?php echo substr($currentSchoolYear['startDate'], 0, 4); ?></span>
                             </div>
                         </div>
-                        <?php endforeach; ?>
-                        
-                        <?php if (empty($subjects)): ?>
-                        <div class="col-12">
-                            <div class="text-center py-5">
-                                <div class="empty-state">
-                                    <i class="bi bi-book display-1 text-muted mb-3"></i>
-                                    <h3 class="text-muted">No tienes materias asignadas</h3>
-                                    <p class="text-muted">Contacta al administrador para que te asigne materias.</p>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
+
+                    <div class="sub-card__footer">
+                        <?php if($fueraDePlazo): ?>
+                        <button class="sub-btn sub-btn--outline" disabled>
+                            <i class="bi bi-lock"></i>
+                            Fuera de plazo
+                        </button>
+                        <span class="sub-card__hint">
+                            Disponible hasta el <?php echo date('d/m/Y', strtotime($fechaLimite)); ?>
+                        </span>
+                        <?php else: ?>
+                        <a href="./gradesSubject.php?idSubject=<?php echo $subject['idSubject']; ?>" class="sub-btn sub-btn--primary">
+                            Ingresar a la materia
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
                         <?php endif; ?>
                     </div>
                 </div>
-            </div>
-        </div>
+                <?php endforeach; ?>
 
-        <!-- Estilos CSS personalizados -->
-        <style>
-            /* Estilos para el título */
-            .page-header {
-                text-align: center;
-                padding: 1.5rem 0 1rem 0;
-                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                border-radius: 15px;
-                margin-bottom: 1.5rem;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            
-            .page-title {
-                color: #192E4E;
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin-bottom: 0.3rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .page-subtitle {
-                font-size: 1.1rem;
-                margin-bottom: 0;
-                opacity: 0.8;
-            }
-            
-            /* Grid de materias */
-            .subjects-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-                gap: 1.5rem;
-                padding: 1rem 0 2rem 0;
-            }
-            
-            .subject-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-            
-            .subject-card:hover {
-                transform: translateY(-5px);
-            }
-            
-            .subject-card .card {
-                border-radius: 15px;
-                overflow: hidden;
-                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-            }
-            
-            .subject-card .card-header {
-                background: linear-gradient(135deg, #192E4E 0%, #264B82 100%) !important;
-                border: none;
-                padding: 1.25rem;
-            }
-            
-            .subject-card .card-body {
-                padding: 1.5rem;
-                min-height: 250px;
-            }
-            
-            .detail-item {
-                padding: 0.5rem 0;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            
-            .detail-item:last-child {
-                border-bottom: none;
-            }
-            
-            .btn-access {
-                background: linear-gradient(135deg, #264B82 0%, #192E4E 100%);
-                border: none;
-                border-radius: 10px;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 15px rgba(25, 46, 78, 0.2);
-            }
-            
-            .btn-access:hover {
-                background: linear-gradient(135deg, #1a3d6b 0%, #142439 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(25, 46, 78, 0.3);
-            }
-            
-            .empty-state {
-                max-width: 400px;
-                margin: 0 auto;
-            }
-            
-            /* Responsividad mejorada */
-            @media (max-width: 768px) {
-                .page-title {
-                    font-size: 2rem;
-                }
-                
-                .page-header {
-                    padding: 1rem 0 0.75rem 0;
-                    margin-bottom: 1rem;
-                }
-                
-                .subjects-grid {
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                    padding: 0.5rem 0 1.5rem 0;
-                }
-                
-                .subject-card .card-body {
-                    min-height: auto;
-                }
-            }
-            
-            @media (min-width: 1200px) {
-                .subjects-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-                }
-            }
-        </style>    
+                <?php if (empty($subjects)): ?>
+                <div class="sub-empty">
+                    <i class="bi bi-book sub-empty__icon"></i>
+                    <h3 class="sub-empty__title">No tienes materias asignadas</h3>
+                    <p class="sub-empty__text">Contacta al administrador para que te asigne materias.</p>
+                </div>
+                <?php endif; ?>
+            </div>
+
+        </div>    
     </main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Hide preloader when page is fully loaded
         window.addEventListener('load', function() {

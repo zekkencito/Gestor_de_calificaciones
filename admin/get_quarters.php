@@ -1,9 +1,9 @@
 <?php
+require_once 'check_session.php';
 require_once "../conection.php";
 
 // Establecer encabezados para permitir acceso y evitar problemas de caché
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 

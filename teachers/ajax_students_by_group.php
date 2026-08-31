@@ -10,10 +10,20 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $schoolYear = isset($_GET['schoolYear']) ? intval($_GET['schoolYear']) : 0;
-$teacher = isset($_GET['teacher']) ? intval($_GET['teacher']) : 0;
+
+$user_id = $_SESSION['user_id'];
+$sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
+$stmtTeacher = $conexion->prepare($sqlTeacher);
+$stmtTeacher->bind_param("i", $user_id);
+$stmtTeacher->execute();
+$resTeacher = $stmtTeacher->get_result();
+$rowTeacher = $resTeacher->fetch_assoc();
+$teacher = $rowTeacher ? $rowTeacher['idTeacher'] : null;
+$stmtTeacher->close();
 
 if (!$schoolYear || !$teacher) {
-    echo json_encode(['error' => 'Parámetros inválidos']);
+    http_response_code(403);
+    echo json_encode(['error' => 'Parámetros inválidos o profesor no autorizado']);
     exit;
 }
 

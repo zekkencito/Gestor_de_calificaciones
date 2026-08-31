@@ -1,3 +1,10 @@
+/* ==========================================================================
+   STYLES — Gestor de Calificaciones (Legacy)
+   
+   Estilos base que no están cubiertos por el design system.
+   El layout (sidebar, header, main) lo maneja layout.css + design-system.css.
+   ========================================================================== */
+
 /* Preloader */
 #preloader {
     position: fixed;
@@ -48,32 +55,6 @@ body {
     font-weight: 300;
 }
 
-main {
-    margin-left: 190px;
-    flex-basis: auto;
-    width: calc(100% - 190px);
-    box-sizing: border-box;
-    min-height: 100vh;
-}
-header {
-    position: fixed;
-    top: 0;
-    left: 190px;
-    margin-left: 0;
-    width: calc(100% - 190px);
-    box-sizing: border-box;
-    z-index: 1000;
-    /* Spacing manejado por Bootstrap y el layout de row */
-}
-
-aside {
-    position: fixed;
-    top: 0px; 
-    padding-left: 0;
-    height: 100%;
-    z-index: 2000;
-    height: 100%;
-}
 #card {
     background-color: #192E4E;
     transition: transform 0.3s ease-in-out;
@@ -83,22 +64,7 @@ aside {
 #card:hover {
     transform: scale(1.1);
 }
-#fechaLimiteDashboard{
-    font-size: 22px;
-    color: white;
-}
-#totalMaterias{
-    font-size: 22px;
-    color: white;
-}
-#totalAlumnos{
-    font-size: 22px;
-    color: white;
-}
-#totalDocentes{
-    font-size: 22px;
-    color: white;
-}
+/* Estadísticas del dashboard — reglas legacy eliminadas (usa admin/dashboard.css) */
 #tittleMenu {
     font-size: 18px;
     color: black;
@@ -110,16 +76,9 @@ aside {
     color: black;
     font-family: "League Spartan", sans-serif;
 }
+/* Calendar — height managed by FullCalendar JS config per page */
 #calendar {
-    height: 75vh;
     width: 100%;
-    margin-top: 0;
-}
-
-.fc .fc-toolbar-title {
-    font-size: 30px; 
-    text-align: center; 
-    justify-content: center;
 }
 
 
@@ -149,7 +108,6 @@ aside {
     height: auto; 
     width: 100%;
     max-width: 100%; 
-    /* padding-left removido ya que Bootstrap maneja el spacing */
 }
 .password-container {
     position: relative;
@@ -167,7 +125,6 @@ aside {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    transform: translateY(-50%);
     right: 20px;
     cursor: pointer;
     color: #aaa;
@@ -180,8 +137,3 @@ aside {
 #chart{
     padding-left: 0vh;
 }
-
-/*Azul - 192E4E
-Gris - C1C1C1
-Blanco - FFFFFF
-Negro - 000000*/

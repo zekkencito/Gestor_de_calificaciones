@@ -1,47 +1,9 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/csrf.php';
+validate_csrf_token();
 
 require_once __DIR__ . "/conection.php";
-
-function loadEnvFile(string $filePath): void
-{
-    if (!is_file($filePath) || !is_readable($filePath)) {
-        return;
-    }
-
-    $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    if ($lines === false) {
-        return;
-    }
-
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
-            continue;
-        }
-
-        [$name, $value] = explode('=', $line, 2);
-        $name = trim($name);
-        $value = trim($value);
-
-        if ($name === '' || getenv($name) !== false) {
-            continue;
-        }
-
-        if (
-            (str_starts_with($value, '"') && str_ends_with($value, '"')) ||
-            (str_starts_with($value, "'") && str_ends_with($value, "'"))
-        ) {
-            $value = substr($value, 1, -1);
-        }
-
-        putenv($name . '=' . $value);
-        $_ENV[$name] = $value;
-        $_SERVER[$name] = $value;
-    }
-}
-
-loadEnvFile(__DIR__ . '/mail.env');
 
 function buildBaseUrl(): string
 {
@@ -212,6 +174,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recovery_email'])) {
         header('Location: index.php?action=recover');
         exit();
     }
+    
+    // ----------------------------------------------------
+    // RATE LIMITING CHECK
+    // ----------------------------------------------------
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $action_limit = 'recovery';
+    $sql_limit = "SELECT scope, attempts, last_attempt, identifier FROM rate_limits 
+                  WHERE action = ? AND ((scope = 'ip' AND identifier = ?) OR (scope = 'email' AND identifier = ?))";
+    $stmt_limit = $conexion->prepare($sql_limit);
+    if ($stmt_limit) {
+        $stmt_limit->bind_param("sss", $action_limit, $ip_address, $email);
+        $stmt_limit->execute();
+        $res_limit = $stmt_limit->get_result();
+        
+        $blocked = false;
+        while ($row_limit = $res_limit->fetch_assoc()) {
+            $last = strtotime($row_limit['last_attempt']);
+            if (time() - $last >= 3600) { // 1 hora
+                $sql_reset = "DELETE FROM rate_limits WHERE action = ? AND scope = ? AND identifier = ?";
+                $stmt_reset = $conexion->prepare($sql_reset);
+                if ($stmt_reset) {
+                    $stmt_reset->bind_param("sss", $action_limit, $row_limit['scope'], $row_limit['identifier']);
+                    $stmt_reset->execute();
+                }
+            } else if ($row_limit['attempts'] >= 3) {
+                $blocked = true;
+                break;
+            }
+        }
+        
+        if ($blocked) {
+            http_response_code(429);
+            $_SESSION['error'] = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+            echo '<meta http-equiv="refresh" content="0;url=index.php?action=recover">';
+            echo '<title>429 Too Many Requests</title></head><body>';
+            echo 'Demasiados intentos. Redirigiendo... <a href="index.php?action=recover">Volver</a>';
+            echo '</body></html>';
+            exit();
+        }
+    }
+    
+    // RECORD ATTEMPT (regardless of if the email exists)
+    $sql_fail = "INSERT INTO rate_limits (scope, identifier, action, attempts, last_attempt) 
+                 VALUES (?, ?, ?, 1, NOW()) 
+                 ON DUPLICATE KEY UPDATE attempts = attempts + 1, last_attempt = NOW()";
+    $stmt_fail = $conexion->prepare($sql_fail);
+    if ($stmt_fail) {
+        $scope_ip = 'ip';
+        $stmt_fail->bind_param("sss", $scope_ip, $ip_address, $action_limit);
+        $stmt_fail->execute();
+        
+        $scope_email = 'email';
+        $stmt_fail->bind_param("sss", $scope_email, $email, $action_limit);
+        $stmt_fail->execute();
+    }
+    // ----------------------------------------------------
 
     $sql = "SELECT u.idUser, u.username, CONCAT(ui.names, ' ', ui.lastnamePa, ' ', ui.lastnameMa) AS full_name, ui.email
             FROM users u
@@ -279,8 +298,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recovery_email'])) {
                     smtpSendEmail($mailConfig, $email, $subject, $htmlMessage, $plainMessage);
                     $_SESSION['success'] = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
                 } catch (Throwable $mailException) {
-                    error_log('No se pudo enviar el correo de recuperación a ' . $email . ': ' . $mailException->getMessage());
-                    $_SESSION['error'] = 'No se pudo enviar el correo. Revisa la configuración SMTP.';
+                    error_log('Password recovery email failed for ' . $email . ': ' . $mailException->getMessage());
+                    $_SESSION['error'] = 'No pudimos enviar el correo en este momento. Inténtalo nuevamente más tarde.';
                 }
             } else {
                 $_SESSION['error'] = 'No se pudo generar el enlace de recuperación. Intenta más tarde.';
@@ -360,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_password'])) {
             $conexion->begin_transaction();
 
             try {
-                $updateUserSql = "UPDATE users SET password = ?, raw_password = NULL, password_changed = 1 WHERE idUser = ?";
+                $updateUserSql = "UPDATE users SET password = ?, raw_password = NULL, password_changed = 1, password_change_date = NOW() WHERE idUser = ?";
                 $updateUserStmt = $conexion->prepare($updateUserSql);
                 $updateUserStmt->bind_param('si', $hashedPassword, $resetUserId);
                 $updateUserStmt->execute();
@@ -369,6 +388,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_password'])) {
                 $invalidateStmt = $conexion->prepare($invalidateSql);
                 $invalidateStmt->bind_param('si', $tokenHash, $resetUserId);
                 $invalidateStmt->execute();
+
+                // Invalidar tokens RememberMe
+                $delTokens = $conexion->prepare("DELETE FROM user_remember_tokens WHERE idUser = ?");
+                if ($delTokens) {
+                    $delTokens->bind_param("i", $resetUserId);
+                    $delTokens->execute();
+                }
 
                 $conexion->commit();
 
@@ -392,10 +418,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_password'])) {
 
 // Revisar si hay cookie rememberMe y no hay sesión activa
 if (!$showRecoveryForm && !$showResetForm && !isset($_SESSION['user_id']) && isset($_COOKIE['rememberMe'])) {
-    $token = $_COOKIE['rememberMe'];
+    $tokenRaw = $_COOKIE['rememberMe'];
+    $tokenHash = hash('sha256', $tokenRaw);
     $sql = "SELECT idUser FROM user_remember_tokens WHERE token = ? AND expires > NOW()";
     $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("s", $token);
+    $stmt->bind_param("s", $tokenHash);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($row = $result->fetch_assoc()) {
@@ -407,11 +434,35 @@ if (!$showRecoveryForm && !$showResetForm && !isset($_SESSION['user_id']) && iss
         $stmtUser->execute();
         $user = $stmtUser->get_result()->fetch_assoc();
         if ($user) {
+            // Rotación del token Remember Me
+            $newTokenRaw = bin2hex(random_bytes(32));
+            $newTokenHash = hash('sha256', $newTokenRaw);
+            $stmtUpdate = $conexion->prepare("UPDATE user_remember_tokens SET token = ?, expires = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE idUser = ?");
+            $stmtUpdate->bind_param("si", $newTokenHash, $userId);
+            $stmtUpdate->execute();
+            
+            $isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+            if (!$isHttps && isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+                $isHttps = true;
+            }
+            setcookie('rememberMe', $newTokenRaw, [
+                'expires' => time() + (86400 * 30),
+                'path' => '/',
+                'domain' => '',
+                'secure' => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            // Hardening de sesión auto-login
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $user['idUser'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['role_description'] = $user['role_description'];
             $_SESSION['idRole'] = $user['idRole'];
+            $_SESSION['login_time'] = time();
+
             // Redirigir según el rol
             if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
                 header("Location: admin/dashboard.php");
@@ -420,6 +471,9 @@ if (!$showRecoveryForm && !$showResetForm && !isset($_SESSION['user_id']) && iss
             }
             exit();
         }
+    } else {
+        // Token inválido o expirado, borrar la cookie
+        setcookie('rememberMe', '', time() - 3600, '/', '', isset($_SERVER['HTTPS']), true);
     }
 }
 
@@ -438,694 +492,277 @@ if (!$showRecoveryForm && !$showResetForm && isset($_SESSION['user_id']) && isse
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Inicio de Sesión - Gestor de Calificaciones</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="icon" href="./img/logo.ico">
-    
-    <style>
-        :root {
-            /* Paleta minimalista - Azul marino, blanco y gris */
-            --navy: #1e3a8a;
-            --navy-light: #3b82f6;
-            --navy-dark: #1e293b;
-            --white: #ffffff;
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            
-            /* Estados */
-            --success: #059669;
-            --error: #dc2626;
-            
-            /* Sombras */
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-            min-height: 100vh;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 30% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        /* === ANIMACIONES === */
-        @keyframes logoFloat {
-            0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-            25% { transform: translateY(-10px) translateX(5px) rotate(1deg); }
-            50% { transform: translateY(-8px) translateX(-3px) rotate(-0.5deg); }
-            75% { transform: translateY(-12px) translateX(4px) rotate(1.5deg); }
-        }
-
-        @keyframes logoHover {
-            0% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.12) rotate(-2deg); }
-            100% { transform: scale(1.1) rotate(3deg); }
-        }
-
-        @keyframes decorativeFloat1 {
-            0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.1; }
-            33% { transform: translateY(-15px) translateX(8px) scale(1.1); opacity: 0.15; }
-            66% { transform: translateY(-10px) translateX(-5px) scale(1.05); opacity: 0.12; }
-        }
-
-        @keyframes decorativeFloat2 {
-            0%, 100% { transform: translateX(0px) translateY(0px) scale(1); opacity: 0.08; }
-            40% { transform: translateX(10px) translateY(-8px) scale(1.05); opacity: 0.12; }
-            80% { transform: translateX(-6px) translateY(5px) scale(1.08); opacity: 0.1; }
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: var(--shadow-xl);
-            overflow: hidden;
-            width: 100%;
-            max-width: 1000px;
-            min-height: 600px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .image-section {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .logo-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            background: var(--white);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow-xl);
-            padding: 20px;
-            animation: logoFloat 3s ease-in-out infinite;
-        }
-
-        .logo-container:hover {
-            animation: logoHover 0.6s ease-in-out;
-            transform: scale(1.1) rotate(3deg);
-        }
-
-        .logo-main {
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-            filter: opacity(0.9);
-            transition: all 0.3s ease;
-        }
-
-        .logo-container:hover .logo-main {
-            filter: opacity(1) brightness(1.1);
-        }
-
-        .decorative-elements {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-        }
-
-        .decorative-elements::before {
-            content: '';
-            position: absolute;
-            top: 20%;
-            left: 10%;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: decorativeFloat1 4s ease-in-out infinite;
-        }
-
-        .decorative-elements::after {
-            content: '';
-            position: absolute;
-            bottom: 30%;
-            right: 15%;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 50%;
-            animation: decorativeFloat2 3.5s ease-in-out infinite reverse;
-        }
-
-        .login-section {
-            padding: 80px 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: var(--white);
-        }
-
-        .title {
-            font-size: 2.1rem;
-            font-weight: 1200;
-            color: var(--navy-dark);
-            text-align: center;
-            margin-bottom: 8px;
-            line-height: 1.2;
-        }
-
-        .subtitle {
-            font-size: 1rem;
-            color: var(--gray-400);
-            text-align: center;
-            margin-bottom: 40px;
-            font-weight: 400;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--gray-600);
-            margin-bottom: 8px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 16px 20px;
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            font-size: 0.95rem;
-            color: var(--gray-800);
-            background: var(--white);
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--navy);
-            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.08);
-        }
-
-        .form-input::placeholder {
-            color: var(--gray-300);
-            font-weight: 400;
-        }
-
-        .password-wrapper {
-            position: relative;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--gray-300);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            transition: color 0.2s ease;
-        }
-
-        .password-toggle:hover {
-            color: var(--navy);
-        }
-
-        .login-button {
-            width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
-            color: var(--white);
-            border: none;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 16px;
-            font-family: inherit;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(30, 58, 138, 0.3);
-        }
-
-        .login-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .login-button:hover {
-            background: linear-gradient(135deg, var(--navy-dark) 0%, #0f1729 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(30, 58, 138, 0.4), 0 0 20px rgba(30, 58, 138, 0.2);
-            filter: blur(0) brightness(1.1);
-        }
-
-        .login-button:hover::before {
-            left: 100%;
-        }
-
-        .login-button:active {
-            transform: translateY(0);
-        }
-
-        .login-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .forgot-password-link {
-            display: inline-block;
-            margin-top: 14px;
-            color: var(--navy);
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .forgot-password-link:hover {
-            color: var(--navy-dark);
-            text-decoration: underline;
-        }
-
-        .loading-spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--white);
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .message {
-            padding: 14px 20px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            margin-bottom: 24px;
-            display: none;
-            font-weight: 500;
-        }
-
-        .message.error {
-            background: rgba(220, 38, 38, 0.1);
-            color: var(--error);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-        }
-
-        .message.success {
-            background: rgba(5, 150, 105, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(5, 150, 105, 0.2);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-                margin: 20px;
-                border-radius: 16px;
-            }
-
-            .image-section {
-                display: none;
-            }
-
-            .login-section {
-                padding: 60px 40px;
-            }
-
-            .title {
-                font-size: 1.75rem;
-            }
-        }
-
-        /* Estados de validación más sutiles */
-        .form-input.valid {
-            border-color: var(--success);
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
-        }
-
-        .form-input.invalid {
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
-        }
-
-        /* Estilos para errores PHP */
-        .php-error {
-            padding: 14px 20px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            margin-bottom: 24px;
-            background: rgba(220, 38, 38, 0.1);
-            color: var(--error);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-            font-weight: 500;
-        }
-
-        .php-success {
-            padding: 14px 20px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            margin-bottom: 24px;
-            background: rgba(5, 150, 105, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(5, 150, 105, 0.2);
-            font-weight: 500;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/design-system.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/login.css">
 </head>
 
-<body>
-    <div class="container">
-        <div class="image-section">
-            <div class="decorative-elements"></div>
-            <div class="logo-container">
-                <img src="./img/logo.webp" alt="Logo" class="logo-main">
+<body class="login-layout">
+
+    <aside class="login-layout__brand">
+        <img src="./img/logo.webp" alt="Logo" class="login-brand__logo" onerror="this.outerHTML='<div class=\'login-brand__fallback\'><i class=\'bi bi-mortarboard-fill\'></i></div>'">
+        <h1 class="login-brand__title">Gestor de Calificaciones</h1>
+        <p class="login-brand__subtitle">Plataforma de administración académica</p>
+    </aside>
+
+    <main class="login-layout__main">
+
+        <?php if ($showResetForm): ?>
+        <!-- ==================== RESET PASSWORD ==================== -->
+        <div class="login-card">
+            <div class="login-card__header">
+                <h5><i class="bi bi-shield-lock"></i> Restablecer contraseña</h5>
             </div>
-        </div>
-        
-        <div class="login-section">
-            <h1 class="title">
-                <?php
-                if ($showResetForm) {
-                    echo 'Restablecer contraseña';
-                } elseif ($showRecoveryForm) {
-                    echo 'Recuperar contraseña';
-                } else {
-                    echo '¡Bienvenido!';
-                }
-                ?>
-            </h1>
-            <p class="subtitle">
-                <?php
-                if ($showResetForm) {
-                    echo 'Crea una nueva contraseña para continuar';
-                } elseif ($showRecoveryForm) {
-                    echo 'Ingresa tu correo para enviarte un enlace de recuperación';
-                } else {
-                    echo 'Ingresa tus credenciales para acceder';
-                }
-                ?>
-            </p>
+            <div class="login-card__body">
 
-            <?php
-            if (isset($_SESSION['error'])) {
-                echo '<div class="php-error">' . $_SESSION['error'] . '</div>';
-                unset($_SESSION['error']);
-            }
-            if (isset($_SESSION['success'])) {
-                echo '<div class="php-success">' . $_SESSION['success'] . '</div>';
-                unset($_SESSION['success']);
-            }
-            if ($pageMessage) {
-                $messageClass = $pageMessageType === 'success' ? 'php-success' : 'php-error';
-                echo '<div class="' . $messageClass . '">' . htmlspecialchars($pageMessage) . '</div>';
-            }
-            ?>
+                <?php if ($pageMessage): ?>
+                <div class="ds-alert ds-alert--<?php echo $pageMessageType === 'success' ? 'success' : 'error'; ?> login-alert">
+                    <i class="bi bi-<?php echo $pageMessageType === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'; ?>"></i>
+                    <?php echo htmlspecialchars($pageMessage); ?>
+                </div>
+                <?php endif; ?>
 
-            <div id="message" class="message"></div>
-
-            <?php if ($showResetForm): ?>
-                <form method="POST" action="index.php">
+                <?php if ($resetUserId): ?>
+                <form method="POST" action="index.php" class="login-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($resetToken, ENT_QUOTES, 'UTF-8'); ?>">
 
-                    <div class="form-group">
-                        <label for="new_password" class="form-label">Nueva contraseña</label>
-                        <div class="password-wrapper">
-                            <input
-                                type="password"
-                                id="new_password"
-                                name="new_password"
-                                class="form-input"
-                                placeholder="Mínimo 6 caracteres"
-                                required
-                                minlength="6"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirm_password" class="form-label">Confirmar contraseña</label>
-                        <div class="password-wrapper">
-                            <input
-                                type="password"
-                                id="confirm_password"
-                                name="confirm_password"
-                                class="form-input"
-                                placeholder="Repite la nueva contraseña"
-                                required
-                                minlength="6"
-                            >
-                        </div>
-                    </div>
-
-                    <button type="submit" class="login-button">
-                        <div class="loading-spinner" id="loadingSpinner"></div>
-                        <span id="buttonText">Actualizar contraseña</span>
-                    </button>
-
-                    <div style="text-align:center; margin-top: 12px;">
-                        <a class="forgot-password-link" href="index.php">Volver al inicio</a>
-                    </div>
-                </form>
-            <?php elseif ($showRecoveryForm): ?>
-                <form method="POST" action="index.php?action=recover">
-                    <div style="margin-top: 6px; padding: 20px; border: 1px solid var(--gray-200); border-radius: 12px; background: var(--gray-50);">
-                        <p style="font-size: 0.95rem; color: var(--gray-500); margin-bottom: 16px; text-align:center;">Escribe el correo registrado para enviarte un enlace temporal.</p>
-                        <div class="form-group">
-                            <label for="recovery_email" class="form-label">Correo electrónico</label>
-                            <input
-                                type="email"
-                                id="recovery_email"
-                                name="recovery_email"
-                                class="form-input"
-                                placeholder="correo@ejemplo.com"
-                                required
-                            >
-                        </div>
-                        <button type="submit" class="login-button">
-                            <div class="loading-spinner" id="loadingSpinner"></div>
-                            <span id="buttonText">Enviar enlace</span>
-                        </button>
-                    </div>
-                    <div style="text-align:center; margin-top: 12px;">
-                        <a class="forgot-password-link" href="index.php">Volver al inicio de sesión</a>
-                    </div>
-                </form>
-            <?php else: ?>
-                <form id="loginForm" action="./admin/php/login.php" method="POST">
-                    <div class="form-group">
-                        <label for="username" class="form-label">Usuario</label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            class="form-input"
-                            placeholder="Ingresa tu usuario"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <div class="password-wrapper">
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                class="form-input"
-                                placeholder="••••••••"
-                                required
-                            >
-                            <button type="button" class="password-toggle" id="togglePassword">
-                                <i class="fas fa-eye"></i>
+                    <div class="ds-form-group">
+                        <label for="new_password" class="ds-label">Nueva contraseña</label>
+                        <div class="login-input-wrapper">
+                            <input type="password" id="new_password" name="new_password" class="ds-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                            <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="new_password">
+                                <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="login-button">
-                        <div class="loading-spinner" id="loadingSpinner"></div>
+                    <div class="ds-form-group">
+                        <label for="confirm_password" class="ds-label">Confirmar contraseña</label>
+                        <div class="login-input-wrapper">
+                            <input type="password" id="confirm_password" name="confirm_password" class="ds-input" placeholder="Repite la nueva contraseña" required minlength="6">
+                            <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="confirm_password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="login-requirements" id="passwordRequirements">
+                        <p class="login-requirements__title">Requisitos</p>
+                        <ul class="login-requirements__list">
+                            <li class="login-requirements__item" id="req-length">
+                                <i class="bi bi-circle"></i> Mínimo 6 caracteres
+                            </li>
+                            <li class="login-requirements__item" id="req-match">
+                                <i class="bi bi-circle"></i> Las contraseñas coinciden
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="ds-btn ds-btn--primary login-submit">
+                        <i class="bi bi-check-lg"></i> Actualizar contraseña
+                    </button>
+
+                    <div class="login-back">
+                        <a href="index.php"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+                    </div>
+                </form>
+                <?php else: ?>
+                <div class="login-token-error">
+                    <div class="login-token-error__icon">
+                        <i class="bi bi-x-lg"></i>
+                    </div>
+                    <h5>Enlace no válido</h5>
+                    <p><?php echo htmlspecialchars($pageMessage ?: 'El enlace ya expiró o ya fue usado. Solicita uno nuevo.'); ?></p>
+                    <div class="login-back login-back--spaced">
+                        <a href="index.php?action=recover"><i class="bi bi-arrow-left"></i> Solicitar nuevo enlace</a>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+            </div>
+        </div>
+
+        <?php elseif ($showRecoveryForm): ?>
+        <!-- ==================== RECOVER PASSWORD ==================== -->
+        <div class="login-card">
+            <div class="login-card__header">
+                <h5><i class="bi bi-envelope-lock"></i> Recuperar contraseña</h5>
+            </div>
+            <div class="login-card__body">
+
+                <?php
+                if (isset($_SESSION['error'])) {
+                    echo '<div class="ds-alert ds-alert--error login-alert"><i class="bi bi-exclamation-triangle-fill"></i> ' . $_SESSION['error'] . '</div>';
+                    unset($_SESSION['error']);
+                }
+                if (isset($_SESSION['success'])) {
+                    echo '<div class="ds-alert ds-alert--success login-alert"><i class="bi bi-check-circle-fill"></i> ' . $_SESSION['success'] . '</div>';
+                    unset($_SESSION['success']);
+                }
+                ?>
+
+                <div class="login-recovery-desc">
+                    <p>Escribe el correo registrado para enviarte un enlace de recuperación temporal.</p>
+                </div>
+
+                <form method="POST" action="index.php?action=recover" class="login-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
+                    <div class="ds-form-group">
+                        <label for="recovery_email" class="ds-label">Correo electrónico</label>
+                        <input type="email" id="recovery_email" name="recovery_email" class="ds-input" placeholder="correo@ejemplo.com" required>
+                    </div>
+
+                    <button type="submit" class="ds-btn ds-btn--primary login-submit">
+                        <i class="bi bi-send"></i> Enviar enlace
+                    </button>
+
+                    <div class="login-back">
+                        <a href="index.php"><i class="bi bi-arrow-left"></i> Volver al inicio de sesión</a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <?php else: ?>
+        <!-- ==================== LOGIN ==================== -->
+        <div class="login-card">
+            <div class="login-card__header">
+                <h5><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</h5>
+            </div>
+            <div class="login-card__body">
+
+                <?php
+                if (isset($_SESSION['error'])) {
+                    echo '<div class="ds-alert ds-alert--error login-alert"><i class="bi bi-exclamation-triangle-fill"></i> ' . $_SESSION['error'] . '</div>';
+                    unset($_SESSION['error']);
+                }
+                if (isset($_SESSION['success'])) {
+                    echo '<div class="ds-alert ds-alert--success login-alert"><i class="bi bi-check-circle-fill"></i> ' . $_SESSION['success'] . '</div>';
+                    unset($_SESSION['success']);
+                }
+                ?>
+
+                <div id="message" class="ds-alert ds-alert--error login-alert login-alert--hidden"></div>
+
+                <form id="loginForm" action="./admin/php/login.php" method="POST" class="login-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
+                    <div class="ds-form-group">
+                        <label for="username" class="ds-label">Usuario</label>
+                        <input type="text" id="username" name="username" class="ds-input" placeholder="Ingresa tu usuario" required>
+                    </div>
+
+                    <div class="ds-form-group">
+                        <label for="password" class="ds-label">Contraseña</label>
+                        <div class="login-input-wrapper">
+                            <input type="password" id="password" name="password" class="ds-input" placeholder="••••••••" required>
+                            <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="ds-btn ds-btn--primary login-submit" id="loginBtn">
+                        <i class="bi bi-box-arrow-in-right"></i>
                         <span id="buttonText">Acceder</span>
                     </button>
 
-                    <div style="text-align:center;">
-                        <a class="forgot-password-link" href="index.php?action=recover">¿Olvidaste tu contraseña?</a>
+                    <div class="login-link-row">
+                        <a href="index.php?action=recover">¿Olvidaste tu contraseña?</a>
                     </div>
                 </form>
-            <?php endif; ?>
+
+            </div>
         </div>
-    </div>
+        <?php endif; ?>
+
+    </main>
 
     <script>
-        // Toggle password visibility
-        const passwordInput = document.getElementById('password');
-        const toggleButton = document.getElementById('togglePassword');
-        if (toggleButton && passwordInput) {
-            const toggleIcon = toggleButton.querySelector('i');
+    (function () {
+        'use strict';
 
-            toggleButton.addEventListener('click', () => {
-                const isPassword = passwordInput.type === 'password';
-                passwordInput.type = isPassword ? 'text' : 'password';
-                toggleIcon.classList.toggle('fa-eye');
-                toggleIcon.classList.toggle('fa-eye-slash');
+        /* ---- Eye toggles (all views) ---- */
+        document.querySelectorAll('.login-eye-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = document.getElementById(btn.dataset.target);
+                if (!target) return;
+                var icon = btn.querySelector('i');
+                var isPassword = target.type === 'password';
+                target.type = isPassword ? 'text' : 'password';
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
             });
-        }
+        });
 
-        // Form validation and submission
-        const form = document.getElementById('loginForm');
-        const usernameInput = document.getElementById('username');
-        const messageDiv = document.getElementById('message');
-        const loginButton = document.querySelector('.login-button');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const buttonText = document.getElementById('buttonText');
+        /* ---- Login form validation ---- */
+        var form = document.getElementById('loginForm');
+        var usernameInput = document.getElementById('username');
+        var passwordInput = document.getElementById('password');
+        var messageDiv = document.getElementById('message');
+        var loginBtn = document.getElementById('loginBtn');
+        var buttonText = document.getElementById('buttonText');
 
-        // Real-time validation
-        if (usernameInput && passwordInput) {
-            [usernameInput, passwordInput].forEach(input => {
-                input.addEventListener('input', () => {
-                    validateField(input);
-                    clearFieldErrors(); // Limpiar errores al escribir
-                });
-                input.addEventListener('blur', () => validateField(input));
-            });
-        }
-
-        function validateField(field) {
-            const value = field.value.trim();
-            
-            field.classList.remove('valid', 'invalid');
-            
-            if (value.length === 0) {
-                return;
-            }
-            
-            field.classList.add('valid');
-        }
-
-        // Función para limpiar errores cuando el usuario empiece a escribir
-        function clearFieldErrors() {
-            if (usernameInput) {
-                usernameInput.classList.remove('invalid');
-            }
-            if (passwordInput) {
-                passwordInput.classList.remove('invalid');
-            }
-            hideMessage();
-        }
-
-        // Form submission con validación JavaScript
-        if (form && usernameInput && passwordInput && loginButton && loadingSpinner && buttonText) {
-            form.addEventListener('submit', (e) => {
-                const username = usernameInput.value.trim();
-                const password = passwordInput.value.trim();
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                var username = usernameInput ? usernameInput.value.trim() : '';
+                var password = passwordInput ? passwordInput.value.trim() : '';
 
                 hideMessage();
 
-                // Validation
                 if (!username || !password) {
-                    e.preventDefault(); // Prevenir envío
+                    e.preventDefault();
                     showMessage('Por favor completa todos los campos', 'error');
-                    // Marcar campos vacíos como inválidos
-                    if (!username) usernameInput.classList.add('invalid');
-                    if (!password) passwordInput.classList.add('invalid');
                     return;
                 }
 
-                // Limpiar estados de error antes de enviar
-                usernameInput.classList.remove('invalid');
-                passwordInput.classList.remove('invalid');
-
-                // Mostrar loading (el formulario se enviará normalmente)
                 setLoading(true);
             });
         }
 
         function showMessage(text, type) {
-            if (!messageDiv) {
-                return;
-            }
+            if (!messageDiv) return;
             messageDiv.textContent = text;
-            messageDiv.className = `message ${type}`;
-            messageDiv.style.display = 'block';
+            messageDiv.className = 'ds-alert ds-alert--' + type + ' login-alert';
         }
 
         function hideMessage() {
-            if (messageDiv) {
-                messageDiv.style.display = 'none';
-            }
+            if (messageDiv) messageDiv.className = 'ds-alert ds-alert--error login-alert login-alert--hidden';
         }
 
         function setLoading(loading) {
-            if (loginButton) {
-                loginButton.disabled = loading;
-            }
-            if (loadingSpinner) {
-                loadingSpinner.style.display = loading ? 'inline-block' : 'none';
-            }
-            if (buttonText) {
-                buttonText.textContent = loading ? 'Verificando...' : 'Ingresar';
-            }
+            if (loginBtn) loginBtn.disabled = loading;
+            if (buttonText) buttonText.textContent = loading ? 'Verificando...' : 'Acceder';
         }
+
+        /* ---- Reset form: live password requirements ---- */
+        var newPw = document.getElementById('new_password');
+        var confirmPw = document.getElementById('confirm_password');
+        var reqLength = document.getElementById('req-length');
+        var reqMatch = document.getElementById('req-match');
+
+        if (newPw && confirmPw && reqLength && reqMatch) {
+            function updateReqs() {
+                var lenOk = newPw.value.length >= 6;
+                var matchOk = confirmPw.value.length > 0 && newPw.value === confirmPw.value;
+
+                reqLength.classList.toggle('met', lenOk);
+                reqLength.querySelector('i').className = lenOk ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+
+                reqMatch.classList.toggle('met', matchOk);
+                reqMatch.querySelector('i').className = matchOk ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+            }
+            newPw.addEventListener('input', updateReqs);
+            confirmPw.addEventListener('input', updateReqs);
+        }
+    })();
     </script>
+
 </body>
 </html>

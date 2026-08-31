@@ -9,7 +9,12 @@ require_once "../fpdf.php";
 
 // Función auxiliar para codificación
 function utf8_decode_safe($text) {
-    return iconv('UTF-8', 'ISO-8859-1//IGNORE', $text);
+    if (function_exists('mb_convert_encoding')) {
+        return mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
+    } elseif (function_exists('iconv')) {
+        return iconv('UTF-8', 'ISO-8859-1//IGNORE', $text);
+    }
+    return utf8_decode($text);
 }
 
 // Función principal para generar el PDF del reporte

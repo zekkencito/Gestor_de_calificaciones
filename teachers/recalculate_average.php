@@ -1,7 +1,8 @@
 <?php
 // Script para recalcular promedios existentes
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 require_once "check_session.php";
 require_once "../conection.php";
@@ -16,7 +17,7 @@ $idSchoolQuarter = 1;
 // 1. Obtener las calificaciones actuales
 $sql = "SELECT gs.grade, ec.percentage 
         FROM gradesSubject gs
-        JOIN evaluation_criteria ec ON gs.idEvalCriteria = ec.idEvalCriteria
+        JOIN evaluation_criteria ec ON gs.idEvalCriteria = ec.id_eval_criteria
         WHERE gs.idStudent = ? AND gs.idSubject = ? AND gs.idSchoolYear = ? AND gs.idSchoolQuarter = ? 
         AND gs.status = 1";
 

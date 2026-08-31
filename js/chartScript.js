@@ -18,14 +18,47 @@ function cargarAprobadosPorcentaje(tipo) {
             datasets: [{
               label: tipo === 'admin' ? 'Porcentaje de grupos' : 'Porcentaje de alumnos',
               data: [data.porcentaje, 100 - data.porcentaje],
-              backgroundColor: ['#2ecc71', '#e74c3c'],
-              borderWidth: 1
+              backgroundColor: ['#1a7f4b', '#b91c1c'],
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 6
             }]
           },
           options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                top: 8,
+                bottom: 4,
+                left: 4,
+                right: 4
+              }
+            },
             plugins: {
-              legend: { display: true },
-              tooltip: { enabled: true }
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  font: {
+                    family: "'League Spartan', sans-serif",
+                    size: 13,
+                    weight: '500'
+                  },
+                  color: '#40454f'
+                }
+              },
+              tooltip: {
+                enabled: true,
+                backgroundColor: '#192E4E',
+                titleFont: { family: "'League Spartan', sans-serif", weight: '600' },
+                bodyFont: { family: "'League Spartan', sans-serif" },
+                cornerRadius: 6,
+                padding: 12
+              }
             }
           }
         });

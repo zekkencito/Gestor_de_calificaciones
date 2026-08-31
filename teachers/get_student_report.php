@@ -55,14 +55,39 @@ try {
     
     $selectClause = implode(", ", $selectColumns);
     
-    // Obtener todos los reportes del estudiante
+    // Obtener el ID del docente desde la sesión
+    $user_id = $_SESSION['user_id'];
+    $sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
+    $stmtTeacher = $conexion->prepare($sqlTeacher);
+    $stmtTeacher->bind_param("i", $user_id);
+    $stmtTeacher->execute();
+    $resTeacher = $stmtTeacher->get_result();
+    $rowTeacher = $resTeacher->fetch_assoc();
+    $teacher_id = $rowTeacher ? $rowTeacher['idTeacher'] : null;
+    $stmtTeacher->close();
+
+    if (!$teacher_id) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error de autorización: Profesor no encontrado'
+        ]);
+        exit;
+    }
+
+    // Obtener todos los reportes del estudiante, validando que el estudiante pertenece al profesor
     $sql = "SELECT $selectClause,
                    uit.names as teacherNames, uit.lastnamePa as teacherLastnamePa, uit.lastnameMa as teacherLastnameMa
             FROM conductReports cr
             LEFT JOIN teachers t ON cr.idTeacher = t.idTeacher
             LEFT JOIN users u ON t.idUser = u.idUser
             LEFT JOIN usersInfo uit ON u.idUserInfo = uit.idUserInfo
-            WHERE cr.idStudent = ?
+            WHERE cr.idStudent = ? 
+            AND EXISTS (
+                SELECT 1 FROM students s2 
+                JOIN teacherGroupsSubjects tgs ON s2.idGroup = tgs.idGroup 
+                WHERE s2.idStudent = cr.idStudent AND tgs.idTeacher = ?
+            )
             ORDER BY cr.idConductReport DESC";
     
     $stmt = $conexion->prepare($sql);
@@ -72,7 +97,7 @@ try {
         error_log("Columnas disponibles: " . implode(', ', $availableColumns));
         throw new Exception("Error preparando consulta: " . $conexion->error);
     }
-    $stmt->bind_param("i", $studentId);
+    $stmt->bind_param("ii", $studentId, $teacher_id);
     $stmt->execute();
     $result = $stmt->get_result();
     

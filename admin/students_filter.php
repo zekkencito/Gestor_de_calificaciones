@@ -1,22 +1,40 @@
 <?php
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 
 $where = [];
 $order = [];
+$params = [];
+$types = "";
 
 if (!empty($_GET['schoolYear'])) {
-    $where[] = "s.idSchoolYear = '" . intval($_GET['schoolYear']) . "'";
-    $order[] = "(s.idSchoolYear = '" . intval($_GET['schoolYear']) . "') DESC";
+    $where[] = "s.idSchoolYear = ?";
+    $order[] = "(s.idSchoolYear = ?) DESC";
+    $val = intval($_GET['schoolYear']);
+    $params[] = $val;
+    $params[] = $val;
+    $types .= "ii";
 }
 if (!empty($_GET['grupo'])) {
-    $where[] = "s.idGroup = '" . intval($_GET['grupo']) . "'";
-    $order[] = "(s.idGroup = '" . intval($_GET['grupo']) . "') DESC";
+    $where[] = "s.idGroup = ?";
+    $order[] = "(s.idGroup = ?) DESC";
+    $val = intval($_GET['grupo']);
+    $params[] = $val;
+    $params[] = $val;
+    $types .= "ii";
 }
 if (!empty($_GET['alumno'])) {
-    $alumno = $conexion->real_escape_string($_GET['alumno']);
-    $where[] = "(ui.names LIKE '%$alumno%' OR ui.lastnamePa LIKE '%$alumno%' OR ui.lastnameMa LIKE '%$alumno%')";
-    $order[] = "(ui.names LIKE '$alumno%' OR ui.lastnamePa LIKE '$alumno%' OR ui.lastnameMa LIKE '$alumno%') DESC";
+    $alumno = trim($_GET['alumno']);
+    $alumno_escaped = str_replace(['%', '_'], ['\%', '\_'], $alumno);
+    $like = "%" . $alumno_escaped . "%";
+    $like_start = $alumno_escaped . "%";
+    
+    $where[] = "(ui.names LIKE ? OR ui.lastnamePa LIKE ? OR ui.lastnameMa LIKE ?)";
+    $order[] = "(ui.names LIKE ? OR ui.lastnamePa LIKE ? OR ui.lastnameMa LIKE ?) DESC";
+    
+    $params[] = $like; $params[] = $like; $params[] = $like;
+    $params[] = $like_start; $params[] = $like_start; $params[] = $like_start;
+    $types .= "ssssss";
 }
 $where_sql = $where ? "WHERE " . implode(" AND ", $where) : "";
 $order_sql = $order ? "ORDER BY " . implode(", ", $order) : "";
@@ -58,9 +76,19 @@ LEFT JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
 LEFT JOIN tutors t ON s.idTutor = t.idTutor
 $where_sql $order_sql LIMIT 100";
 
-$result = $conexion->query($sql);
+$stmt = $conexion->prepare($sql);
+if (!$stmt) {
+    echo "<tr><td colspan='9'>Error al preparar la consulta.</td></tr>";
+    exit;
+}
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+
 if (!$result) {
-    echo "<tr><td colspan='9'>Error en la consulta: " . $conexion->error . "</td></tr>";
+    echo "<tr><td colspan='9'>Error en la consulta: " . htmlspecialchars($stmt->error) . "</td></tr>";
     exit;
 }
 while ($row = $result->fetch_assoc()) {

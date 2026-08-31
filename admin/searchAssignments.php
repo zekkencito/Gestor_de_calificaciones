@@ -1,19 +1,28 @@
 <?php
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 
 header('Content-Type: text/html; charset=utf-8');
 
 $where = '';
+$params = [];
+$types = '';
+
 if (isset($_POST['buscar']) && isset($_POST['valor'])) {
     $buscar = $_POST['buscar'];
     $valor = $_POST['valor'];
     if ($buscar === 'grupo') {
-        $where = " AND g.idGroup = '" . $conexion->real_escape_string($valor) . "'";
+        $where = " AND g.idGroup = ?";
+        $params[] = intval($valor);
+        $types .= "i";
     } else if ($buscar === 'maestro') {
-        $where = " AND t.idTeacher = '" . $conexion->real_escape_string($valor) . "'";
+        $where = " AND t.idTeacher = ?";
+        $params[] = intval($valor);
+        $types .= "i";
     } else if ($buscar === 'materia') {
-        $where = " AND sub.idSubject = '" . $conexion->real_escape_string($valor) . "'";
+        $where = " AND sub.idSubject = ?";
+        $params[] = intval($valor);
+        $types .= "i";
     }
 }
 
@@ -41,7 +50,12 @@ WHERE 1 $where
 GROUP BY syear.idSchoolYear, g.idGroup, t.idTeacher, g.grade, g.group_, ui.lastnamePa, ui.lastnameMa, ui.names
 ORDER BY ultimaAsignacion DESC";
 
-$result = $conexion->query($sql);
+$stmt = $conexion->prepare($sql);
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {

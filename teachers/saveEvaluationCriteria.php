@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 // Mostrar todos los errores para depuración
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

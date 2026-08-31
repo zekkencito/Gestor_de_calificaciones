@@ -1,717 +1,449 @@
-/* Los estilos específicos para el contenido de asignaciones, NO afectar el sidebar */
-main {
-    box-sizing: border-box;
-    font-family: "League Spartan", sans-serif !important;
+/* ==========================================================================
+   ASSIGNMENTS PAGE — Gestor de Calificaciones
+   
+   design-taste-frontend: Operate mode, density 7, variance 3, motion 2
+   impeccable: scanability-first, table is king, no decoration
+   emil-design-eng: ease-out entries, scale(0.97) press, stagger 60ms
+   
+   Scoped to body.page-assignments.
+   Loads AFTER time.css (same load order pattern as student/teacher).
+   
+   Design decisions (aligned with dashboard, students, teachers):
+   - No gradients, no shadows, no glassmorphism
+   - Border-radius: --ds-radius-md (6px) everywhere
+   - Table is the primary element — compact, scannable
+   - Filters are functional, not decorative
+   - Modals: uses shared ds-modal from components.css
+   ========================================================================== */
+
+/* =========================================================================
+   PAGE CONTENT WRAPPER
+   ========================================================================== */
+
+.page-assignments .page-content {
+  padding: var(--ds-space-5) var(--ds-space-6);
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
-/* Header de página moderno */
-.page-header {
-    text-align: center;
-    padding: 1.5rem 0 1rem 0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 15px;
-    margin-top: 4rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+/* =========================================================================
+   PAGE HEADER
+   Minimal. Title + subtitle. Accent underline. No card, no gradient.
+   ========================================================================== */
+
+.page-assignments .page-header {
+  margin-bottom: var(--ds-space-5);
 }
 
-.page-title {
-    font-size: 2.5rem !important;
-    font-weight: 600 !important;
-    margin-bottom: 0.5rem;
-    align-items: center;
-    font-family: "League Spartan", sans-serif !important;
+.page-assignments .page-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-900);
+  margin: 0 0 var(--ds-space-1) 0;
+  display: inline-block;
+  position: relative;
 }
 
-.page-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 0;
+.page-assignments .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 40px;
+  height: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 2px;
 }
 
-/* Tarjeta de filtros moderna */
-.filter-card .card {
-    border-radius: 15px;
-    transition: all 0.3s ease;
-    overflow: hidden;
+.page-assignments .page-subtitle {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-gray-400);
+  margin: var(--ds-space-2) 0 0 0;
+  font-weight: var(--ds-font-regular);
 }
 
-.filter-card .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+/* =========================================================================
+   FILTER SECTION
+   Inline bar. Controls + actions in one row. No card wrapper.
+   ========================================================================== */
+
+.page-assignments .asn-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  margin-bottom: var(--ds-space-4);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
-.filter-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
+.page-assignments .asn-filters__field-value {
+  padding: var(--ds-space-2) var(--ds-space-3);
+  background-color: var(--ds-gray-50);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-sm);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-800);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
 }
 
-.filter-card .card-body {
-    padding: 1.5rem;
-    background: white;
+.page-assignments .asn-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  flex: 1;
+  min-width: 160px;
+  position: relative;
 }
 
-.filter-card .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: 500;
+.page-assignments .asn-filter__label {
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
 }
 
-.filter-card .form-select:focus {
-    border-color: #192E4E;
-    box-shadow: 0 0 0 0.2rem rgba(25, 46, 78, 0.25);
+.page-assignments .asn-filter__select {
+  width: 100%;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-300);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease-out),
+    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235a6070' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px 10px;
+  padding-right: 2.5rem;
 }
 
-.filter-card .form-label {
-    color: #495057;
-    margin-bottom: 0.5rem;
+.page-assignments .asn-filter__select:focus {
+  border-color: var(--ds-primary-600);
+  box-shadow: var(--ds-shadow-focus);
 }
 
-/* Botones modernos */
-.btn {
-    border-radius: 10px;
-    padding: 0.6rem 1.2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: none;
+.page-assignments .asn-actions {
+  display: flex;
+  gap: var(--ds-space-2);
+  align-items: flex-end;
+  flex-shrink: 0;
 }
 
-.btn-success {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    border: none;
+/* =========================================================================
+   BUTTONS
+   Using ds-btn from components.css. Page-specific overrides only.
+   ========================================================================== */
+
+.page-assignments .asn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    box-shadow 150ms var(--ds-ease-out),
+    transform 100ms var(--ds-ease-out);
+  outline: none;
+  text-decoration: none;
 }
 
-.btn-success:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+.page-assignments .asn-btn:active {
+  transform: scale(0.97);
 }
 
-.btn-danger {
-    background: linear-gradient(135deg, #dc3545, #fd7e14);
-    border: none;
+.page-assignments .asn-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-primary-500);
 }
 
-.btn-danger:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+.page-assignments .asn-btn--primary {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #192E4E, #2C5695);
-    border: none;
+.page-assignments .asn-btn--primary:hover {
+  background-color: var(--ds-primary-700);
+  border-color: var(--ds-primary-700);
 }
 
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
+.page-assignments .asn-btn--outline {
+  background-color: var(--ds-white);
+  border-color: var(--ds-gray-300);
+  color: var(--ds-gray-600);
 }
 
-/* Tarjeta de tabla moderna */
-.table-card .card {
-    border-radius: 15px;
-    overflow: hidden;
-    transition: all 0.3s ease;
+.page-assignments .asn-btn--outline:hover {
+  background-color: var(--ds-gray-50);
+  border-color: var(--ds-gray-400);
+  color: var(--ds-gray-800);
 }
 
-.table-card .card:hover {
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+.page-assignments .asn-btn--danger {
+  background-color: var(--ds-error);
+  border-color: var(--ds-error);
+  color: var(--ds-white);
 }
 
-.table-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem;
+.page-assignments .asn-btn--danger:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
 }
 
-.table-card .table {
-    margin-bottom: 0;
+.page-assignments .asn-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.table-card .table thead th {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: none;
-    padding: 1rem;
-    font-weight: 600;
-    color: #495057;
-    text-transform: uppercase;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
+/* --- Small (table actions) --- */
+.page-assignments .asn-btn--sm {
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  gap: 4px;
 }
 
-.table-card .table tbody tr {
-    transition: all 0.3s ease;
+.page-assignments .asn-btn--sm i {
+  font-size: 0.85rem;
 }
 
-.table-card .table tbody tr:hover {
-    background-color: rgba(25, 46, 78, 0.05);
-    transform: scale(1.01);
+/* --- Icon ghost (view/report buttons) --- */
+.page-assignments .asn-btn--icon {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ds-gray-500);
+  padding: var(--ds-space-1);
+  border-radius: var(--ds-radius-sm);
 }
 
-.table-card .table tbody td {
-    padding: 1rem;
-    border: none;
-    border-bottom: 1px solid #f1f3f4;
-    vertical-align: middle;
-    font-weight: 500;
+.page-assignments .asn-btn--icon:hover {
+  background-color: var(--ds-gray-100);
+  color: var(--ds-primary-700);
 }
 
-.table-card .card-footer {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    padding: 1.25rem;
+.page-assignments .asn-btn--icon-danger {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ds-error);
+  padding: var(--ds-space-1);
+  border-radius: var(--ds-radius-sm);
 }
 
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
+.page-assignments .asn-btn--icon-danger:hover {
+  background-color: var(--ds-error-bg);
+  color: var(--ds-error);
 }
 
-.btn-outline-info:hover {
-    transform: scale(1.1);
+/* =========================================================================
+   TABLE — The most important element on this page
+   ========================================================================== */
+
+.page-assignments .asn-table-wrap {
+  background-color: var(--ds-white);
+  border: 1px solid var(--ds-gray-200);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
 }
 
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
+.page-assignments .asn-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ds-gray-100);
 }
 
-/* Botones de acción en tabla */
-.btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-    border-radius: 8px;
+.page-assignments .asn-table-title {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.btn-outline-primary:hover,
-.btn-outline-info:hover,
-.btn-outline-warning:hover {
-    transform: scale(1.1);
+.page-assignments .asn-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Estado vacío */
-#emptyState {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 15px;
-    margin: 2rem;
+.page-assignments .asn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ds-font-family);
 }
 
-/* Responsive */
+.page-assignments .asn-table thead th {
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: var(--ds-font-bold);
+  color: var(--ds-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--ds-gray-50);
+  border-bottom: 1px solid var(--ds-gray-200);
+  white-space: nowrap;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.page-assignments .asn-table tbody tr {
+  transition: background-color 120ms var(--ds-ease-out);
+}
+
+.page-assignments .asn-table tbody tr:hover {
+  background-color: rgba(25, 46, 78, 0.03);
+}
+
+.page-assignments .asn-table tbody td {
+  padding: 10px 12px;
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-700);
+  border-bottom: 1px solid var(--ds-gray-100);
+  vertical-align: middle;
+  text-align: center;
+}
+
+.page-assignments .asn-table tbody td.text-center {
+  text-align: center;
+}
+
+.page-assignments .asn-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================================================
+   BADGES — Subject pills in table
+   ========================================================================== */
+
+.page-assignments .asn-subject-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: 3px 10px;
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-font-semibold);
+  line-height: var(--ds-leading-normal);
+  border-radius: var(--ds-radius-sm);
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-700);
+  white-space: nowrap;
+}
+
+/* =========================================================================
+   TABLE ACTION GROUPS — Edit/Delete per subject
+   ========================================================================== */
+
+.page-assignments .asn-action-group {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: var(--ds-radius-sm);
+  overflow: hidden;
+}
+
+/* =========================================================================
+   EMPTY STATE
+   ========================================================================== */
+
+.page-assignments .asn-empty {
+  padding: var(--ds-space-10) var(--ds-space-6);
+  text-align: center;
+}
+
+.page-assignments .asn-empty i {
+  font-size: 2.5rem;
+  color: var(--ds-gray-300);
+  margin-bottom: var(--ds-space-3);
+}
+
+.page-assignments .asn-empty p {
+  color: var(--ds-gray-400);
+  font-size: var(--ds-text-sm);
+  margin: 0;
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .page-assignments .asn-filters {
+    gap: var(--ds-space-2);
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE — Mobile
+   ========================================================================== */
+
 @media (max-width: 768px) {
-    .page-title {
-        font-size: 2rem;
-    }
-    
-    .filter-card .row > div {
-        margin-bottom: 1rem;
-    }
-}
+  .page-assignments .page-title {
+    font-size: var(--ds-text-xl);
+  }
 
-/* ETIQUETAS LEGACY (mantener compatibilidad) */
-#labelAlumno, #labelCiclo {
-    font-size: 22px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-bottom: 8px;
-    display: block;
-}
-
-/* BOTONES */
-.buttonInscribir {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 20px;
-    width: auto; /* Ancho automático en lugar del 100% */
-    justify-content: center;
-}
-
-/* Contenedor del botón */
-.button-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 28px; /* Ajuste para alinear con los inputs */
-}
-/* Asegurar que las columnas tengan el mismo espaciado */
-.col-md-6 {
-    padding: 0 15px; /* Espaciado estándar de Bootstrap */
-}
-.align-items-center {
-    align-items: center;
-}
-#button {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    font-size: 20px;
-    height: 5.5vh;
-}
-
-.botonCancelar, .botonEnter {
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    font-size: 18px;
-    height: 6.5vh;
-}
-
-#botonVer {
-    border: none;
-    background: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* ICONOS */
-#iBuscar {
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#iconoAdd {
-    color: white;
-    font-size: 1.5rem;
-}
-
-/* TABLA */
-#listaAlumnos {
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    margin-left: 35px;
-}
-
-.contenedorTabla {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-th {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-
-td {
-    font-size: 18px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-
-/* MODALES */
-#tituloModal {
-    font-family: "League Spartan", sans-serif;
-    font-weight: 800;
-    font-size: 30px;
-    margin: 0;
-}
-.form-group {
-    display: flex;
+  .page-assignments .asn-filters {
     flex-direction: column;
-}
-.labelAgregar{
-    font-size: 17px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 600;
-    margin-top: 7px;
-}
-.botonCancelar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.botonEnter:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.buttonInscribir:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.page-subtitle {
-    font-size: 1.1rem;
-    margin-bottom: 0;
-    opacity: 0.8;
-    color: #6c757d;
-}
+    align-items: stretch;
+  }
 
-/* ========== ELEMENTOS ANTIGUOS (Removidos - Ya no se usan) ========== */
-#labelAlumno{
-    font-size: 22px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-top: 16px;
-}
-option{
-    font-size: 15px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 300;
-}
-#listaAlumnos{
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    margin-left: 40px;
-}
-#subject{
-    font-size: 15px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: bold;
-}
+  .page-assignments .asn-filter {
+    min-width: 100%;
+  }
 
-#asignacion{
-    font-size: 25px;
-    font-family: "League Spartan", sans-serif;
-    color: black;
-    font-weight: bold;
-    margin-top: 16px;
-}
-#botonVer{
-    border: none;
-    background: none;
-    border-width: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-}
-#button{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 5.5vh;
-    margin-top: 20px;
-}
-#buttonBuscar{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 5.5vh;
-    margin-top: 20px;
-}
-#buttonReset{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 5.5vh;
-    margin-top: 20px;
-}
-#iconoAdd{
-    color: white;
-    font-size: 1.5rem;
-}
-
-
-/*MODALS*/
-.form-group {
-    display: flex;
+  .page-assignments .asn-actions {
     flex-direction: column;
-}
-#tituloModal{
-    font-family: "League Spartan", sans-serif;
-    font-weight: 800;
-    font-size: 30px;
-    margin:0;
-}
-.labelAgregar{
-    font-size: 17px;
-    font-family: "League Spartan", sans-serif;
-    font-weight: 600;
-    margin-top: 7px;
-}
-.botonCancelar{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 6.5vh;
-}
-.botonEnter{
-    background-color: #192E4E;
-    color: white;
-    border: none;
-    outline: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    gap: 15px;
-    justify-content: space-between;
-    width: fit-content;
-    font-size: 18px;
-    height: 6.5vh;
-}
-input, select{
-    margin-bottom: 12px;
-}
-.botonCancelar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.botonEnter:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#button:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#buttonBuscar:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-#buttonReset:hover {
-    background-color:rgb(27, 84, 168);
-    color: white;
-    
-}
-.btn-primary {
-    background: linear-gradient(135deg, #192E4E, #2C5695);
-    border: none;
-}
+    align-items: stretch;
+  }
 
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(25, 46, 78, 0.3);
-}
+  .page-assignments .asn-table thead th {
+    font-size: 0.65rem;
+    padding: 8px 8px;
+  }
 
-/* ========== TARJETAS ========== */
-.filter-card, .table-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+  .page-assignments .asn-table tbody td {
+    padding: 8px 8px;
+    font-size: var(--ds-text-xs);
+  }
 
-.filter-card:hover, .table-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
-}
-
-.filter-card .card, .table-card .card {
-    border-radius: 15px;
-    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.filter-card .card-header, .table-card .card-header {
-    border-radius: 15px 15px 0 0;
-    border-bottom: 1px solid #e9ecef;
-    background-color: #f8f9fa;
-}
-
-.filter-card .card-title, .table-card .card-title {
-    color: #192E4E;
-    font-weight: 600;
-    margin-bottom: 0;
-}
-
-/* ========== TABLA MEJORADA ========== */
-.table-responsive {
-    border-radius: 0 0 15px 15px;
-    width: 100%;
-    overflow: hidden;
-}
-
-.table {
-    margin-bottom: 0 !important;
-    width: 100%;
-    table-layout: auto;
-}
-
-.table th {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
-    border: none !important;
-    padding: 1rem !important;
-    font-weight: 600 !important;
-    color: #495057 !important;
-    text-transform: uppercase !important;
-    font-size: 0.875rem !important;
-    letter-spacing: 0.5px !important;
-}
-
-.table td {
-    padding: 1rem !important;
-    border: none !important;
-    border-bottom: 1px solid #f1f3f4 !important;
-    vertical-align: middle !important;
-    font-weight: 500 !important;
-}
-
-.table tbody tr {
-    transition: all 0.3s ease;
-}
-
-.table tbody tr:hover {
-    background-color: rgba(25, 46, 78, 0.05);
-    transform: scale(1.01);
-}
-
-.table tbody tr:last-child td {
-    border-bottom: none !important;
-}
-
-/* ========== BOTONES ========== */
-.table .btn {
-    border-radius: 6px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    padding: 0.4rem 0.7rem !important;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.3rem;
-    border: none !important;
-}
-
-.table .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
-}
-
-.table .btn-info {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
-    color: white !important;
-}
-
-.table .btn-info:hover {
-    background: linear-gradient(135deg, #138496 0%, #0d5860 100%) !important;
-}
-
-.table .btn-warning {
-    background-color: #ffc107 !important;
-    color: #000 !important;
-}
-
-.table .btn-warning:hover {
-    background-color: #ffb300 !important;
-}
-
-.table .btn-danger {
-    background-color: #dc3545 !important;
-    color: white !important;
-}
-
-.table .btn-danger:hover {
-    background-color: #c82333 !important;
-}
-
-.table .btn-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-    color: white !important;
-}
-
-.table .btn-primary:hover {
-    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%) !important;
-}
-
-/* ========== BADGES ========== */
-.badge {
-    padding: 0.5rem 0.75rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    border-radius: 6px;
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width: 768px) {
-    .table th {
-        font-size: 0.75rem;
-        padding: 0.8rem 0.6rem !important;
-    }
-
-    .table td {
-        padding: 0.8rem 0.6rem !important;
-        font-size: 0.9rem;
-    }
-
-    .table .btn {
-        padding: 0.3rem 0.6rem !important;
-        font-size: 0.75rem;
-    }
+  .page-assignments .asn-btn--sm {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
 }

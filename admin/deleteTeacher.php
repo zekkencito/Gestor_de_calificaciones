@@ -1,9 +1,10 @@
 <?php
+require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
-include '../conection.php';
+require_once '../conection.php';
 
-if (isset($_GET['id'])) {
-    $teacherId = $_GET['id'];
+if (isset($_POST['id'])) {
+    $teacherId = $_POST['id'];
 
     try {
         // Verificar si el profesor existe

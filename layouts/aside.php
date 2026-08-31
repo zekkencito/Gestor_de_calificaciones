@@ -1,303 +1,85 @@
-<head>
-    <link rel="stylesheet" href="../css/admin/time.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-</head>
-
-<aside class="sidebar-modern">
+<aside class="ds-sidebar">
     <div class="sidebar-content">
         <nav class="sidebar-nav">
-            <ul class="nav flex-column" >
-                <li class="nav-item logo-container">
-                    <img class="logo" src="../img/logo.webp" alt="Gregorio Torres Logo">
+            <ul class="ds-sidebar__nav">
+                <li class="ds-sidebar__logo">
+                    <img class="ds-sidebar__logo-img" src="../img/logo.webp" alt="Gregorio Torres Logo">
                 </li>
-                <li class="nav-item">
-                    <a href="../admin/dashboard.php" class="nav-link">
-                        <i class="bi bi-house-door-fill me-2"></i> Inicio
+                <!-- NAVEGACIÓN -->
+                <?php
+                $currentPage = basename($_SERVER['SCRIPT_FILENAME'], '.php');
+                ?>
+                <li class="ds-sidebar__item">
+                    <a href="../admin/dashboard.php" class="ds-sidebar__link<?= $currentPage === 'dashboard' ? ' ds-sidebar__link--active' : '' ?>">
+                        <i class="bi bi-house-door-fill ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Inicio</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <div class="nav-link collapsible-link" data-bs-toggle="collapse" href="#usuariosMenu" role="button"
-                        aria-expanded="false" aria-controls="usuariosMenu">
-                        <i class="bi bi-people-fill" style="margin-left: 0px;"></i> Usuarios <i class="bi bi-chevron-down ms-2" style="font-size: 1rem;"></i>
+                <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'AD' || (isset($_SESSION['idRole']) && $_SESSION['idRole'] == 3))): ?>
+                <li class="ds-sidebar__item ds-sidebar__item--collapsible">
+                    <div class="ds-sidebar__link" data-bs-toggle="collapse" href="#usuariosMenu" role="button"
+                        aria-expanded="<?= in_array($currentPage, ['teachers', 'students']) ? 'true' : 'false' ?>" aria-controls="usuariosMenu">
+                        <i class="bi bi-people-fill ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Usuarios</span>
+                        <i class="bi bi-chevron-down ds-sidebar__chevron"></i>
                     </div>
-                    <div class="collapse" id="usuariosMenu">
-                        <a href="../admin/teachers.php" class="nav-link sub-link pt-2">
-                            <i class="bi bi-person-fill me-2"></i> Docentes
+                    <div class="collapse<?= in_array($currentPage, ['teachers', 'students']) ? ' show' : '' ?>" id="usuariosMenu">
+                        <a href="../admin/teachers.php" class="ds-sidebar__link ds-sidebar__link--sub<?= $currentPage === 'teachers' ? ' ds-sidebar__link--active' : '' ?>">
+                            <i class="bi bi-person-fill ds-sidebar__icon ds-sidebar__icon--sub"></i>
+                            <span class="ds-sidebar__label">Docentes</span>
                         </a>
-                        <a  href="../admin/students.php" class="nav-link sub-link pt-2">
-                            <i class="bi bi-person-fill me-2"></i> Alumnos
+                        <a href="../admin/students.php" class="ds-sidebar__link ds-sidebar__link--sub<?= $currentPage === 'students' ? ' ds-sidebar__link--active' : '' ?>">
+                            <i class="bi bi-person-fill ds-sidebar__icon ds-sidebar__icon--sub"></i>
+                            <span class="ds-sidebar__label">Alumnos</span>
                         </a>
                     </div>
                 </li>
-                <li class="nav-item">
-                    <a href="../admin/assignments.php" class="nav-link">
-                        <i class="bi bi-list-task me-2"></i> Asignaciones
+                <li class="ds-sidebar__item">
+                    <a href="../admin/assignments.php" class="ds-sidebar__link<?= $currentPage === 'assignments' ? ' ds-sidebar__link--active' : '' ?>">
+                        <i class="bi bi-list-task ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Asignaciones</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-bs-toggle="modal"
+                <!-- GESTIÓN -->
+                <li class="ds-sidebar__divider"></li>
+                <li class="ds-sidebar__section">
+                    <span class="ds-sidebar__section-label">Gestión</span>
+                </li>
+                <li class="ds-sidebar__item">
+                    <a href="#" class="ds-sidebar__link" data-bs-toggle="modal"
                         data-bs-target="#modalFechaLimite">
-                        <i class="bi bi-calendar-date-fill me-2"></i> Plazo de Calificaciones
+                        <i class="bi bi-calendar-date-fill ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Plazo de Calificaciones</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-bs-toggle="modal"
+                <li class="ds-sidebar__item">
+                    <a href="#" class="ds-sidebar__link" data-bs-toggle="modal"
                         data-bs-target="#modalAñoEscolar">
-                        <i class="bi bi-calendar-event-fill me-2"></i> Ciclo escolar
+                        <i class="bi bi-calendar-event-fill ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Ciclo Escolar</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#modalPeriodos">
-                        <i class="bi bi-calendar3-range me-2"></i> Períodos Escolares
+                <li class="ds-sidebar__item">
+                    <a href="#" class="ds-sidebar__link" data-bs-toggle="modal" data-bs-target="#modalPeriodos">
+                        <i class="bi bi-calendar3-range ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Períodos Escolares</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#modalGrupos">
-                        <i class="bi bi-diagram-3-fill me-2"></i> Grupos
+                <li class="ds-sidebar__item">
+                    <a href="#" class="ds-sidebar__link" data-bs-toggle="modal" data-bs-target="#modalGrupos">
+                        <i class="bi bi-diagram-3-fill ds-sidebar__icon"></i>
+                        <span class="ds-sidebar__label">Grupos</span>
                     </a>
                 </li>
-                <div class="modal fade" id="modalFechaLimite" tabindex="-1" aria-labelledby="modalFechaLimiteLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
-                                <h5 class="modal-title" style="font-size: 1.25rem;">
-                                    <i class="bi bi-calendar-date-fill me-2"></i>
-                                    Configurar Plazo de Calificaciones
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <?php
-                                require_once "../conection.php";
-                                $fechaLimite = null;
-                                $res = $conexion->query("SELECT limitDate FROM limitDate WHERE idLimitDate = 1 LIMIT 1");
-                                if ($row = $res->fetch_assoc()) {
-                                    $fechaLimite = $row['limitDate'];
-                                }
-                                ?>
-                                <div class="mb-3">
-                                    <label for="inputFechaLimite" class="form-label fw-semibold">
-                                        <i class="bi bi-calendar-check me-1"></i>
-                                        Fecha límite de calificaciones:
-                                    </label>
-                                    <input type="text" class="form-control border-secondary flatpickr-date" id="inputFechaLimite"
-                                        value="<?php echo $fechaLimite; ?>" placeholder="Seleccionar fecha" readonly>
-                                    <div id="fechaFormateada" class="mt-2 p-2 bg-light rounded border">
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            <strong>Fecha seleccionada:</strong> 
-                                            <span id="fechaEspanol" class="text-primary">
-                                                <?php 
-                                                if ($fechaLimite) {
-                                                    $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-                                                    list($anio, $mes, $dia) = explode('-', $fechaLimite);
-                                                    echo intval($dia) . ' de ' . $meses[intval($mes) - 1] . ' de ' . $anio;
-                                                } else {
-                                                    echo 'No definida';
-                                                }
-                                                ?>
-                                            </span>
-                                        </small>
-                                    </div>
-                                    <div id="fechaLimiteInfo" class="form-text text-success mt-2"></div>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 bg-light">
-                                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
-                                    <i class="bi bi-x-circle me-1"></i>
-                                    Cancelar
-                                </button>
-                                <button class="btn btn-danger" type="button" id="btnQuitarFecha">
-                                    <i class="bi bi-trash me-1"></i>
-                                    Quitar Fecha
-                                </button>
-                                <button class="btn" type="button" id="btnGuardarFecha" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    Guardar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="modalAñoEscolar" tabindex="-1" aria-labelledby="modalAñoEscolarLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
-                                <h5 class="modal-title" style="font-size: 1.25rem;">
-                                    <i class="bi bi-calendar-event-fill me-2"></i>
-                                    Ciclo Escolar <span id="añoActualDisplay"></span>
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Vista cuando NO existe ciclo escolar -->
-                                <div id="noCicloEscolar" style="display: none;">
-                                    <div class="alert alert-info">
-                                        <i class="bi bi-info-circle me-2"></i>
-                                        No existe un ciclo escolar para el año <strong id="añoActual"></strong>. 
-                                        <br>Define las fechas de inicio y fin para crear el ciclo escolar de este año.
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-5">
-                                            <label for="nuevoInicio" class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-check me-1"></i>
-                                                Fecha de Inicio:
-                                            </label>
-                                            <input type="text" class="form-control border-secondary flatpickr-date" id="nuevoInicio" placeholder="Seleccionar fecha" readonly>
-                                        </div>
-                                        <div class="col-md-5">
-                                            <label for="nuevoFin" class="form-label fw-semibold">
-                                                <i class="bi bi-calendar-x me-1"></i>
-                                                Fecha de Fin:
-                                            </label>
-                                            <input type="text" class="form-control border-secondary flatpickr-date" id="nuevoFin" placeholder="Seleccionar fecha" readonly>
-                                        </div>
-                                        <div class="col-md-2 d-flex align-items-end">
-                                            <button class="btn w-100" id="btnCrearCiclo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                                <i class="bi bi-plus-circle me-1"></i>
-                                                Crear
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Vista cuando SÍ existe ciclo escolar -->
-                                <div id="siCicloEscolar" style="display: none;">
-                                    <div class="alert alert-success">
-                                        <i class="bi bi-check-circle me-2"></i>
-                                        Ciclo escolar del año <strong id="añoActual2"></strong> configurado.
-                                    </div>
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h6 class="card-title">Fechas del Ciclo Escolar</h6>
-                                            <div class="row g-3" id="editarCicloForm">
-                                                <div class="col-md-6">
-                                                    <label for="editInicio" class="form-label fw-semibold">
-                                                        <i class="bi bi-calendar-check me-1"></i>
-                                                        Fecha de Inicio:
-                                                    </label>
-                                                    <input type="text" class="form-control border-secondary flatpickr-date" id="editInicio" placeholder="Seleccionar fecha" readonly>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="editFin" class="form-label fw-semibold">
-                                                        <i class="bi bi-calendar-x me-1"></i>
-                                                        Fecha de Fin:
-                                                    </label>
-                                                    <input type="text" class="form-control border-secondary flatpickr-date" id="editFin" placeholder="Seleccionar fecha" readonly>
-                                                </div>
-                                                <div class="d-flex justify-content-end">
-                                                    <button class="btn" id="btnGuardarCiclo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                                        <i class="bi bi-check-circle me-1"></i>
-                                                        Guardar Cambios
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div id="anioEscolarInfo" class="form-text text-success mt-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="modalGrupos" tabindex="-1" aria-labelledby="modalGruposLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
-                                <h5 class="modal-title" style="font-size: 1.25rem;">
-                                    <i class="bi bi-diagram-3-fill me-2"></i>
-                                    Administrar Grupos
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle text-center mb-0">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><i class="bi bi-collection me-1"></i>Grupo</th>
-                                                <th><i class="bi bi-mortarboard me-1"></i>Grado</th>
-                                                <th><i class="bi bi-gear me-1"></i>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tablaGrupos"></tbody>
-                                    </table>
-                                </div>
-                                <hr class="my-4">
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Agregar Nuevo Grupo
-                                </h6>
-                                <div class="row g-3">
-                                    <div class="col-md-5">
-                                        <label for="nuevoGrupo" class="form-label fw-semibold">
-                                            <i class="bi bi-collection me-1"></i>
-                                            Grupo:
-                                        </label>
-                                        <input type="text" class="form-control border-secondary" id="nuevoGrupo"
-                                            maxlength="2" placeholder="Ej: A">
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label for="nuevoGrado" class="form-label fw-semibold">
-                                            <i class="bi bi-mortarboard me-1"></i>
-                                            Grado:
-                                        </label>
-                                        <input type="text" class="form-control border-secondary" id="nuevoGrado"
-                                            maxlength="2" placeholder="Ej: 1">
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button class="btn w-100" id="btnAgregarGrupo" style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease; margin-bottom: 15px;" onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                            <i class="bi bi-plus-circle me-1"></i>
-                                            Agregar
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="grupoInfo" class="form-text text-success mt-2"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal Administrar Períodos Escolares -->
-                <div class="modal fade" id="modalPeriodos" tabindex="-1" aria-labelledby="modalPeriodosLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header text-white border-0" style="background-color: #192E4E;">
-                                <h5 class="modal-title" style="font-size: 1.25rem;">
-                                    <i class="bi bi-calendar3-range me-2"></i>
-                                    Trimestres del Ciclo Escolar <span id="añoPeriodosDisplay"></span>
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    Define las fechas de inicio y fin para cada uno de los 3 trimestres del ciclo escolar actual.
-                                </div>
-                                
-                                <!-- Contenedor de trimestres -->
-                                <div id="trimestresContainer"></div>
-                                
-                                <div id="periodoInfo" class="form-text text-success mt-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
+                <!-- Modales movidos a layouts/modals.php (fuera del sidebar para evitar stacking context) -->
             </ul>
         </nav>
     </div>
 </aside>
+
+<!-- Modales del sidebar (fuera del <aside> para evitar stacking context trap) -->
+<?php include __DIR__ . "/modals.php"; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -375,7 +157,9 @@
                 }
                 fetch('../teachers/set_limit_date.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'fechaLimite=' + encodeURIComponent(fecha)
                 })
                     .then(r => r.json())
@@ -403,7 +187,9 @@
             btnQuitar.addEventListener('click', function () {
                 fetch('../teachers/set_limit_date.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'quitarLimite=1'
                 })
                     .then(r => r.json())
@@ -446,7 +232,9 @@
     function cargarCicloEscolarActual() {
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'action=getCurrentYear'
         })
         .then(r => r.json())
@@ -475,6 +263,24 @@
         });
     }
 
+    function setAnioInfo(msg, type) {
+        const el = document.getElementById('anioEscolarInfo');
+        if (!el) return;
+        const icons = { success: 'bi-check-circle', error: 'bi-exclamation-triangle', warning: 'bi-exclamation-triangle' };
+        el.innerHTML = '<i class="bi ' + (icons[type] || 'bi-info-circle') + ' me-2"></i>' + msg;
+        el.className = 'ds-alert ds-alert--' + type + ' mt-3';
+        el.style.display = 'flex';
+    }
+
+    function setPeriodoInfo(msg, type) {
+        const el = document.getElementById('periodoInfo');
+        if (!el) return;
+        const icons = { success: 'bi-check-circle', error: 'bi-exclamation-triangle', warning: 'bi-exclamation-triangle' };
+        el.innerHTML = '<i class="bi ' + (icons[type] || 'bi-info-circle') + ' me-2"></i>' + msg;
+        el.className = 'ds-alert ds-alert--' + type + ' mt-3';
+        el.style.display = 'flex';
+    }
+
     function crearCicloEscolar() {
         // Obtener valores desde las instancias de Flatpickr en formato Y-m-d
         const nuevoInicioFp = document.getElementById('nuevoInicio')._flatpickr;
@@ -484,27 +290,26 @@
         const fin = nuevoFinFp ? nuevoFinFp.input.value : document.getElementById('nuevoFin').value;
         
         if (!inicio || !fin) {
-            document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
-            document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+            setAnioInfo('Debes ingresar ambas fechas.', 'error');
             return;
         }
         
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `action=add&startDate=${inicio}&endDate=${fin}`
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('anioEscolarInfo').textContent = 'Ciclo escolar creado con 3 trimestres automáticamente.';
-                document.getElementById('anioEscolarInfo').className = 'form-text text-success mt-3';
+                setAnioInfo('Ciclo escolar creado con 3 trimestres automáticamente.', 'success');
                 setTimeout(() => {
                     cargarCicloEscolarActual();
                 }, 1500);
             } else {
-                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al crear el ciclo escolar.';
-                document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+                setAnioInfo(data.error || 'Error al crear el ciclo escolar.', 'error');
             }
         });
     }
@@ -518,81 +323,152 @@
         const fin = finFp ? finFp.input.value : document.getElementById('editFin').value;
         
         if (!inicio || !fin) {
-            document.getElementById('anioEscolarInfo').textContent = 'Debes ingresar ambas fechas.';
-            document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+            setAnioInfo('Debes ingresar ambas fechas.', 'error');
             return;
         }
         
         fetch('../admin/manage_school_years.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `action=edit&idSchoolYear=${currentSchoolYearId}&startDate=${inicio}&endDate=${fin}`
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('anioEscolarInfo').textContent = 'Fechas actualizadas correctamente.';
-                document.getElementById('anioEscolarInfo').className = 'form-text text-success mt-3';
+                setAnioInfo('Fechas actualizadas correctamente.', 'success');
             } else {
-                document.getElementById('anioEscolarInfo').textContent = data.error || 'Error al actualizar.';
-                document.getElementById('anioEscolarInfo').className = 'form-text text-danger mt-3';
+                setAnioInfo(data.error || 'Error al actualizar.', 'error');
             }
         });
     }
 
+    // ==================== GRUPOS — Tabs + Pills ====================
+    let _gruposData = [];
+    let _gradoActivo = 1;
+
     function cargarGrupos() {
         fetch('../admin/manage_groups.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body:'action=list'
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'action=list'
         })
-            .then(r => r.json())
-            .then(data => {
-                const tbody = document.getElementById('tablaGrupos');
-                tbody.innerHTML = '';
-                if (data.success && data.groups.length) {
-                    data.groups.forEach(g => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${g.group_}</td><td>${g.grade}</td>
-                        <td><button style="height: 5vh;" class='buttonDelete1' onclick='eliminarGrupo(${g.idGroup})'>Eliminar</button></td>`;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan='3'>Sin registros</td></tr>`;
-                }
-            });
+        .then(r => r.json())
+        .then(data => {
+            _gruposData = data.success ? data.groups : [];
+            renderGruposPills();
+        });
+    }
+
+    function renderGruposPills() {
+        const container = document.getElementById('grpPills');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const grupos = _gruposData.filter(g => parseInt(g.grade) === _gradoActivo);
+
+        if (grupos.length === 0) {
+            container.innerHTML = '<div class="grp-pills__empty">No hay grupos en este grado</div>';
+            return;
+        }
+
+        grupos.forEach(g => {
+            const pill = document.createElement('div');
+            pill.className = 'grp-pill';
+            pill.innerHTML = `<span class="grp-pill__label">${g.group_}</span><button class="grp-pill__remove" onclick="eliminarGrupo(${g.idGroup})" title="Eliminar ${g.group_}">&times;</button>`;
+            container.appendChild(pill);
+        });
     }
 
     function agregarGrupo() {
-        const grupo = document.getElementById('nuevoGrupo').value.trim();
-        const grado = document.getElementById('nuevoGrado').value.trim();
-        if (!grupo || !grado) {
-            document.getElementById('grupoInfo').textContent = 'Debes ingresar grupo y grado.';
+        const input = document.getElementById('nuevoGrupo');
+        const grupo = input.value.trim();
+        if (!grupo) {
+            setGrupoInfo('Ingresa una letra de grupo.', false);
+            input.focus();
             return;
         }
         fetch('../admin/manage_groups.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=add&group_=${encodeURIComponent(grupo)}&grade=${encodeURIComponent(grado)}`
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=add&group_=${encodeURIComponent(grupo)}&grade=${_gradoActivo}`
         }).then(r => r.json()).then(data => {
             if (data.success) {
-                document.getElementById('grupoInfo').textContent = 'Grupo añadido correctamente.';
+                input.value = '';
+                setGrupoInfo('Grupo añadido correctamente.', true);
                 cargarGrupos();
             } else {
-                document.getElementById('grupoInfo').textContent = data.error || 'Error al añadir.';
+                setGrupoInfo(data.error || 'Error al añadir.', false);
             }
         });
     }
 
     function eliminarGrupo(id) {
-        if (!confirm('¿Seguro de borrar este grupo?')) return;
-        fetch('../admin/manage_groups.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=delete&idGroup=${id}`
-        }).then(r => r.json()).then(data => {
-            if (data.success) cargarGrupos();
+        Swal.fire({
+            title: '¿Eliminar grupo?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#192E4E',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            fetch('../admin/manage_groups.php', {
+                method: 'POST',
+                headers: {
+
+                    'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=delete&idGroup=${id}`
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Grupo eliminado',
+                        text: 'El grupo se eliminó correctamente.',
+                        confirmButtonColor: '#192E4E'
+                    });
+                    cargarGrupos();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'No se pudo eliminar el grupo.',
+                        confirmButtonColor: '#192E4E'
+                    });
+                }
+            }).catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor.',
+                    confirmButtonColor: '#192E4E'
+                });
+            });
         });
+    }
+
+    function setGrupoInfo(msg, ok) {
+        const el = document.getElementById('grupoInfo');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = ok ? 'grp-info grp-info--ok' : 'grp-info grp-info--err';
+    }
+
+    function seleccionarGrado(grado) {
+        _gradoActivo = grado;
+        document.querySelectorAll('.grp-tab').forEach(t => {
+            t.classList.toggle('active', parseInt(t.dataset.grade) === grado);
+        });
+        const label = document.getElementById('grpAddLabel');
+        if (label) label.textContent = `Agregar grupo al Grado ${grado}`;
+        renderGruposPills();
     }
 
     // ==================== FUNCIONES PARA LOS 3 TRIMESTRES ====================
@@ -605,7 +481,9 @@
     function cargarTrimestres() {
         fetch('../admin/manage_school_quarters.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'action=list'
         })
         .then(r => r.json())
@@ -618,12 +496,12 @@
             }
             
             if (!data.success) {
-                container.innerHTML = `<div class="alert alert-warning">${data.error || 'Error al cargar trimestres'}</div>`;
+                container.innerHTML = `<div class="ds-alert ds-alert--warning"><i class="bi bi-exclamation-triangle me-2"></i>${data.error || 'Error al cargar trimestres'}</div>`;
                 return;
             }
             
             if (data.quarters.length === 0) {
-                container.innerHTML = `<div class="alert alert-warning">
+                container.innerHTML = `<div class="ds-alert ds-alert--warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     Primero debes crear el ciclo escolar del año actual.
                 </div>`;
@@ -634,14 +512,14 @@
             container.innerHTML = '';
             data.quarters.forEach((q, index) => {
                 const card = document.createElement('div');
-                card.className = 'card mb-3';
+                card.className = 'ds-card mb-3';
                 card.innerHTML = `
-                    <div class="card-header text-white" style="background-color: #192E4E;">
-                        <h6 class="mb-0" style="font-size: 1.125rem;">
-                            <i class="bi bi-calendar3 me-2"></i>${q.name}
+                    <div class="ds-card__header" style="background-color: var(--ds-primary-800);">
+                        <h6 class="ds-card__title" style="color: var(--ds-white);">
+                            <i class="bi bi-calendar3"></i>${q.name}
                         </h6>
                     </div>
-                    <div class="card-body">
+                    <div class="ds-card__body">
                         <p class="text-muted mb-3">${q.description || 'Sin descripción'}</p>
                         <div class="row g-3">
                             <div class="col-md-5">
@@ -661,11 +539,8 @@
                                        value="${q.endDate || ''}" placeholder="Seleccionar fecha" readonly>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button class="btn w-100" 
-                                        style="background-color: #192E4E; border-color: #192E4E; color: white; transition: all 0.2s ease; margin-bottom: 13px;"
-                                        onmouseover="this.style.backgroundColor='#0f1f35'; this.style.opacity='0.9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 3px 8px rgba(0,0,0,0.15)'"
-                                        onmouseout="this.style.backgroundColor='#192E4E'; this.style.opacity='1'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
-                                        onclick="guardarFechasTrimestre(${q.idSchoolQuarter})">
+                                <button class="ds-btn ds-btn--primary w-100" 
+                                        data-quarter="${q.idSchoolQuarter}">
                                     <i class="bi bi-check-circle me-1"></i>
                                     Guardar
                                 </button>
@@ -680,11 +555,18 @@
             if (typeof window.initializeTrimesterDates === 'function') {
                 window.initializeTrimesterDates();
             }
+
+            // Bind save buttons (delegated from container)
+            container.querySelectorAll('.ds-btn[data-quarter]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    guardarFechasTrimestre(this.dataset.quarter);
+                });
+            });
         })
         .catch(error => {
             console.error('Error:', error);
             document.getElementById('trimestresContainer').innerHTML = `
-                <div class="alert alert-danger">Error de conexión</div>
+                <div class="ds-alert ds-alert--error">Error de conexión</div>
             `;
         });
     }
@@ -701,24 +583,23 @@
         const fin = finFp ? finFp.input.value : finEl.value;
         
         if (!inicio || !fin) {
-            document.getElementById('periodoInfo').textContent = 'Debes ingresar ambas fechas.';
-            document.getElementById('periodoInfo').className = 'form-text text-danger mt-3';
+            setPeriodoInfo('Debes ingresar ambas fechas.', 'error');
             return;
         }
         
         fetch('../admin/manage_school_quarters.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+
+                'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `action=edit&idSchoolQuarter=${id}&startDate=${inicio}&endDate=${fin}`
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('periodoInfo').textContent = 'Fechas del trimestre actualizadas correctamente.';
-                document.getElementById('periodoInfo').className = 'form-text text-success mt-3';
+                setPeriodoInfo('Fechas del trimestre actualizadas correctamente.', 'success');
             } else {
-                document.getElementById('periodoInfo').textContent = data.error || 'Error al actualizar.';
-                document.getElementById('periodoInfo').className = 'form-text text-danger mt-3';
+                setPeriodoInfo(data.error || 'Error al actualizar.', 'error');
             }
         });
     }
@@ -736,8 +617,20 @@
         
         const modalGrupos = document.getElementById('modalGrupos');
         if (modalGrupos) {
-            modalGrupos.addEventListener('show.bs.modal', cargarGrupos);
+            modalGrupos.addEventListener('show.bs.modal', function() {
+                _gradoActivo = 1;
+                seleccionarGrado(1);
+                cargarGrupos();
+            });
             document.getElementById('btnAgregarGrupo').onclick = agregarGrupo;
+            document.getElementById('nuevoGrupo').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); agregarGrupo(); }
+            });
+            document.querySelectorAll('.grp-tab').forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    seleccionarGrado(parseInt(this.dataset.grade));
+                });
+            });
         }
         
         const modalPeriodos = document.getElementById('modalPeriodos');
@@ -747,83 +640,36 @@
     });
 </script>
 
-<style>
-    .sidebar-modern {
-        background-color:rgb(236, 236, 236); /* Fondo gris claro */
-        width: 190px; /* Ancho ligeramente mayor */
-        min-height: 100vh; /* Para que ocupe toda la altura */
-        box-shadow: 1px 10px 10px #192E4E; /* Sombra sutil */
-        display: flex;
-        flex-direction: column;
-        padding-left: 5px;
-    }
+<!-- Sidebar overlay for mobile -->
+<div class="ds-sidebar-overlay" id="ds-sidebar-overlay"></div>
 
-    .sidebar-content {
-        padding: 5px;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
+<!-- Sidebar toggle script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var sidebar = document.querySelector('.ds-sidebar');
+    var overlay = document.getElementById('ds-sidebar-overlay');
+    var toggle = document.getElementById('ds-sidebar-toggle');
 
-    .sidebar-nav {
-        flex-grow: 1;
+    if (sidebar) {
+        sidebar.classList.remove('ds-sidebar--open');
     }
+    if (overlay) {
+        overlay.classList.remove('ds-sidebar-overlay--visible');
+    }
+    document.body.classList.remove('ds-sidebar-is-open');
 
-    .logo-container {
-        padding-top: 9px;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
-    }
+    if (toggle && sidebar && overlay) {
+        toggle.addEventListener('click', function() {
+            sidebar.classList.toggle('ds-sidebar--open');
+            overlay.classList.toggle('ds-sidebar-overlay--visible');
+            document.body.classList.toggle('ds-sidebar-is-open');
+        });
 
-    .logo {
-        height: 79px;
-        width: 70.6px;
-        display: block;
-        margin: 0 auto;
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('ds-sidebar--open');
+            overlay.classList.remove('ds-sidebar-overlay--visible');
+            document.body.classList.remove('ds-sidebar-is-open');
+        });
     }
-
-    .nav-link {
-        padding: 0.75rem 1rem;
-        color:rgb(0, 0, 0); /* Texto gris oscuro */
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-        border-radius: 0.25rem;
-    }
-
-    .nav-link:hover {
-        background-color:rgb(217, 220, 224);
-        color: rgb(38, 75, 130);
-    }
-
-    .nav-link i {
-        font-size: 1.5rem;
-        margin-right: 0.5rem;
-    }
-
-    .collapsible-link {
-        cursor: pointer;
-        padding: 0.6rem 1rem;
-        color:rgb(0, 0, 0);
-        display: flex;
-        align-items: center;
-        border-radius: 0.25rem;
-        font-size: 0.9rem;
-    }
-
-    .collapsible-link:hover {
-        background-color:rgb(217, 220, 224);
-        color: rgb(38, 75, 130);
-    }
-
-    .collapsible-link i {
-        margin-left: auto;
-    }
-
-    .sub-link {
-        padding-left: 2rem;
-        font-size: 0.9rem;
-    }
-</style>
+});
+</script>

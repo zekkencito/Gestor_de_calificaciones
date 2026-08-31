@@ -15,10 +15,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     try {
+        // Obtener el ID del docente desde la sesión
+        $user_id = $_SESSION['user_id'];
+        $sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
+        $stmtTeacher = $conexion->prepare($sqlTeacher);
+        $stmtTeacher->bind_param("i", $user_id);
+        $stmtTeacher->execute();
+        $resTeacher = $stmtTeacher->get_result();
+        $rowTeacher = $resTeacher->fetch_assoc();
+        $teacher_id = $rowTeacher ? $rowTeacher['idTeacher'] : null;
+        $stmtTeacher->close();
+
+        if (!$teacher_id) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Error de autorización: Profesor no encontrado']);
+            exit;
+        }
+
         $stmt = $conexion->prepare("SELECT idEvalCriteria, criteria, porcentage FROM evaluationCriteria 
                                    WHERE idSubject = ? AND idSchoolYear = ? AND idSchoolQuarter = ? 
+                                   AND EXISTS (
+                                       SELECT 1 FROM teacherGroupsSubjects tgs 
+                                       WHERE tgs.idSubject = evaluationCriteria.idSubject 
+                                       AND tgs.idTeacher = ?
+                                   )
                                    ORDER BY idEvalCriteria");
-        $stmt->bind_param("iii", $idSubject, $idSchoolYear, $idSchoolQuarter);
+        $stmt->bind_param("iiii", $idSubject, $idSchoolYear, $idSchoolQuarter, $teacher_id);
         $stmt->execute();
         $result = $stmt->get_result();
         

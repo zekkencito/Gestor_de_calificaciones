@@ -1,0 +1,490 @@
+/* ==========================================================================
+   LAYOUT — Gestor de Calificaciones
+    
+    Shell structure: sidebar + header + main content.
+    Sidebar responsive: 200px desktop, off-canvas mobile.
+    Usa tokens de design-system.css.
+    ========================================================================== */
+
+/* =========================================================================
+   SIDEBAR — Design System
+   
+   BEM-based sidebar with design system tokens.
+   Namespace: .ds-sidebar
+   All rules use (0,2,0)+ specificity to override Bootstrap.
+   ========================================================================== */
+
+/* — Container — */
+.ds-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--ds-sidebar-width);
+  background-color: var(--ds-white);
+  border-right: 1px solid var(--ds-gray-200);
+  z-index: var(--ds-z-sticky);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: transform var(--ds-duration-slow) var(--ds-ease-out);
+}
+
+.ds-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ds-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ds-sidebar::-webkit-scrollbar-thumb {
+  background: var(--ds-gray-200);
+  border-radius: 2px;
+}
+
+.ds-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-gray-300);
+}
+
+/* — Logo — */
+.ds-sidebar__logo {
+  list-style: none;
+  padding: var(--ds-space-4) var(--ds-space-4) var(--ds-space-3);
+  border-bottom: 1px solid var(--ds-gray-100);
+  margin-bottom: var(--ds-space-1);
+  flex-shrink: 0;
+}
+
+.ds-sidebar__logo-img {
+  height: 80px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* — Nav list — */
+.ds-sidebar__nav {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* — Items — */
+.ds-sidebar__item {
+  list-style: none;
+}
+
+/* — Links — (0,2,0) — beats Bootstrap .nav-link (0,1,0) */
+.ds-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  margin: 1px var(--ds-space-2);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: var(--ds-gray-600);
+  text-decoration: none;
+  border-radius: var(--ds-radius-sm);
+  position: relative;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-duration-fast) var(--ds-ease-out),
+    color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.ds-sidebar__link:hover {
+  background-color: var(--ds-gray-50);
+  color: var(--ds-gray-900);
+  text-decoration: none;
+}
+
+.ds-sidebar__link:active {
+  transform: scale(0.98);
+}
+
+/* — Icons — */
+.ds-sidebar__icon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ds-sidebar__icon--sub {
+  font-size: 1rem;
+  width: 20px;
+}
+
+/* — Labels — */
+.ds-sidebar__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* — Chevron — */
+.ds-sidebar__chevron {
+  font-size: 0.75rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--ds-gray-400);
+  transition: transform 150ms var(--ds-ease-out);
+}
+
+.ds-sidebar__link[aria-expanded="true"] .ds-sidebar__chevron {
+  transform: rotate(180deg);
+}
+
+/* — Submenu links — */
+.ds-sidebar__link--sub {
+  padding-left: calc(var(--ds-space-3) + 28px);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-regular);
+  color: var(--ds-gray-500);
+  margin-top: 1px;
+}
+
+.ds-sidebar__link--sub:hover {
+  color: var(--ds-gray-800);
+}
+
+/* — Section divider — */
+.ds-sidebar__divider {
+  height: 1px;
+  background-color: var(--ds-gray-100);
+  margin: var(--ds-space-2) var(--ds-space-3);
+  list-style: none;
+}
+
+/* — Section label — */
+.ds-sidebar__section {
+  list-style: none;
+}
+
+.ds-sidebar__section-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-1);
+  margin: 0;
+  line-height: 1;
+}
+
+/* — Active state — */
+.ds-sidebar__link--active {
+  background-color: var(--ds-primary-50);
+  color: var(--ds-primary-800);
+  font-weight: var(--ds-font-semibold);
+}
+
+.ds-sidebar__link--active:hover {
+  background-color: var(--ds-primary-100);
+  color: var(--ds-primary-900);
+}
+
+.ds-sidebar__link--active::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--ds-space-2) * -1);
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background-color: var(--ds-primary-800);
+  border-radius: 0 2px 2px 0;
+}
+
+.ds-sidebar__link--active .ds-sidebar__icon,
+.ds-sidebar__link--active .ds-sidebar__label {
+  color: var(--ds-primary-800);
+}
+
+.ds-sidebar__link--active .ds-sidebar__chevron {
+  color: var(--ds-primary-400);
+}
+
+/* — Sidebar content wrapper — */
+.ds-sidebar .sidebar-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ds-sidebar .sidebar-nav {
+  flex-grow: 1;
+}
+
+/* =========================================================================
+   HEADER BAR
+   ========================================================================= */
+
+.ds-header {
+  position: fixed;
+  top: 0;
+  left: var(--ds-sidebar-width);
+  right: 0;
+  height: var(--ds-header-height);
+  background-color: var(--ds-primary-800);
+  color: var(--ds-white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--ds-space-5);
+  z-index: var(--ds-z-header);
+  transition: left var(--ds-duration-slow) var(--ds-ease-out);
+  border-bottom: 1px solid var(--ds-primary-900);
+}
+
+.ds-header__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.ds-header__title h5 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-semibold);
+  color: var(--ds-white);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+.ds-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+/* Hamburger toggle — visible solo en mobile */
+.ds-header__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--ds-white);
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: var(--ds-radius-sm);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-out);
+  margin-right: var(--ds-space-3);
+  flex-shrink: 0;
+}
+
+.ds-header__toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* — Header children — */
+.ds-header__user-area {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex-shrink: 0;
+  padding-left: var(--ds-space-4);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  margin-left: var(--ds-space-4);
+}
+
+.ds-header__user-name {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-font-medium);
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+.ds-header__logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  border-radius: var(--ds-radius-sm);
+  transition:
+    background-color var(--ds-duration-fast) var(--ds-ease-out),
+    color var(--ds-duration-fast) var(--ds-ease-out);
+  font-size: 1rem;
+}
+
+.ds-header__logout:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--ds-white);
+  text-decoration: none;
+}
+
+/* =========================================================================
+   MAIN CONTENT
+   ========================================================================= */
+
+.ds-main {
+  margin-left: var(--ds-sidebar-width);
+  padding-top: var(--ds-header-height);
+  min-height: 100vh;
+  background-color: var(--ds-gray-50);
+  transition: margin-left var(--ds-duration-slow) var(--ds-ease-out);
+}
+
+.ds-main__content {
+  padding: var(--ds-space-6);
+}
+
+/* =========================================================================
+   OVERLAY — Backdrop para sidebar en mobile
+   ========================================================================= */
+
+.ds-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: calc(var(--ds-z-sticky) - 1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ds-duration-slow) var(--ds-ease-out);
+}
+
+.ds-sidebar-overlay--visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* =========================================================================
+   RESPONSIVE — Mobile (< 768px)
+   
+   Sidebar se oculta off-screen. Header ocupa 100%.
+   Hamburger toggle visible. Overlay al abrir sidebar.
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  .ds-sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+    z-index: calc(var(--ds-z-overlay) + 2);
+  }
+
+  .ds-sidebar--open {
+    transform: translateX(0);
+    box-shadow: var(--ds-shadow-xl);
+  }
+
+  .ds-header {
+    left: 0;
+    z-index: calc(var(--ds-z-overlay) + 1);
+    padding: 0 var(--ds-space-3);
+  }
+
+  .ds-header__toggle {
+    display: flex;
+  }
+
+  .ds-header__title h5 {
+    font-size: var(--ds-text-sm);
+  }
+
+  .ds-header__user-name {
+    font-size: var(--ds-text-xs);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ds-main {
+    margin-left: 0;
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE — Tablet (768px - 992px)
+   
+   Sidebar más compacto para dar espacio al contenido.
+   ========================================================================= */
+
+@media (min-width: 769px) and (max-width: 992px) {
+  :root {
+    --ds-sidebar-width: 180px;
+  }
+
+  .ds-sidebar__link {
+    font-size: var(--ds-text-xs);
+    padding: var(--ds-space-2);
+  }
+}
+
+/* =========================================================================
+   JS TOGGLE HELPER
+   
+   Clase que se agrega al body cuando el sidebar está abierto en mobile.
+   Previene scroll del contenido detrás.
+   ========================================================================= */
+
+body.ds-sidebar-is-open {
+  overflow: hidden;
+}
+
+@media (min-width: 769px) {
+  body.ds-sidebar-is-open {
+    overflow: auto;
+  }
+}
+
+/* =========================================================================
+   PRELOADER
+   
+   Shared across all pages (admin + teacher).
+   HTML: <div id="preloader"><img src="..." class="logo"></div>
+   JS:   preloader.classList.add('loaded') → fade out → .remove()
+   ========================================================================== */
+
+#preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+#preloader.loaded {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#preloader .logo {
+  width: 100px;
+  height: auto;
+  animation: preloader-pulse 1.5s infinite;
+}
+
+@keyframes preloader-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}

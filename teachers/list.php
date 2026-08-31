@@ -1,8 +1,5 @@
 <?php
 // Última actualización: 2026-02-16
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once "check_session.php";
 require_once "../force_password_check.php";
 require_once "../conection.php";
@@ -148,46 +145,35 @@ if ($selectedGroup) {
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        // Debug temporal: log del primer estudiante
-        if (empty($students)) {
-            error_log("DEBUG: Primer estudiante obtenido: " . json_encode($row));
-            error_log("DEBUG: idStudent value: " . var_export($row['idStudent'], true));
-        }
         $students[] = $row;
     }
     $stmt->close();
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Lista de Alumnos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
+    <!-- Design System -->
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <!-- Page styles -->
     <link rel="stylesheet" href="../css/teacher/list.css">
     <link rel="stylesheet" href="../css/admin/student.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
-
-    <!-- TIPOGRAFIA -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-
-    <!-- TIPOGRAFIA -->
+    <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-
-
-    
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="min-height: 100vh; width: 100%; margin: 0; padding: 0; overflow-x: hidden;">
+<body class="page-tch-list">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -195,446 +181,288 @@ if ($selectedGroup) {
     <?php
         include "../layouts/asideTeacher.php"; 
     ?>
-    <main class="flex-grow-1 col-9 p-0" style="overflow-y: auto; max-height: 100vh;">
+    <main class="ds-main">
         <?php
             include "../layouts/headerTeacher.php"; 
         ?> 
         
         <!-- Header de la página -->
-        <div class="container-fluid px-4 pt-5" style="height: auto;">
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-header mb-3">
-                        <h1 class="page-title">
-                            <i class="bi bi-people me-3"></i>
-                            Lista de Alumnos
-                        </h1>
-                        <p class="page-subtitle text-muted">
-                            Consulta y gestiona la información de tus estudiantes
-                        </p>
-                    </div>
-                </div>
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Lista de Alumnos</h1>
+                <p class="page-subtitle">Consulta y gestiona la información de tus estudiantes</p>
             </div>
-        </div>
 
         <!-- Contenido principal -->
         <div class="container-fluid px-4">
             <!-- Panel de filtros -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="filter-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-funnel me-2 text-primary"></i>
-                                    Filtros de Búsqueda
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-12">
-                                        <div class="alert alert-success mb-0 d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <i class="bi bi-calendar-date me-2"></i><strong>Año Escolar:</strong> 
-                                                <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
-                                            </div>
-                                            <div>
-                                                <i class="bi bi-calendar3 me-2"></i><strong>Trimestre:</strong> 
-                                                <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-12">
-                                        <label id="labelGrupo" for="grupo" class="form-label fw-semibold">
-                                            <i class="bi bi-collection me-1"></i>
-                                            Grupo:
-                                        </label>
-                                        <select class="form-select border-secondary" id="grupo">
-                                            <option value="" selected>Seleccionar grupo</option>
-                                            <?php foreach ($groups as $g): ?>
-                                                <option value="<?php echo $g['idGroup']; ?>" <?php if ($selectedGroup == $g['idGroup']) echo 'selected'; ?>>
-                                                    <?php echo htmlspecialchars($g['grade'] . '° ' . $g['group_']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="row g-3 mt-2">
-                                    <div class="col-md-12" id="contenedorBotonDescargar">
-                                        <button type="button" id="descargarGrupoBtn" 
-                                                class="btn <?php echo $descargasHabilitadas ? 'w-100' : 'btn-secondary w-100'; ?>" 
-                                                <?php if($descargasHabilitadas) echo 'style="background-color: #192E4E; border-color: #192E4E; color: white;"'; else echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
-                                            <i class="fas fa-download me-2"></i> 
-                                            <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="tch-filters">
+                <div class="tch-filter--info">
+                    <div class="tch-filter__info-bar">
+                        <div>
+                            <i class="bi bi-calendar-date"></i> <strong>Año Escolar:</strong>
+                            <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
+                        </div>
+                        <div>
+                            <i class="bi bi-calendar3"></i> <strong>Trimestre:</strong>
+                            <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
                         </div>
                     </div>
+                </div>
+                <div class="tch-filter">
+                    <label id="labelGrupo" for="grupo" class="tch-filter__label">Grupo:</label>
+                    <select class="tch-filter__select" id="grupo">
+                        <option value="" selected>Seleccionar grupo</option>
+                        <?php foreach ($groups as $g): ?>
+                            <option value="<?php echo $g['idGroup']; ?>" <?php if ($selectedGroup == $g['idGroup']) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($g['grade'] . '° ' . $g['group_']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="tch-actions" id="contenedorBotonDescargar">
+                    <button type="button" id="descargarGrupoBtn"
+                            class="tch-btn <?php echo $descargasHabilitadas ? 'tch-btn--success' : 'tch-btn--outline'; ?>"
+                            <?php if(!$descargasHabilitadas) echo 'disabled title="Las descargas se habilitarán después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
+                        <i class="fas fa-download"></i>
+                        <?php echo $descargasHabilitadas ? 'Descargar PDFs del Grupo' : 'Descarga después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
+                    </button>
                 </div>
             </div>
 
             <!-- Tabla de estudiantes -->
-            <div class="row <?php echo !$selectedGroup ? 'd-none' : ''; ?>" id="contenedorTabla">
-                <div class="col-12">
-                    <div class="table-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-table me-2 text-success"></i>
-                                    Estudiantes Registrados
-                                </h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0" id="tabla">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th class="fw-semibold">No.</th>
-                                                <th class="fw-semibold">Apellido Paterno</th>
-                                                <th class="fw-semibold">Apellido Materno</th>
-                                                <th class="fw-semibold">Nombres</th>
-                                                <th class="fw-semibold">Grado</th>
-                                                <th class="fw-semibold">Grupo</th>
-                                                <th class="fw-semibold">Estado</th>
-                                                <th class="fw-semibold text-center">Boleta</th>
-                                                <th class="fw-semibold text-center">Ver Información</th>
-                                                <th class="fw-semibold text-center">Bitácora Incidencias</th>
-                        </tr>
-                    </thead>
-                    <!-- DEBUG: Archivo actualizado 2026-02-13 19:00 - Columna Reporte agregada -->
-                    <tbody id="alumnos-tbody">
-                        <?php if ($selectedGroup && count($students) > 0): ?>
-                            <?php foreach ($students as $i => $student): ?>
-                                <!-- DEBUG: <?php echo "idStudent: " . ($student['idStudent'] ?? 'NULL') . ", schoolNum: " . ($student['schoolNum'] ?? 'NULL') . ", nombre: " . ($student['names'] ?? 'NULL'); ?> -->
-                                <tr>    
-                                    <td><?php echo $i + 1; ?></td>
-                                    <td><?php echo htmlspecialchars($student['lastnamePa']); ?></td>
-                                    <td><?php echo htmlspecialchars($student['lastnameMa']); ?></td>
-                                    <td><?php echo htmlspecialchars($student['names']); ?></td>
-                                    <td><?php echo htmlspecialchars($student['grade']); ?>°</td>
-                                    <td><?php echo htmlspecialchars($student['group_']); ?></td>
-                                    <td>
-                                        <?php
-                                            if ($student['nomenclature'] == 'AC') {
-                                                echo '<span class="badge bg-success">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'BA') {
-                                                echo '<span class="badge bg-danger">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'RE') {
-                                                echo '<span class="badge bg-warning">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'EG') {
-                                                echo '<span class="badge bg-primary">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'IN') {
-                                                echo '<span class="badge bg-secondary">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'TR') {
-                                                echo '<span class="badge bg-info">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'RC') {
-                                                echo '<span class="badge bg-dark">' . $student['description'] . '</span>';
-                                            } elseif ($student['nomenclature'] == 'EX') {
-                                                echo '<span class="badge bg-light">' . $student['description'] . '</span>';
-                                            } else {
-                                                echo '<span class="badge bg-secondary">-</span>';
-                                            }
-                                        ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="botonVer "
-                                            data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
-                                            data-id="<?php echo $student['idStudent']; ?>"
-                                            data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
-                                            data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>"
-                                            data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>"
-                                            data-grade="<?php echo htmlspecialchars($student['grade']); ?>"
-                                            data-grupo="<?php echo htmlspecialchars($student['group_']); ?>"
-                                            data-curp="<?php echo htmlspecialchars($student['curp'] ?? ''); ?>"
-                                            data-tutornombres="<?php echo htmlspecialchars($student['tutorName'] ?? ''); ?>"
-                                            data-tutorpaterno="<?php echo htmlspecialchars($student['tutorLastnamePa'] ?? ''); ?>"
-                                            data-tutormaterno="<?php echo htmlspecialchars($student['tutorLastnameMa'] ?? ''); ?>"
-                                        >
-                                            <i class="bi bi-file-earmark-text-fill"></i>
-                                        </button>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" id="botonVer"
-                                            data-id="<?php echo $student['idStudent']; ?>"
-                                            data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
-                                            data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>"
-                                            data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>"
-                                            data-status="<?php echo htmlspecialchars($student['idStudentStatus']); ?>"
-                                            data-grupo="<?php echo htmlspecialchars($student['group_']); ?>"
-                                            data-grade="<?php echo htmlspecialchars($student['grade']); ?>"
-                                            data-curp="<?php echo htmlspecialchars($student['curp'] ?? ''); ?>"
-                                            data-bs-toggle="modal" data-bs-target="#showModal"
-                                            data-tutornombres="<?php echo htmlspecialchars($student['tutorName'] ?? ''); ?>"
-                                            data-tutorpaterno="<?php echo htmlspecialchars($student['tutorLastnamePa'] ?? ''); ?>"
-                                            data-tutormaterno="<?php echo htmlspecialchars($student['tutorLastnameMa'] ?? ''); ?>"
-                                            data-tutoremail="<?php echo htmlspecialchars($student['tutorEmail'] ?? ''); ?>"
-                                            data-tutortelefono="<?php echo htmlspecialchars($student['tutorPhone'] ?? ''); ?>"
-                                            data-tutordireccion="<?php echo htmlspecialchars($student['tutorAddress'] ?? ''); ?>"
-                                            data-tutorine="<?php echo htmlspecialchars($student['tutorIne'] ?? ''); ?>"
-                                        >
-                                            <i class="bi bi-person-fill"></i>
-                                        </button>
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- DEBUG: Celda de Bitácora de Incidencias para estudiante ID: <?php echo $student['idStudent']; ?> -->
-                                        <button type="button" class="botonReporte" data-bs-toggle="modal" data-bs-target="#reportModal" data-id="<?php echo $student['idStudent']; ?>" data-nombres="<?php echo htmlspecialchars($student['names']); ?>" data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>" data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>">
-                                            <i class="bi bi-file-earmark-person-fill"></i>
-                                        </button>
-                                    </td>
+            <div id="contenedorTabla" class="<?php echo !$selectedGroup ? 'd-none' : ''; ?>">
+                <div class="tch-table-wrap">
+                    <div class="tch-table-header">
+                        <h3 class="tch-table-title">Estudiantes Registrados</h3>
+                    </div>
+                    <div class="tch-table-responsive">
+                        <table class="tch-table" id="tabla">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Apellido Paterno</th>
+                                    <th>Apellido Materno</th>
+                                    <th>Nombres</th>
+                                    <th>Grado</th>
+                                    <th>Grupo</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Boleta</th>
+                                    <th class="text-center">Ver Información</th>
+                                    <th class="text-center">Bitácora Incidencias</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php elseif($selectedGroup): ?>
-                            <tr><td colspan="10" class="text-center py-4">
-                                <div class="empty-state">
-                                    <i class="bi bi-people text-muted display-4"></i>
-                                    <p class="text-muted mt-2 mb-0">No hay alumnos en este grupo.</p>
-                                </div>
-                            </td></tr>
-                        <?php else: ?>
-                            <tr><td colspan="10" class="text-center py-4">
-                                <div class="empty-state">
-                                    <i class="bi bi-search text-muted display-4"></i>
-                                    <p class="text-muted mt-2 mb-0">Seleccione un grupo para ver los alumnos.</p>
-                                </div>
-                            </td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                            </thead>
+                            <tbody id="alumnos-tbody">
+                                <?php if ($selectedGroup && count($students) > 0): ?>
+                                    <?php foreach ($students as $i => $student): ?>
+                                        <tr>
+                                            <td><?php echo $i + 1; ?></td>
+                                            <td><?php echo htmlspecialchars($student['lastnamePa']); ?></td>
+                                            <td><?php echo htmlspecialchars($student['lastnameMa']); ?></td>
+                                            <td><?php echo htmlspecialchars($student['names']); ?></td>
+                                            <td><?php echo htmlspecialchars($student['grade']); ?>°</td>
+                                            <td><?php echo htmlspecialchars($student['group_']); ?></td>
+                                            <td>
+                                                <?php
+                                                    $badgeMap = [
+                                                        'AC' => 'tch-badge--success',
+                                                        'BA' => 'tch-badge--danger',
+                                                        'RE' => 'tch-badge--warning',
+                                                        'EG' => 'tch-badge--primary',
+                                                        'IN' => 'tch-badge--secondary',
+                                                        'TR' => 'tch-badge--info',
+                                                        'RC' => 'tch-badge--secondary',
+                                                        'EX' => 'tch-badge--neutral',
+                                                    ];
+                                                    $badgeClass = $badgeMap[$student['nomenclature']] ?? 'tch-badge--secondary';
+                                                    $badgeText = $student['description'] ?: '-';
+                                                ?>
+                                                <span class="tch-badge <?php echo $badgeClass; ?>"><?php echo $badgeText; ?></span>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="tch-btn--icon btn-boleta"
+                                                    data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
+                                                    data-id="<?php echo $student['idStudent']; ?>"
+                                                    data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
+                                                    data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>"
+                                                    data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>"
+                                                    data-grade="<?php echo htmlspecialchars($student['grade']); ?>"
+                                                    data-grupo="<?php echo htmlspecialchars($student['group_']); ?>"
+                                                    data-curp="<?php echo htmlspecialchars($student['curp'] ?? ''); ?>"
+                                                    data-tutornombres="<?php echo htmlspecialchars($student['tutorName'] ?? ''); ?>"
+                                                    data-tutorpaterno="<?php echo htmlspecialchars($student['tutorLastnamePa'] ?? ''); ?>"
+                                                    data-tutormaterno="<?php echo htmlspecialchars($student['tutorLastnameMa'] ?? ''); ?>"
+                                                >
+                                                    <i class="bi bi-file-earmark-text-fill"></i>
+                                                </button>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="tch-btn--icon btn-info"
+                                                    data-id="<?php echo $student['idStudent']; ?>"
+                                                    data-nombres="<?php echo htmlspecialchars($student['names']); ?>"
+                                                    data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>"
+                                                    data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>"
+                                                    data-status="<?php echo htmlspecialchars($student['idStudentStatus']); ?>"
+                                                    data-grupo="<?php echo htmlspecialchars($student['group_']); ?>"
+                                                    data-grade="<?php echo htmlspecialchars($student['grade']); ?>"
+                                                    data-curp="<?php echo htmlspecialchars($student['curp'] ?? ''); ?>"
+                                                    data-bs-toggle="modal" data-bs-target="#showModal"
+                                                    data-tutornombres="<?php echo htmlspecialchars($student['tutorName'] ?? ''); ?>"
+                                                    data-tutorpaterno="<?php echo htmlspecialchars($student['tutorLastnamePa'] ?? ''); ?>"
+                                                    data-tutormaterno="<?php echo htmlspecialchars($student['tutorLastnameMa'] ?? ''); ?>"
+                                                    data-tutoremail="<?php echo htmlspecialchars($student['tutorEmail'] ?? ''); ?>"
+                                                    data-tutortelefono="<?php echo htmlspecialchars($student['tutorPhone'] ?? ''); ?>"
+                                                    data-tutordireccion="<?php echo htmlspecialchars($student['tutorAddress'] ?? ''); ?>"
+                                                    data-tutorine="<?php echo htmlspecialchars($student['tutorIne'] ?? ''); ?>"
+                                                >
+                                                    <i class="bi bi-person-fill"></i>
+                                                </button>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="tch-btn--icon btn-reporte" data-bs-toggle="modal" data-bs-target="#reportModal" data-id="<?php echo $student['idStudent']; ?>" data-nombres="<?php echo htmlspecialchars($student['names']); ?>" data-paterno="<?php echo htmlspecialchars($student['lastnamePa']); ?>" data-materno="<?php echo htmlspecialchars($student['lastnameMa']); ?>">
+                                                    <i class="bi bi-file-earmark-person-fill"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php elseif($selectedGroup): ?>
+                                    <tr><td colspan="10">
+                                        <div class="tch-empty">
+                                            <i class="bi bi-people tch-empty__icon"></i>
+                                            <p class="tch-empty__title">No hay alumnos en este grupo</p>
+                                        </div>
+                                    </td></tr>
+                                <?php else: ?>
+                                    <tr><td colspan="10">
+                                        <div class="tch-empty">
+                                            <i class="bi bi-search tch-empty__icon"></i>
+                                            <p class="tch-empty__title">Seleccione un grupo para ver los alumnos</p>
+                                        </div>
+                                    </td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Estilos CSS personalizados -->
-        <style>
-            /* Estilos para el header */        
-            .page-header {
-                text-align: center;
-                padding: 1.5rem 0 1rem 0;
-                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                border-radius: 15px;
-                margin-top: 4rem;
-                margin-bottom: 1.5rem;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            
-            .page-title {
-                color: #192E4E;
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin-bottom: 0.3rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .page-subtitle {
-                font-size: 1.1rem;
-                margin-bottom: 0;
-                opacity: 0.8;
-            }
 
-            /* Tarjetas */
-            .filter-card, .table-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-            
-            .filter-card:hover, .table-card:hover {
-                transform: translateY(-2px);
-            }
-            
-            .filter-card .card, .table-card .card {
-                border-radius: 15px;
-                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-            }
-            
-            .filter-card .card-header, .table-card .card-header {
-                border-radius: 15px 15px 0 0;
-                border-bottom: 1px solid #e9ecef;
-            }
-
-            /* Tabla */
-            .table-responsive {
-                border-radius: 0 0 15px 15px;
-            }
-            
-            .table th {
-                background-color: #f8f9fa;
-                border-bottom: 2px solid #dee2e6;
-                font-weight: 600;
-                color: #495057;
-            }
-            
-            .table tbody tr {
-                transition: background-color 0.2s ease;
-            }
-            
-            .table tbody tr:hover {
-                background-color: rgba(13, 110, 253, 0.05);
-            }
-
-            /* Botones en tabla */
-            .table .btn {
-                border-radius: 8px;
-                font-weight: 500;
-                transition: all 0.2s ease;
-                justify-content: center;
-                align-items: center;
-            }
-            
-            .table .btn-info {
-                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-                border: none;
-            }
-            
-            .table .btn-primary {
-                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-                border: none;
-            }
-
-            /* Estado vacío */
-            .empty-state {
-                padding: 2rem;
-            }
-
-            /* Responsividad */
-            @media (max-width: 768px) {
-                .page-title {
-                    font-size: 2rem;
-                }
-                
-                .page-header {
-                    padding: 1rem 0 0.75rem 0;
-                    margin-bottom: 1rem;
-                }
-                
-                .filter-card .card-body .row {
-                    flex-direction: column;
-                }
-                
-                .filter-card .card-body .col-md-4 {
-                    margin-bottom: 1rem;
-                }
-            }
-        </style>
     </main>
-    <!-- MODAL SHOW-->
-    <div class="modal fade modal-lg" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 id="tituloModal"class="modal-title fs-5" id="exampleModalLabel">Información Personal</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="#" enctype="multipart/form-data" method="post" class="needs-validation" novalidate id="form">
-        <div class="modal-body">
-            <div class="row">   
-                <div class="col-6"style="padding-right: 0;">
-                    <label class="labelAgregar"for="txtName">Nombres:</label>
-                    <span id="modal-nombres"></span>
-                </div>
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtLastname">Apellidos:</label>
-                    <span id="modal-apellidos"></span>
-                </div>
-            </div>
-            <div class="row pt-3">
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtCurp">CURP:</label>
-                    <span id="modal-curp"></span>
-                </div>
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtGrade">Grado:</label> 
-                    <span id="modal-grado"></span>
-                </div>
-            </div>
-            <div class="row pt-3">
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtGroup">Grupo:</label>
-                    <span id="modal-grupo"></span>
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="modal-header">
-                    <h1 id="tituloModal" class="modal-title fs-5" id="exampleModalLabel">Información del Tutor</h1>
-        </div>
-        <div class="modal-body">
-            <div class="row">   
-                <div class="col-6"style="padding-right: 0;">
-                    <label class="labelAgregar"for="txtName">Nombres:</label>
-                    <span id="modal-tutornombres"></span>
-                </div>
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtLastname">Apellidos:</label>
-                    <span id="modal-tutorapellidos"></span>
-                </div>
-            </div>
-            <div class="row pt-3">
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtIne">INE:</label>
-                    <span id="modal-tutorine"></span>
-                </div>
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtEmail">Correo:</label>
-                    <span id="modal-tutoremail"></span>
-                </div>
-            </div>
-            <div class="row pt-3">
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtPhone">Número de Teléfono:</label>
-                    <span id="modal-tutortelefono"></span>
-                </div>
-                <div class="col-6">
-                    <label class="labelAgregar"for="txtAddress">Dirección:</label>
-                    <span id="modal-tutordireccion"></span>
-                </div>
-            </div>
-
-        </div>
-    </form>
-
-            </div>
-        </div>
-
-    </div>
-    <!-- MODAL BOLETA -->
-    <div class="modal fade" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
+    <!-- MODAL SHOW -->
+    <div class="modal fade tch-modal" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
-                    <i class="bi bi-file-earmark-text-fill me-2"></i>
-                    <h5 class="modal-title" id="modalCamposFormativosLabel">Boleta del Estudiante</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="showModalLabel">
+                        <i class="bi bi-person-circle me-2"></i>
+                        Información del Estudiante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body">
-                    <div class="mb-4" id="divCamposFormativos">
-                        
-                        <div id="loadingGrades" class="text-center my-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
-                            </div>
-                            <p class="mt-2">Cargando calificaciones...</p>
+                    <!-- Información Personal -->
+                    <h6 class="text-black border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-badge me-2"></i>
+                        Datos Personales
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombres:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-nombres">-</p>
                         </div>
-                        
-                        <ul class="list-group shadow-sm" id="gradesList">
-                        </ul>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellidos:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-apellidos">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">CURP:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-curp">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Grado:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-grado">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Grupo:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-grupo">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Información del Tutor -->
+                    <h6 class="text-black border-bottom pb-2 mb-3 mt-4">
+                        <i class="bi bi-person-hearts me-2"></i>
+                        Información del Tutor
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombres:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutornombres">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellidos:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutorapellidos">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">INE:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutorine">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Correo:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutoremail">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutortelefono">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tutordireccion">-</p>
+                        </div>
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button id="btnVerDetalles" type="button" 
-                            class="btn"
-                            style="background-color: #192E4E; color: white; border: none; <?php echo !$descargasHabilitadas ? 'opacity: 0.6;' : ''; ?>"
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BOLETA -->
+    <div class="modal fade tch-modal" id="modalCamposFormativos" tabindex="-1" aria-labelledby="modalCamposFormativosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCamposFormativosLabel">
+                        <i class="bi bi-file-earmark-text-fill me-2"></i>
+                        Boleta del Estudiante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="divCamposFormativos">
+                        <h6 class="text-black border-bottom pb-2 mb-3">
+                            <i class="bi bi-journal-text me-2"></i>
+                            Calificaciones
+                        </h6>
+                        <div id="loadingGrades" class="tch-spinner text-center my-4">
+                            <div class="tch-spinner__ring"></div>
+                            <p class="tch-spinner__text">Cargando calificaciones...</p>
+                        </div>
+                        <ul class="list-group shadow-sm" id="gradesList"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cerrar
+                    </button>
+                    <button id="btnVerDetalles" type="button"
+                            class="tch-btn tch-btn--primary"
+                            <?php echo !$descargasHabilitadas ? 'disabled' : ''; ?>
                             <?php if(!$descargasHabilitadas) echo 'title="Disponible después del ' . date('d/m/Y', strtotime($fechaLimite)) . '"'; ?>>
                         <?php echo $descargasHabilitadas ? 'Imprimir boleta' : 'Boleta disponible después del ' . date('d/m/Y', strtotime($fechaLimite)); ?>
                     </button>
@@ -644,116 +472,173 @@ if ($selectedGroup) {
     </div>
 
     <!-- MODAL VERIFICAR BITÁCORA -->
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal fade tch-modal" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                <div class="modal-header">
                     <h5 class="modal-title" id="reportModalLabel">
                         <i class="bi bi-file-earmark-person-fill me-2"></i>Bitácora de Incidencias del Estudiante
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="student-info mb-4">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">Información del Estudiante</h6>
-                        <p><strong>Nombre:</strong> <span id="report-student-name"></span></p>
-                    </div>
-                    
-                    <div id="reportLoadingIndicator" class="text-center my-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+                    <!-- Información del Estudiante -->
+                    <h6 class="text-black border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-circle me-2"></i>
+                        Información del Estudiante
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="report-student-name">-</p>
                         </div>
-                        <p class="mt-2">Verificando bitácora...</p>
                     </div>
-                    
+
+                    <div id="reportLoadingIndicator" class="tch-spinner">
+                        <div class="tch-spinner__ring"></div>
+                        <p class="tch-spinner__text">Verificando bitácora...</p>
+                    </div>
+
                     <div id="reportExistsContent" class="d-none">
-                        <div class="alert alert-danger" role="alert">
+                        <div class="tch-alert-danger" role="alert">
                             <i class="bi bi-check-circle-fill me-2"></i>Este estudiante tiene <strong><span id="reportCount">0</span></strong> bitácoras registrado(s).
                         </div>
-                        
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
+                        <div class="tch-table-responsive">
+                            <table class="tch-report-table">
+                                <thead>
                                     <tr>
                                         <th>Fecha</th>
                                         <th>Docente</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="reportsList">    
-                                    <!-- Los reportes se cargarán aquí dinámicamente -->
-                                </tbody>
+                                <tbody id="reportsList"></tbody>
                             </table>
                         </div>
-                        
                         <div class="text-center mt-3">
-                            <button type="button" class="btn" style="background-color: #192E4E; color: white;" id="btnAddAnotherReport">
+                            <button type="button" class="tch-btn tch-btn--primary" id="btnAddAnotherReport">
                                 <i class="bi bi-plus-circle me-2"></i>Agregar Nueva Bitácora
                             </button>
                         </div>
                     </div>
-                    
+
                     <div id="reportNotExistsContent" class="d-none">
-                        <div class="alert alert-warning" role="alert">
+                        <div class="tch-alert-warning" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>Este estudiante no tiene bitácoras registradas.
                         </div>
                         <p class="text-center">¿Desea crear una nueva bitácora para este estudiante?</p>
                         <div class="text-center mt-3">
-                            <button type="button" class="btn" style="background-color: #192E4E; color: white;" id="btnCreateReport">
+                            <button type="button" class="tch-btn tch-btn--primary" id="btnCreateReport">
                                 <i class="bi bi-file-earmark-plus me-2"></i>Crear Nueva Bitácora
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLES DE REPORTE -->
+    <div class="modal fade tch-modal" id="reportDetailsModal" tabindex="-1" aria-labelledby="reportDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportDetailsModalLabel">
+                        <i class="bi bi-info-circle me-2"></i>Detalles de la Bitácora
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="detail-report-date">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Docente:</label>
+                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="detail-report-teacher">-</p>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción:</label>
+                            <div class="form-control-plaintext border rounded px-3 py-2 bg-light" id="detail-report-desc" style="min-height: 80px;">-</div>
+                        </div>
+                        <div class="col-12" id="detail-report-obs-container">
+                            <label class="form-label">Observaciones:</label>
+                            <div class="form-control-plaintext border rounded px-3 py-2 bg-light" id="detail-report-obs" style="min-height: 60px;">-</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end text-muted">
+                        <small id="detail-report-created"></small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 bg-light d-flex justify-content-end gap-2 py-3 px-4 rounded-bottom">
+                    <button type="button" class="tch-btn tch-btn--outline tch-btn--sm m-0" data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+                    <button type="button" class="tch-btn tch-btn--primary tch-btn--sm m-0 px-4 shadow-sm" id="btnImprimirReporte">
+                        <i class="bi bi-printer me-2"></i>Imprimir reporte
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL CREAR NUEVO REPORTE -->
-    <div class="modal fade" id="createReportModal" tabindex="-1" aria-labelledby="createReportModalLabel" aria-hidden="true">
+    <div class="modal fade tch-modal" id="createReportModal" tabindex="-1" aria-labelledby="createReportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header text-white border-0" style="background-color: #192E4E;">
+                <div class="modal-header">
                     <h5 class="modal-title" id="createReportModalLabel">
                         <i class="bi bi-file-earmark-plus me-2"></i>Crear Nueva Bitácora
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form id="reportForm">
+                    <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                     <div class="modal-body">
                         <input type="hidden" id="reportStudentId" name="studentId">
-                        
-                        <div class="mb-4">
-                            <h6 class="fw-bold border-bottom pb-2 mb-3">Información del Estudiante</h6>
-                            <p><strong>Nombre:</strong> <span id="create-report-student-name"></span></p>
+                        <!-- Información del Estudiante -->
+                        <h6 class="text-black border-bottom pb-2 mb-3">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Información del Estudiante
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre:</label>
+                                <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="create-report-student-name">-</p>
+                            </div>
                         </div>
-
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="reportFecha" class="form-label fw-bold">Fecha: <span class="text-danger">*</span></label>
+                                <label for="reportFecha" class="form-label">Fecha: <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="reportFecha" name="fecha" placeholder="Seleccione una fecha" readonly required>
                             </div>
                         </div>
-
                         <div class="mb-3">
-                            <label for="reportDescripcion" class="form-label fw-bold">Descripción: <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="reportDescripcion" name="descripcion" rows="4" 
+                            <label for="reportDescripcion" class="form-label">Descripción: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="reportDescripcion" name="descripcion" rows="4"
                                       placeholder="Describa detalladamente la situación..." required></textarea>
                         </div>
-
                         <div class="mb-3">
-                            <label for="reportObservaciones" class="form-label fw-bold">Observaciones:</label>
-                            <textarea class="form-control" id="reportObservaciones" name="observaciones" rows="3" 
+                            <label for="reportObservaciones" class="form-label">Observaciones:</label>
+                            <textarea class="form-control" id="reportObservaciones" name="observaciones" rows="3"
                                       placeholder="Agregue observaciones adicionales (opcional)..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save me-2"></i>Guardar Bitácora
+                        <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="tch-btn tch-btn--primary">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Guardar Bitácora
                         </button>
                     </div>
                 </form>
@@ -763,9 +648,6 @@ if ($selectedGroup) {
 
     <!-- MODAL SHOW-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../js/chartScript.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
@@ -795,9 +677,9 @@ if ($selectedGroup) {
                 // Si no hay grupo seleccionado, ocultar tabla
                 contenedorTabla.classList.add('d-none');
                 tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
-                    <div class="empty-state">
-                        <i class="bi bi-search text-muted display-4"></i>
-                        <p class="text-muted mt-2 mb-0">Seleccione un grupo para ver los alumnos.</p>
+                    <div class="tch-empty">
+                        <i class="tch-empty__icon bi bi-search"></i>
+                        <p class="tch-empty__title">Seleccione un grupo para ver los alumnos.</p>
                     </div>
                 </td></tr>`;
                 return;
@@ -805,10 +687,10 @@ if ($selectedGroup) {
             
             // Mostrar spinner de carga
             tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+                <div class="tch-spinner" role="status">
+                    <div class="tch-spinner__ring"></div>
                 </div>
-                <p class="text-muted mt-2">Cargando estudiantes...</p>
+                <p class="tch-empty__title">Cargando estudiantes...</p>
             </td></tr>`;
             
             // Mostrar la tabla
@@ -827,21 +709,21 @@ if ($selectedGroup) {
                         });
                     } else if (data.success && data.students.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
-                            <div class="empty-state">
-                                <i class="bi bi-people text-muted display-4"></i>
-                                <p class="text-muted mt-2 mb-0">No hay alumnos en este grupo.</p>
+                            <div class="tch-empty">
+                                <i class="tch-empty__icon bi bi-people"></i>
+                                <p class="tch-empty__title">No hay alumnos en este grupo.</p>
                             </div>
                         </td></tr>`;
                     } else {
                         tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
-                            <div class="alert alert-danger">Error al cargar estudiantes</div>
+                            <div class="tch-alert-danger">Error al cargar estudiantes</div>
                         </td></tr>`;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4">
-                        <div class="alert alert-danger">Error de conexión</div>
+                        <div class="tch-alert-danger">Error de conexión</div>
                     </td></tr>`;
                 });
         });
@@ -851,7 +733,7 @@ if ($selectedGroup) {
             const tr = document.createElement('tr');
             
             // Determinar badge de estado
-            let statusBadge = '<span class="badge bg-secondary">-</span>';
+            let statusBadge = '<span class="tch-badge tch-badge--secondary">-</span>';
             const statusMap = {
                 'AC': 'success',
                 'BA': 'danger',
@@ -859,11 +741,11 @@ if ($selectedGroup) {
                 'EG': 'primary',
                 'IN': 'secondary',
                 'TR': 'info',
-                'RC': 'dark',
-                'EX': 'light'
+                'RC': 'secondary',
+                'EX': 'neutral'
             };
             if (student.nomenclature && statusMap[student.nomenclature]) {
-                statusBadge = `<span class="badge bg-${statusMap[student.nomenclature]}">${student.description || student.nomenclature}</span>`;
+                statusBadge = `<span class="tch-badge tch-badge--${statusMap[student.nomenclature]}">${student.description || student.nomenclature}</span>`;
             }
             
             tr.innerHTML = `
@@ -875,7 +757,7 @@ if ($selectedGroup) {
                 <td>${escapeHtml(student.group_)}</td>
                 <td>${statusBadge}</td>
                 <td class="text-center">
-                    <button type="button" class="botonVer"
+                    <button type="button" class="tch-btn--icon btn-boleta"
                         data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
                         data-id="${student.idStudent}"
                         data-nombres="${escapeHtml(student.names)}"
@@ -891,7 +773,7 @@ if ($selectedGroup) {
                     </button>
                 </td>
                 <td class="text-center">
-                    <button type="button" id="botonVer"
+                    <button type="button" class="tch-btn--icon btn-info"
                         data-id="${student.idStudent}"
                         data-nombres="${escapeHtml(student.names)}"
                         data-paterno="${escapeHtml(student.lastnamePa)}"
@@ -912,7 +794,7 @@ if ($selectedGroup) {
                     </button>
                 </td>
                 <td class="text-center">
-                    <button type="button" class="botonReporte" 
+                    <button type="button" class="tch-btn--icon btn-reporte"
                         data-bs-toggle="modal" data-bs-target="#reportModal" 
                         data-id="${student.idStudent}" 
                         data-nombres="${escapeHtml(student.names)}" 
@@ -954,7 +836,7 @@ if ($selectedGroup) {
                 .then(subjectsData => {
                     console.log('Datos de materias recibidos:', subjectsData);
                     if (!subjectsData.success || !subjectsData.subjects || subjectsData.subjects.length === 0) {
-                        gradesList.innerHTML = '<div class="alert alert-info">No hay materias asignadas para este estudiante</div>';
+                        gradesList.innerHTML = '<div class="tch-alert-info">No hay materias asignadas para este estudiante</div>';
                         return;
                     }
 
@@ -1049,12 +931,12 @@ if ($selectedGroup) {
                     loadingIndicator.classList.add('d-none');
                     
                     if (!data.success) {
-                        gradesList.innerHTML = `<div class="alert alert-danger">${data.message || 'Error al cargar calificaciones'}</div>`;
+                        gradesList.innerHTML = `<div class="tch-alert-danger">${data.message || 'Error al cargar calificaciones'}</div>`;
                         return;
                     }
                     
                     if (!data.subjects || data.subjects.length === 0) {
-                        gradesList.innerHTML = '<div class="alert alert-info">No hay calificaciones disponibles para este período</div>';
+                        gradesList.innerHTML = '<div class="tch-alert-info">No hay calificaciones disponibles para este período</div>';
                         return;
                     }
                     
@@ -1064,26 +946,26 @@ if ($selectedGroup) {
 
                     // Mostrar promedio general
                     const avgItem = document.createElement('div');
-                    avgItem.className = 'alert fw-bold text-center mb-3';
+                    avgItem.className = 'tch-alert-summary';
                     
                     // Determinar el color del promedio
-                    let avgBadgeClass = 'bg-secondary';
-                    if (generalAverage >= 9) avgBadgeClass = 'bg-success';
-                    else if (generalAverage >= 7) avgBadgeClass = 'bg-warning';
-                    else if (generalAverage >= 0) avgBadgeClass = 'bg-danger';
+                    let avgBadgeClass = 'tch-badge--secondary';
+                    if (generalAverage >= 9) avgBadgeClass = 'tch-badge--success';
+                    else if (generalAverage >= 7) avgBadgeClass = 'tch-badge--warning';
+                    else if (generalAverage >= 0) avgBadgeClass = 'tch-badge--danger';
                     
                     avgItem.innerHTML = `
-                        PROMEDIO GENERAL: <span class="badge ${avgBadgeClass} rounded-pill">${Number(generalAverage || 0).toFixed(1)}</span>
+                        PROMEDIO GENERAL: <span class="tch-badge ${avgBadgeClass}">${Number(generalAverage || 0).toFixed(1)}</span>
                     `;
                     gradesList.appendChild(avgItem);
                     
                     // Crear tabla de áreas de aprendizaje
                     const table = document.createElement('table');
-                    table.className = 'table table-bordered table-hover';
+                    table.className = 'tch-report-table';
                     
                     // Cabecera de la tabla
                     const thead = document.createElement('thead');
-                    thead.className = 'table-primary';
+                    thead.className = 'tch-report-table__head';
                     thead.innerHTML = `
                         <tr>
                             <th>Campo Formativo</th>
@@ -1104,17 +986,17 @@ if ($selectedGroup) {
                         // Celda del área (con rowspan)
                         const areaCell = document.createElement('td');
                         areaCell.rowSpan = area.subjects.length;
-                        areaCell.className = 'align-middle fw-bold text-center table-light';
+                        areaCell.className = 'tch-report-table__area-cell';
                         
                         // Color para el promedio del área
-                        let areaBadgeClass = 'bg-secondary';
-                        if (area.average >= 9) areaBadgeClass = 'bg-success';
-                        else if (area.average >= 7) areaBadgeClass = 'bg-warning';
-                        else if (area.average >= 0) areaBadgeClass = 'bg-danger';
+                        let areaBadgeClass = 'tch-badge--secondary';
+                        if (area.average >= 9) areaBadgeClass = 'tch-badge--success';
+                        else if (area.average >= 7) areaBadgeClass = 'tch-badge--warning';
+                        else if (area.average >= 0) areaBadgeClass = 'tch-badge--danger';
                         
                         areaCell.innerHTML = `
                             ${area.name}<br>
-                            <small class="badge ${areaBadgeClass} rounded-pill mt-1">${Number(area.average || 0).toFixed(1)}</small>
+                            <small class="tch-badge ${areaBadgeClass} tch-badge--pill mt-1">${Number(area.average || 0).toFixed(1)}</small>
                         `;
                         firstRow.appendChild(areaCell);
                         
@@ -1127,12 +1009,12 @@ if ($selectedGroup) {
                         const gradeCell = document.createElement('td');
                         gradeCell.className = 'text-center';
                         
-                        let gradeBadgeClass = 'bg-secondary';
-                        if (firstSubject.average >= 9) gradeBadgeClass = 'bg-success';
-                        else if (firstSubject.average >= 7) gradeBadgeClass = 'bg-warning';
-                        else if (firstSubject.average >= 0) gradeBadgeClass = 'bg-danger';
+                        let gradeBadgeClass = 'tch-badge--secondary';
+                        if (firstSubject.average >= 9) gradeBadgeClass = 'tch-badge--success';
+                        else if (firstSubject.average >= 7) gradeBadgeClass = 'tch-badge--warning';
+                        else if (firstSubject.average >= 0) gradeBadgeClass = 'tch-badge--danger';
                         
-                        gradeCell.innerHTML = `<span class="badge ${gradeBadgeClass} rounded-pill">${Number(firstSubject.average || 0).toFixed(1)}</span>`;
+                        gradeCell.innerHTML = `<span class="tch-badge ${gradeBadgeClass}">${Number(firstSubject.average || 0).toFixed(1)}</span>`;
                         firstRow.appendChild(gradeCell);
                         
                         tbody.appendChild(firstRow);
@@ -1150,12 +1032,12 @@ if ($selectedGroup) {
                             const gradeCell = document.createElement('td');
                             gradeCell.className = 'text-center';
                             
-                            let gradeBadgeClass = 'bg-secondary';
-                            if (subject.average >= 9) gradeBadgeClass = 'bg-success';
-                            else if (subject.average >= 7) gradeBadgeClass = 'bg-warning';
-                            else if (subject.average >= 0) gradeBadgeClass = 'bg-danger';
+                            let gradeBadgeClass = 'tch-badge--secondary';
+                            if (subject.average >= 9) gradeBadgeClass = 'tch-badge--success';
+                            else if (subject.average >= 7) gradeBadgeClass = 'tch-badge--warning';
+                            else if (subject.average >= 0) gradeBadgeClass = 'tch-badge--danger';
                             
-                            gradeCell.innerHTML = `<span class="badge ${gradeBadgeClass} rounded-pill">${Number(subject.average || 0).toFixed(1)}</span>`;
+                            gradeCell.innerHTML = `<span class="tch-badge ${gradeBadgeClass}">${Number(subject.average || 0).toFixed(1)}</span>`;
                             row.appendChild(gradeCell);
                             
                             tbody.appendChild(row);
@@ -1168,90 +1050,13 @@ if ($selectedGroup) {
                 .catch(error => {
                     console.error('Error completo:', error);
                     loadingIndicator.classList.add('d-none');
-                    gradesList.innerHTML = '<div class="alert alert-danger">Error al cargar calificaciones: ' + error.message + '</div>';
+                    gradesList.innerHTML = '<div class="tch-alert-danger">Error al cargar calificaciones: ' + error.message + '</div>';
                 });
         }
         
         // Función para redondear hacia arriba con 1 decimal (igual que saveGrades.php)
         function ceilToOneDecimal(value) {
             return Math.ceil(value * 10) / 10;
-        }
-
-        // Función para mostrar las calificaciones en el modal
-        function displayGrades(grades) {
-            const gradesList = document.getElementById('gradesList');
-            gradesList.innerHTML = '';
-            
-            // Primero, obtener todos los criterios de evaluación para calcular promedio correcto
-            fetch(`getEvaluationCriteria.php?subject_id=${currentSubjectId}&quarter=${currentQuarter}`)
-                .then(response => response.json())
-                .then(allCriteria => {
-                    // Calcular promedio considerando TODOS los criterios (vacíos como 0)
-                    let totalGrade = 0;
-                    let totalCriteria = allCriteria.length;
-                    
-                    allCriteria.forEach(criteria => {
-                        // Buscar si este criterio tiene calificación
-                        const gradeItem = grades.find(g => g.criteria_id == criteria.criteria_id);
-                        const grade = gradeItem ? parseFloat(gradeItem.grade) : 0; // Si no tiene calificación, contar como 0
-                        
-                        if (!isNaN(grade)) {
-                            totalGrade += grade;
-                        }
-                    });
-                    
-                    const avgGrade = totalCriteria > 0 ? ceilToOneDecimal(totalGrade / totalCriteria) : 0;
-                    
-                    // Agregar el promedio general
-                    const avgItem = document.createElement('li');
-                    avgItem.className = 'list-group-item d-flex justify-content-between align-items-center bg-light fw-bold';
-                    
-                    // Determinar el color del promedio
-                    let avgBadgeClass = 'bg-secondary';
-                    if (avgGrade >= 9) avgBadgeClass = 'bg-success';
-                    else if (avgGrade >= 7) avgBadgeClass = 'bg-warning';
-                    else if (avgGrade >= 0) avgBadgeClass = 'bg-danger';
-                    
-                    avgItem.innerHTML = `
-                        PROMEDIO GENERAL
-                        <span class="badge ${avgBadgeClass} rounded-pill">${avgGrade.toFixed(1)}</span>
-                    `;
-                    gradesList.appendChild(avgItem);
-                    
-                    // Separador
-                    const separator = document.createElement('li');
-                    separator.className = 'list-group-item bg-white border-0 py-1';
-                    gradesList.appendChild(separator);
-                    
-                    // Mostrar TODOS los criterios de evaluación (con y sin calificación)
-                    allCriteria.forEach(criteria => {
-                        const gradeItem = grades.find(g => g.criteria_id == criteria.criteria_id);
-                        const grade = gradeItem ? parseFloat(gradeItem.grade) : 0; // Si no hay calificación, mostrar 0
-                        
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                        
-                        // Determinar el color de la insignia según la calificación
-                        let badgeClass = 'bg-secondary';
-                        if (grade >= 9) badgeClass = 'bg-success';
-                        else if (grade >= 7) badgeClass = 'bg-warning';
-                        else if (grade >= 0) badgeClass = 'bg-danger';
-                        
-                        // Mostrar calificación o "No evaluado" si es 0 por falta de evaluación
-                        const displayGrade = gradeItem ? grade.toString() : '0 (Sin evaluar)';
-                        
-                        li.innerHTML = `
-                            ${criteria.criteria_name}
-                            <span class="badge ${badgeClass} rounded-pill">${displayGrade}</span>
-                        `;
-                        
-                        gradesList.appendChild(li);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error al cargar criterios:', error);
-                    gradesList.innerHTML = '<div class="alert alert-danger">Error al cargar criterios de evaluación</div>';
-                });
         }
 
         // Evento: Botón Ver detalles (Imprimir boleta) (Imprimir boleta)
@@ -1328,7 +1133,7 @@ if ($selectedGroup) {
                 // Crear el div de información del estudiante
                 studentInfoDiv = document.createElement('div');
                 studentInfoDiv.id = 'studentInfo';
-                studentInfoDiv.className = 'alert alert-light mb-4 border';
+                studentInfoDiv.className = 'modal-info-bar';
                 
                 // Insertar al principio del modal-body
                 modalBody.insertBefore(studentInfoDiv, modalBody.firstChild);
@@ -1336,13 +1141,11 @@ if ($selectedGroup) {
             
             // Actualizar la información del estudiante
             studentInfoDiv.innerHTML = `
-                <div class="alert alert-success d-flex justify-content-between align-items-center f-6">
-                    <div>
-                        <span class="fw-bold">Alumno:</span> ${studentName}
-                    </div>
-                    <div class="text-end">
-                        <span class="fw-bold">Grado:</span> ${gradeInfo}° <span class="fw-bold">Grupo:</span> ${groupInfo}
-                    </div>
+                <div>
+                    <span class="fw-bold">Alumno:</span> ${studentName}
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold">Grado:</span> ${gradeInfo}° <span class="fw-bold">Grupo:</span> ${groupInfo}
                 </div>
             `;
             
@@ -1457,7 +1260,7 @@ if ($selectedGroup) {
                                 <td>${student.group_}</td>
                                 <td>${getStatusBadge(student.nomenclature, student.description)}</td>
                                 <td class="text-center">
-                                    <button type="button" id="botonVer" class="btn-boleta"
+                                    <button type="button" class="tch-btn--icon btn-boleta"
                                         data-bs-toggle="modal" data-bs-target="#modalCamposFormativos"
                                         data-id="${student.idStudent}"
                                         data-nombres="${student.names}"
@@ -1470,7 +1273,7 @@ if ($selectedGroup) {
                                     </button>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" id="botonVer" class="botonVer"
+                                    <button type="button" class="tch-btn--icon btn-info"
                                         data-bs-toggle="modal" 
                                         data-bs-target="#showModal"
                                         data-id="${student.schoolNum}"
@@ -1492,7 +1295,7 @@ if ($selectedGroup) {
                                     </button>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="botonReporte"
+                                    <button type="button" class="tch-btn--icon btn-reporte"
                                         data-bs-toggle="modal" 
                                         data-bs-target="#reportModal"
                                         data-id="${student.idStudent}"
@@ -1523,10 +1326,10 @@ if ($selectedGroup) {
                         case 'EG': badge = 'primary'; break;   // Egresado
                         case 'IN': badge = 'secondary'; break; // Inactivo
                         case 'TR': badge = 'info'; break;      // Trasladado
-                        case 'RC': badge = 'dark'; break;      // Recursando
-                        case 'EX': badge = 'light'; break;     // Expulsado
+                        case 'RC': badge = 'secondary'; break;  // Recursando
+                        case 'EX': badge = 'neutral'; break;    // Expulsado
                     }
-                    return `<span class="badge bg-${badge}">${description}</span>`;
+                    return `<span class="tch-badge tch-badge--${badge}">${description}</span>`;
                 }
                 return '';
             }
@@ -1588,7 +1391,9 @@ if ($selectedGroup) {
                 // Realizar la petición
                 fetch('generate_group_pdfs.php', {
                     method: 'POST',
-                    headers: {
+                headers: {
+
+                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content,
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: `schoolYear=${encodeURIComponent(schoolYear)}&grupo=${encodeURIComponent(grupo)}`
@@ -1635,8 +1440,8 @@ if ($selectedGroup) {
 
         // Event listener para los botones de reporte
         document.addEventListener('click', function(e) {
-            if (e.target.closest('.botonReporte')) {
-                const button = e.target.closest('.botonReporte');
+            if (e.target.closest('.btn-reporte')) {
+                const button = e.target.closest('.btn-reporte');
                 currentStudentId = button.getAttribute('data-id');
                 const nombres = button.getAttribute('data-nombres');
                 const paterno = button.getAttribute('data-paterno');
@@ -1676,11 +1481,11 @@ if ($selectedGroup) {
                             row.innerHTML = `
                                 <td>${report.fecha}</td>
                                 <td>${report.teacherFullName || 'N/A'}</td>
-                                <td>
-                                    <button style="background-color: #FF0000; color: white; border: none; padding: 0.375rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; margin-right: 0.5rem; cursor: pointer;" onclick="viewReportPDF(${report.idConductReport})" title="Ver PDF">
-                                        <i class="bi bi-file-pdf"></i> Ver PDF
+                                <td class="tch-report-actions d-flex justify-content-center gap-2">
+                                    <button class="tch-btn--icon btn-pdf" onclick="viewReportPDF(${report.idConductReport})" title="Imprimir reporte">
+                                        <i class="bi bi-file-pdf"></i> Imprimir
                                     </button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewReportDetails(${report.idConductReport})" title="Ver detalles">
+                                    <button class="tch-btn--icon btn-view" onclick="viewReportDetails(${report.idConductReport})" title="Ver detalles">
                                         <i class="bi bi-eye"></i> Detalles
                                     </button>
                                 </td>
@@ -1713,25 +1518,34 @@ if ($selectedGroup) {
         window.viewReportDetails = function(idConductReport) {
             const report = window.currentReports.find(r => r.idConductReport == idConductReport);
             if (report) {
-                Swal.fire({
-                    title: 'Detalles del Reporte',
-                    html: `
-                        <div class="text-start">
-                            <p><strong>Fecha:</strong> ${report.fecha}</p>
-                            <p><strong>Docente:</strong> ${report.teacherFullName || 'N/A'}</p>
-                            <hr>
-                            <p><strong>Descripción:</strong></p>
-                            <p>${report.descripcion}</p>
-                            ${report.observaciones ? `<hr><p><strong>Observaciones:</strong></p><p>${report.observaciones}</p>` : ''}
-                            <hr>
-                            <p class="text-muted"><small>Creado: ${report.createdAt}</small></p>
-                        </div>
-                    `,
-                    icon: 'info',
-                    width: '600px',
-                    showCloseButton: true,
-                    confirmButtonText: 'Cerrar'
-                });
+                // Llenar los datos en el modal
+                document.getElementById('detail-report-date').textContent = report.fecha;
+                document.getElementById('detail-report-teacher').textContent = report.teacherFullName || 'N/A';
+                document.getElementById('detail-report-desc').textContent = report.descripcion;
+                
+                const obsContainer = document.getElementById('detail-report-obs-container');
+                if (report.observaciones) {
+                    obsContainer.style.display = 'block';
+                    document.getElementById('detail-report-obs').textContent = report.observaciones;
+                } else {
+                    obsContainer.style.display = 'none';
+                }
+                
+                document.getElementById('detail-report-created').textContent = `Creado: ${report.createdAt}`;
+                
+                // Actualizar el botón de imprimir
+                const btnPrint = document.getElementById('btnImprimirReporte');
+                btnPrint.setAttribute('onclick', `viewReportPDF(${idConductReport})`);
+                
+                // Ocultar el modal de lista de reportes si se desea
+                const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                if (reportModal) {
+                    reportModal.hide();
+                }
+                
+                // Mostrar el modal de detalles
+                const detailsModal = new bootstrap.Modal(document.getElementById('reportDetailsModal'));
+                detailsModal.show();
             }
         };
 
@@ -1817,6 +1631,9 @@ if ($selectedGroup) {
             // Enviar datos al servidor
             fetch('save_student_report.php', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
                 body: formData
             })
             .then(response => response.json())

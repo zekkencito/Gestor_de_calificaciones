@@ -1,306 +1,326 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_config.php';
+require_once __DIR__ . '/csrf.php';
+validate_csrf_token();
+require_once __DIR__ . '/conection.php';
 
-// Verificar que el usuario esté logueado y necesite cambiar contraseña
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit();
 }
 
-// Si no necesita cambio de contraseña, redirigir al dashboard
-if (!isset($_SESSION['force_password_change']) || $_SESSION['force_password_change'] !== true) {
-    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
-        header("Location: admin/dashboard.php");
-    } else {
-        header("Location: teachers/dashboard.php");
-    }
-    exit();
+$message = '';
+$message_type = '';
+
+if (isset($_SESSION['password_change_message'])) {
+    $message = $_SESSION['password_change_message']['text'];
+    $message_type = $_SESSION['password_change_message']['type'];
+    unset($_SESSION['password_change_message']);
 }
 
-require_once "conection.php";
-
-$error = '';
-$success = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $current_password = $_POST['current_password'];
-    $new_password = $_POST['new_password'];
-    $confirm_password = $_POST['confirm_password'];
-    
-    // Validaciones
+    $current_password = $_POST['current_password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+
     if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-        $error = 'Todos los campos son obligatorios';
+        $message = 'Todos los campos son obligatorios.';
+        $message_type = 'error';
     } elseif (strlen($new_password) < 6) {
-        $error = 'La nueva contraseña debe tener al menos 6 caracteres';
+        $message = 'La nueva contraseña debe tener al menos 6 caracteres.';
+        $message_type = 'error';
     } elseif ($new_password !== $confirm_password) {
-        $error = 'Las contraseñas nuevas no coinciden';
+        $message = 'Las contraseñas nuevas no coinciden.';
+        $message_type = 'error';
     } else {
-        // Verificar contraseña actual
-        $sql = "SELECT raw_password FROM users WHERE idUser = ?";
+        $sql = "SELECT password, raw_password FROM users WHERE idUser = ?";
         $stmt = $conexion->prepare($sql);
         $stmt->bind_param("i", $_SESSION['user_id']);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
-            
-            if ($current_password === $user['raw_password']) {
-                // Contraseña correcta, actualizar
+
+            $is_valid_password = false;
+            if (!empty($user['raw_password'])) {
+                $is_valid_password = ($current_password === $user['raw_password']);
+            } else {
+                $is_valid_password = password_verify($current_password, $user['password']);
+            }
+
+            if ($is_valid_password) {
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                
-                $updateSql = "UPDATE users SET 
-                             password = ?, 
-                             raw_password = NULL, 
+
+                $updateSql = "UPDATE users SET
+                             password = ?,
+                             raw_password = NULL,
                              password_changed = 1,
                              password_change_date = NOW()
                              WHERE idUser = ?";
                 $updateStmt = $conexion->prepare($updateSql);
                 $updateStmt->bind_param("si", $hashed_password, $_SESSION['user_id']);
-                
+
                 if ($updateStmt->execute()) {
-                    // Eliminar la bandera de cambio forzoso
                     unset($_SESSION['force_password_change']);
                     
-                    // Redirigir al dashboard
-                    if ($_SESSION['role'] === 'AD' || $_SESSION['idRole'] == 3) {
-                        header("Location: admin/dashboard.php");
-                    } else {
-                        header("Location: teachers/dashboard.php");
+                    // Invalidar tokens RememberMe para este usuario
+                    $delTokens = $conexion->prepare("DELETE FROM user_remember_tokens WHERE idUser = ?");
+                    if ($delTokens) {
+                        $delTokens->bind_param("i", $_SESSION['user_id']);
+                        $delTokens->execute();
                     }
+
+                    // Forzar reautenticación por seguridad
+                    $_SESSION['success'] = 'Contraseña actualizada correctamente. Por favor, inicia sesión nuevamente.';
+                    header("Location: admin/php/logout.php");
                     exit();
                 } else {
-                    $error = 'Error al actualizar la contraseña';
+                    $message = 'Error al actualizar la contraseña.';
+                    $message_type = 'error';
                 }
             } else {
-                $error = 'La contraseña actual es incorrecta';
+                $message = 'La contraseña actual es incorrecta.';
+                $message_type = 'error';
             }
         } else {
-            $error = 'Usuario no encontrado';
+            $message = 'Usuario no encontrado.';
+            $message_type = 'error';
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cambio de Contraseña Obligatorio - Gestor de Calificaciones</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .change-password-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-        }
-        
-        .logo-container {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .logo-container img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-        
-        .form-title {
-            color: #333;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-        
-        .form-subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 0.95rem;
-        }
-        
-        .security-warning {
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        
-        .form-label {
-            color: #555;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .form-control {
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            padding: 12px 15px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .btn-change-password {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-change-password:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .password-requirements {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-            font-size: 0.85rem;
-        }
-        
-        .password-requirements ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-        
-        .alert {
-            border-radius: 10px;
-            border: none;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-    </style>
+    <title>Cambiar Contraseña — Gestor de Calificaciones</title>
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
+
+    <link rel="icon" href="assets/img/favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/change_password.css">
 </head>
 <body>
-    <div class="change-password-container">
-        <div class="logo-container">
-            <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'">
-        </div>
-        
-        <h1 class="form-title">Cambio de Contraseña</h1>
-        <p class="form-subtitle">Por su seguridad, debe cambiar su contraseña temporal</p>
-        
-        <div class="security-warning">
-            <i class="fas fa-shield-alt me-2"></i>
-            Su cuenta utiliza una contraseña temporal. Por razones de seguridad, debe establecer una nueva contraseña antes de continuar.
-        </div>
-        
-        <?php if ($error): ?>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-        
-        <form method="POST" class="needs-validation" novalidate>
-            <div class="mb-3">
-                <label for="current_password" class="form-label">
-                    <i class="fas fa-key me-2"></i>Contraseña Actual (Temporal)
-                </label>
-                <input type="password" class="form-control" id="current_password" name="current_password" required>
-                <div class="invalid-feedback">
-                    Por favor ingrese su contraseña actual.
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <label for="new_password" class="form-label">
-                    <i class="fas fa-lock me-2"></i>Nueva Contraseña
-                </label>
-                <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
-                <div class="invalid-feedback">
-                    La contraseña debe tener al menos 6 caracteres.
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <label for="confirm_password" class="form-label">
-                    <i class="fas fa-lock me-2"></i>Confirmar Nueva Contraseña
-                </label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                <div class="invalid-feedback">
-                    Por favor confirme su nueva contraseña.
-                </div>
-            </div>
-            
-            <div class="password-requirements">
-                <strong>Requisitos de la contraseña:</strong>
-                <ul>
-                    <li>Mínimo 6 caracteres</li>
-                    <li>Se recomienda usar una combinación de letras, números y símbolos</li>
-                    <li>No debe ser igual a contraseñas anteriores</li>
-                </ul>
-            </div>
-            
-            <button type="submit" class="btn btn-change-password mt-4">
-                <i class="fas fa-shield-alt me-2"></i>Cambiar Contraseña
-            </button>
-        </form>
+    <div id="preloader">
+        <img src="assets/img/logo.png" alt="Logo" class="logo">
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="cp-layout">
+        <!-- Branding panel -->
+        <div class="cp-layout__brand">
+            <img
+                src="assets/img/logo.png"
+                alt="Logo"
+                class="cp-brand__logo"
+                onerror="this.style.display='none'; document.getElementById('brand-fallback').style.display='flex';"
+            >
+            <div id="brand-fallback" class="cp-brand__fallback" style="display:none;">
+                <i class="bi bi-person-lock"></i>
+            </div>
+            <h1 class="cp-brand__title">Gestor de Calificaciones</h1>
+            <p class="cp-brand__subtitle">Actualiza tu contraseña para proteger tu cuenta.</p>
+        </div>
+
+        <!-- Main form area -->
+        <div class="cp-layout__main">
+            <div class="cp-card">
+                <!-- Form state -->
+                <div id="form-state">
+                    <div class="cp-card__header">
+                        <h5><i class="bi bi-shield-lock"></i> Cambiar contraseña</h5>
+                    </div>
+
+                    <div class="cp-card__body">
+                        <form id="password-form" class="cp-form" method="POST" action="" novalidate>
+                            <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
+                            <?php if ($message): ?>
+                                <div class="ds-alert ds-alert--<?php echo $message_type === 'error' ? 'error' : 'success'; ?> cp-alert">
+                                    <i class="bi <?php echo $message_type === 'error' ? 'bi-exclamation-triangle' : 'bi-check-circle'; ?>"></i>
+                                    <span><?php echo htmlspecialchars($message); ?></span>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- Current password -->
+                            <div class="ds-form-group">
+                                <label class="ds-label" for="current_password">Contraseña actual</label>
+                                <div class="cp-input-wrapper">
+                                    <input
+                                        type="password"
+                                        class="ds-input"
+                                        id="current_password"
+                                        name="current_password"
+                                        required
+                                        autocomplete="current-password"
+                                    >
+                                    <button type="button" class="cp-eye-toggle" data-target="current_password" aria-label="Mostrar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- New password -->
+                            <div class="ds-form-group">
+                                <label class="ds-label" for="new_password">Nueva contraseña</label>
+                                <div class="cp-input-wrapper">
+                                    <input
+                                        type="password"
+                                        class="ds-input"
+                                        id="new_password"
+                                        name="new_password"
+                                        required
+                                        minlength="6"
+                                        autocomplete="new-password"
+                                    >
+                                    <button type="button" class="cp-eye-toggle" data-target="new_password" aria-label="Mostrar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Requirements checklist -->
+                            <div class="cp-requirements" id="password-requirements">
+                                <div class="cp-requirements__title">Requisitos de seguridad</div>
+                                <ul class="cp-requirements__list">
+                                    <li class="cp-requirements__item" id="req-length">
+                                        <i class="bi bi-x-circle"></i>
+                                        <span>Mínimo 6 caracteres</span>
+                                    </li>
+                                    <li class="cp-requirements__item" id="req-upper">
+                                        <i class="bi bi-x-circle"></i>
+                                        <span>Al menos una letra mayúscula</span>
+                                    </li>
+                                    <li class="cp-requirements__item" id="req-number">
+                                        <i class="bi bi-x-circle"></i>
+                                        <span>Al menos un número</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Confirm password -->
+                            <div class="ds-form-group">
+                                <label class="ds-label" for="confirm_password">Confirmar contraseña</label>
+                                <div class="cp-input-wrapper">
+                                    <input
+                                        type="password"
+                                        class="ds-input"
+                                        id="confirm_password"
+                                        name="confirm_password"
+                                        required
+                                        autocomplete="new-password"
+                                    >
+                                    <button type="button" class="cp-eye-toggle" data-target="confirm_password" aria-label="Mostrar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cp-submit-wrap">
+                                <button type="submit" class="ds-btn ds-btn--primary" id="submit-btn">
+                                    <i class="bi bi-check-lg"></i>
+                                    <span>Guardar contraseña</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Success state -->
+                <div id="success-state" class="cp-success" style="display: none;">
+                    <div class="cp-success__icon">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <h5>Contraseña actualizada</h5>
+                    <p>Tu contraseña ha sido cambiada correctamente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Bootstrap form validation
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                var forms = document.getElementsByClassName('needs-validation');
-                var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
-        
-        // Verificar que las contraseñas coincidan
-        document.getElementById('confirm_password').addEventListener('input', function() {
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = this.value;
-            
-            if (newPassword !== confirmPassword) {
-                this.setCustomValidity('Las contraseñas no coinciden');
-            } else {
-                this.setCustomValidity('');
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+
+        /* ---- Eye toggle ---- */
+        document.querySelectorAll('.cp-eye-toggle').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var input = document.getElementById(this.dataset.target);
+                var icon  = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye';
+                }
+            });
         });
+
+        /* ---- Requirements validation ---- */
+        var newPass = document.getElementById('new_password');
+        var confirm = document.getElementById('confirm_password');
+
+        function checkRequirements(value) {
+            var met = {
+                length: value.length >= 6,
+                upper: /[A-Z]/.test(value),
+                number: /[0-9]/.test(value)
+            };
+            for (var key in met) {
+                var el = document.getElementById('req-' + key);
+                var icon = el.querySelector('i');
+                if (met[key]) {
+                    el.classList.add('met');
+                    icon.className = 'bi bi-check-circle';
+                } else {
+                    el.classList.remove('met');
+                    icon.className = 'bi bi-x-circle';
+                }
+            }
+            return met;
+        }
+
+        if (newPass) {
+            newPass.addEventListener('input', function() {
+                checkRequirements(this.value);
+            });
+        }
+
+        /* ---- Confirm match indicator ---- */
+        if (confirm) {
+            confirm.addEventListener('input', function() {
+                var match = this.value.length > 0 && this.value === newPass.value;
+                this.style.borderColor = match ? 'var(--ds-success)' : '';
+                this.style.boxShadow   = match ? '0 0 0 3px var(--ds-success-bg)' : '';
+            });
+        }
+
+        /* ---- Success redirect ---- */
+        <?php if ($message_type === 'success'): ?>
+        setTimeout(function() {
+            document.getElementById('form-state').style.display = 'none';
+            document.getElementById('success-state').style.display = 'block';
+        }, 100);
+        <?php endif; ?>
+    });
     </script>
+
+    <script>
+    window.addEventListener('load', function() {
+        var preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.add('loaded');
+            setTimeout(function() { preloader.remove(); }, 500);
+        }
+    });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 require_once "check_session.php";
 require_once "../force_password_check.php";
-include '../conection.php';
+require_once '../conection.php';
 
 // Consulta principal para obtener los datos de los profesores
 $sql = "SELECT 
@@ -21,8 +23,8 @@ $sql = "SELECT
     u.username,
     u.password,
     u.raw_password,
-    GROUP_CONCAT(DISTINCT CONCAT(g.grade, '°', g.group_)) AS grupos,
-    GROUP_CONCAT(DISTINCT s.name) AS materias
+    GROUP_CONCAT(DISTINCT CONCAT(g.grade, '°', g.group_) ORDER BY g.grade, g.group_ SEPARATOR ', ') AS grupos,
+    GROUP_CONCAT(DISTINCT CONCAT(tgs.idDFM, ':', s.idSubject, ':', s.name) ORDER BY s.name SEPARATOR '|||') AS materias_data
 FROM teachers t
 INNER JOIN users u ON t.idUser = u.idUser
 INNER JOIN usersInfo ui ON u.idUserInfo = ui.idUserInfo
@@ -44,10 +46,16 @@ if (!$resultado) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <title>Maestros</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin/time.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="../css/admin/teacher.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.2/main.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
@@ -55,11 +63,11 @@ if (!$resultado) {
     <!-- TIPOGRAFIA -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     
     <link rel="icon" href="../img/logo.ico">
 </head>
-<body class="row d-flex" style="height: 100%; width: 100%; margin: 0; padding: 0;">
+<body class="page-teachers">
     <!-- Preloader -->
     <div id="preloader">
         <img src="../img/logo.webp" alt="Cargando..." class="logo">
@@ -69,94 +77,62 @@ if (!$resultado) {
     <!-- END ASIDEBAR -->
     
     <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 col-9 p-0">
+    <main class="ds-main">
         <?php include "../layouts/header.php"; ?>
         
         <!-- Header de la página -->
-        <div class="container-fluid px-4 pt-5">
-            <div class="row">
-                <div class="col-12">
-                    <div class="page-header mb-3">
-                        <h1 class="page-title">
-                            <i class="bi bi-person-workspace me-3"></i>
-                            Gestión de Docentes
-                        </h1>
-                        <p class="page-subtitle">
-                            Administra la información de los profesores del sistema
-                        </p>
-                    </div>
-                </div>
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="bi bi-person-workspace me-3"></i>
+                    Gestión de Docentes
+                </h1>
+                <p class="page-subtitle">
+                    Administra la información de los profesores del sistema
+                </p>
             </div>
-        </div>
 
         <!-- Contenido principal -->
-        <div class="container-fluid px-4">
             <!-- Panel de filtros -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="filter-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-search me-2 text-primary"></i>
-                                    Buscar Docente
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-8">
-                                        <label for="docente" class="form-label fw-semibold">
-                                            <i class="bi bi-person-search me-1"></i>
-                                            Buscar por nombre:
-                                        </label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control border-secondary" id="docente" placeholder="Buscar docente...">
-                                            <span class="input-group-text bg-light border-secondary">
-                                                <i class="bi bi-search text-primary"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4 d-flex align-items-end pt-4">
-                                        <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addModal">
-                                            <i class="bi bi-plus-lg me-2"></i>
-                                            Agregar Docente
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="tch-filters">
+                <div class="tch-filter">
+                    <label for="docente" class="tch-filter__label">
+                        Buscar por nombre
+                    </label>
+                    <input type="text" class="tch-filter__input" id="docente" placeholder="Buscar docente...">
+                </div>
+                
+                <div class="tch-actions">
+                    <button class="tch-btn tch-btn--primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Agregar Docente
+                    </button>
                 </div>
             </div>
 
             <!-- Tabla de docentes -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="table-card">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light border-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-list-check me-2 text-primary"></i>
-                                    Docentes Registrados
-                                </h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th class="fw-semibold">ID</th>
-                                                <th class="fw-semibold">Apellido Paterno</th>
-                                                <th class="fw-semibold">Apellido Materno</th>
-                                                <th class="fw-semibold">Nombre(s)</th>
-                                                <th class="fw-semibold">Estado</th>
-                                                <th class="fw-semibold">Grupo</th>
-                                                <th class="fw-semibold">Materia</th>
-                                                <th class="fw-semibold text-center">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="teachersBody">
+            <div class="tch-table-wrap">
+                <div class="tch-table-header">
+                    <h5 class="tch-table-title">
+                        <i class="bi bi-list-check me-2"></i>
+                        Docentes Registrados
+                    </h5>
+                </div>
+                <div class="tch-table-responsive">
+                    <table class="tch-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Apellido Paterno</th>
+                                <th>Apellido Materno</th>
+                                <th>Nombre(s)</th>
+                                <th>Estado</th>
+                                <th>Grupo</th>
+                                <th>Materia</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachersBody">
                                             <?php
                                             if ($resultado && $resultado->num_rows > 0) {
                                                 while($fila = $resultado->fetch_assoc()){
@@ -169,11 +145,11 @@ if (!$resultado) {
                                                 <td>
                                                     <?php
                                                     if ($fila['status'] == 'Activo') {
-                                                        echo '<span class="badge bg-success">' . htmlspecialchars($fila['status']) . '</span>';
+                                                        echo '<span class="tch-badge tch-badge--active">' . htmlspecialchars($fila['status']) . '</span>';
                                                     } elseif ($fila['status'] == 'Inactivo') {
-                                                        echo '<span class="badge bg-danger">' . htmlspecialchars($fila['status']) . '</span>';
+                                                        echo '<span class="tch-badge tch-badge--inactive">' . htmlspecialchars($fila['status']) . '</span>';
                                                     } else {
-                                                        echo '<span class="badge bg-secondary">' . htmlspecialchars($fila['status']) . '</span>'; 
+                                                        echo '<span class="tch-badge tch-badge--info">' . htmlspecialchars($fila['status']) . '</span>'; 
                                                     }
                                                     ?>
                                                 </td>
@@ -184,7 +160,7 @@ if (!$resultado) {
                                                         $gruposArray = explode(',', $grupos);
                                                         foreach ($gruposArray as $grupo) {
                                                             if (!empty(trim($grupo))) {
-                                                                echo '<span class="badge text-white me-1" style="background-color: #192E4E;">' . htmlspecialchars(trim($grupo)) . '</span>';
+                                                                echo '<span class="tch-badge tch-badge--institutional me-1">' . htmlspecialchars(trim($grupo)) . '</span>';
                                                             }
                                                         }
                                                     } else {
@@ -194,14 +170,25 @@ if (!$resultado) {
                                                 </td>
                                                 <td>
                                                     <?php
-                                                    $materias = $fila['materias'];
-                                                    if (!empty($materias)) {
-                                                        $materiasArray = explode(',', $materias);
-                                                        $materiasLimitadas = array_slice($materiasArray, 0); // Solo mostrar 3
-                                                        foreach ($materiasLimitadas as $materia) {
-                                                            if (!empty(trim($materia))) {
-                                                                echo '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' . htmlspecialchars(trim($materia)) . '</span>';
-                                                            }
+                                                    $materiasData = $fila['materias_data'];
+                                                    if (!empty($materiasData)) {
+                                                        $materiasArray = explode('|||', $materiasData);
+                                                        foreach ($materiasArray as $materiaStr) {
+                                                            if (empty(trim($materiaStr))) continue;
+                                                            list($idDFM, $idSubject, $materiaName) = explode(':', $materiaStr);
+                                                            $idDFM = intval($idDFM);
+                                                            $idSubject = intval($idSubject);
+                                                            $materiaName = htmlspecialchars(trim($materiaName));
+                                                            echo '<span class="tch-badge tch-badge--institutional me-1 mb-1 tch-badge--clickable" '
+                                                                . 'data-iddfm="' . $idDFM . '" '
+                                                                . 'data-idsubject="' . $idSubject . '" '
+                                                                . 'data-subjectname="' . $materiaName . '" '
+                                                                . 'data-idteacher="' . $fila['idTeacher'] . '" '
+                                                                . 'data-teachername="' . htmlspecialchars(trim($fila['names'] . ' ' . $fila['lastnamePa'])) . '" '
+                                                                . 'title="Editar materia: ' . $materiaName . '">'
+                                                                . $materiaName
+                                                                . ' <i class="bi bi-pencil-fill tch-badge__edit"></i>'
+                                                                . '</span>';
                                                         }
                                                     } else {
                                                         echo '<span class="text-muted">Sin materias</span>';
@@ -209,8 +196,8 @@ if (!$resultado) {
                                                     ?>
                                                 </td>
                                                 <td class="text-center">
-                                                    <div class="btn-group" role="group" aria-label="Acciones">
-                                                        <button class="btn btn-sm btn-outline-info btn-ver" 
+                                                    <div style="display: flex; gap: 4px; justify-content: center;">
+                                                        <button class="tch-btn tch-btn--sm btn-ver" 
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#showModal" 
                                                             data-id="<?php echo $fila['idTeacher']; ?>"
@@ -219,7 +206,7 @@ if (!$resultado) {
                                                             data-materno="<?php echo htmlspecialchars($fila['lastnameMa']); ?>"
                                                             data-status="<?php echo htmlspecialchars($fila['status']); ?>"
                                                             data-grupos="<?php echo htmlspecialchars($fila['grupos'] ?? ''); ?>"
-                                                            data-materias="<?php echo htmlspecialchars($fila['materias'] ?? ''); ?>"
+                                                            data-materias="<?php echo htmlspecialchars($fila['materias_data'] ?? ''); ?>"
                                                             data-ine="<?php echo htmlspecialchars($fila['ine'] ?? ''); ?>"
                                                             data-cedula="<?php echo htmlspecialchars($fila['profesionalID'] ?? ''); ?>"
                                                             data-telefono="<?php echo htmlspecialchars($fila['phone'] ?? ''); ?>"
@@ -232,13 +219,12 @@ if (!$resultado) {
                                                             title="Ver detalles">
                                                             <i class="bi bi-eye-fill"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-warning btn-editar" 
+                                                        <button class="tch-btn tch-btn--sm btn-outline-warning btn-editar" 
                                                             data-id="<?php echo $fila['idTeacher']; ?>"
                                                             data-nombres="<?php echo htmlspecialchars($fila['names']); ?>"
                                                             data-paterno="<?php echo htmlspecialchars($fila['lastnamePa']); ?>"
                                                             data-materno="<?php echo htmlspecialchars($fila['lastnameMa']); ?>"
                                                             data-status="<?php echo htmlspecialchars($fila['status']); ?>"
-                                                            data-status-id="<?php echo htmlspecialchars($fila['idTeacherStatus']); ?>"
                                                             data-ine="<?php echo htmlspecialchars($fila['ine'] ?? ''); ?>"
                                                             data-cedula="<?php echo htmlspecialchars($fila['profesionalID'] ?? ''); ?>"
                                                             data-telefono="<?php echo htmlspecialchars($fila['phone'] ?? ''); ?>"
@@ -249,7 +235,7 @@ if (!$resultado) {
                                                             title="Editar docente">
                                                             <i class="bi bi-pencil-fill"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-danger btn-eliminar" 
+                                                        <button class="tch-btn tch-btn--sm btn-eliminar" 
                                                             data-id="<?php echo $fila['idTeacher']; ?>"
                                                             data-nombres="<?php echo htmlspecialchars($fila['names']); ?>"
                                                             data-paterno="<?php echo htmlspecialchars($fila['lastnamePa']); ?>"
@@ -271,19 +257,15 @@ if (!$resultado) {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
     <!-- END MAIN CONTENT --> 
 
     <!-- Modal para mostrar detalles del docente -->
-    <div class="modal fade" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+    <div class="modal fade tch-modal" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="showModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="showModalLabel">
                         <i class="bi bi-person-circle me-2"></i>
                         Información del Docente
                     </h5>
@@ -293,111 +275,111 @@ if (!$resultado) {
                     <div class="row g-3">
                         <!-- Información Personal -->
                         <div class="col-12">
-                            <h6 class="text-black border-bottom pb-2 mb-3">
+                            <h6>
                                 <i class="bi bi-person-badge me-2"></i>
                                 Datos Personales
                             </h6>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold text-muted">ID:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-id">-</p>
+                            <label class="form-label">ID:</label>
+                            <p class="form-control-plaintext" id="modal-id">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Nombres:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-nombres">-</p>
+                            <label class="form-label">Nombres:</label>
+                            <p class="form-control-plaintext" id="modal-nombres">-</p>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold text-muted">Estado:</label>
-                            <div class="border rounded px-3 py-2 bg-light d-flex align-items-center" id="modal-status">-</div>
+                            <label class="form-label">Estado:</label>
+                            <div class="form-control-plaintext" id="modal-status">-</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Apellido Paterno:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-paterno">-</p>
+                            <label class="form-label">Apellido Paterno:</label>
+                            <p class="form-control-plaintext" id="modal-paterno">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Apellido Materno:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-materno">-</p>
+                            <label class="form-label">Apellido Materno:</label>
+                            <p class="form-control-plaintext" id="modal-materno">-</p>
                         </div>
                         
                         <!-- Información de Contacto -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-black border-bottom pb-2 mb-3">
+                            <h6>
                                 <i class="bi bi-telephone me-2"></i>
                                 Información de Contacto
                             </h6>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Teléfono:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-telefono">-</p>
+                            <label class="form-label">Teléfono:</label>
+                            <p class="form-control-plaintext" id="modal-telefono">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Email:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-email">-</p>
+                            <label class="form-label">Email:</label>
+                            <p class="form-control-plaintext" id="modal-email">-</p>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-muted">Dirección:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-direccion">-</p>
+                            <label class="form-label">Dirección:</label>
+                            <p class="form-control-plaintext" id="modal-direccion">-</p>
                         </div>
                         
                         <!-- Información Profesional -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-black border-bottom pb-2 mb-3">
+                            <h6>
                                 <i class="bi bi-briefcase me-2"></i>
                                 Información Profesional
                             </h6>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Cédula Profesional:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-cedula">-</p>
+                            <label class="form-label">Cédula Profesional:</label>
+                            <p class="form-control-plaintext" id="modal-cedula">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">INE:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-ine">-</p>
+                            <label class="form-label">INE:</label>
+                            <p class="form-control-plaintext" id="modal-ine">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Tipo de Docente:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-tipo">-</p>
+                            <label class="form-label">Tipo de Docente:</label>
+                            <p class="form-control-plaintext" id="modal-tipo">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Género:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-genero">-</p>
+                            <label class="form-label">Género:</label>
+                            <p class="form-control-plaintext" id="modal-genero">-</p>
                         </div>
                         
                         <!-- Asignaciones -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-black border-bottom pb-2 mb-3">
+                            <h6>
                                 <i class="bi bi-clipboard-check me-2"></i>
                                 Asignaciones Actuales
                             </h6>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Grupos:</label>
-                            <div class="border rounded px-3 py-2 bg-light" id="modal-grupos">-</div>
+                            <label class="form-label">Grupos:</label>
+                            <div class="form-control-plaintext" id="modal-grupos">-</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Materias:</label>
-                            <div class="border rounded px-3 py-2 bg-light" id="modal-materias">-</div>
+                            <label class="form-label">Materias:</label>
+                            <div class="form-control-plaintext" id="modal-materias">-</div>
                         </div>
                         
                         <!-- Información de Usuario -->
                         <div class="col-12 mt-4">
-                            <h6 class="text-black border-bottom pb-2 mb-3">
+                            <h6>
                                 <i class="bi bi-key me-2"></i>
                                 Credenciales de Acceso
                             </h6>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Usuario:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-username">-</p>
+                            <label class="form-label">Usuario:</label>
+                            <p class="form-control-plaintext" id="modal-username">-</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Contraseña:</label>
-                            <p class="form-control-plaintext border rounded px-3 py-2 bg-light" id="modal-password">-</p>
+                            <label class="form-label">Contraseña:</label>
+                            <p class="form-control-plaintext" id="modal-password">-</p>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer">
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>
                         Cerrar
                     </button>
@@ -407,11 +389,11 @@ if (!$resultado) {
     </div>
 
     <!-- Modal para agregar docente -->
-    <div class="modal fade modal-lg" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal fade tch-modal" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="addModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">
                         <i class="bi bi-person-plus me-2"></i>
                         Agregar Docente
                     </h5>
@@ -419,44 +401,45 @@ if (!$resultado) {
                 </div>
                 <div class="modal-body">
                     <form action="addTeacher.php" method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                         <div class="row g-3">
                             <!-- Información Personal -->
                             <div class="col-12">
-                                <h6 class="text-black border-bottom pb-2 mb-3">
+                                <h6>
                                     <i class="bi bi-person-badge me-2"></i>
                                     Datos Personales
                                 </h6>
                             </div>
                             <div class="col-md-4">
-                                <label for="addName" class="form-label fw-semibold">
+                                <label for="addName" class="form-label">
                                     <i class="bi bi-person me-1"></i>
                                     Nombre(s):
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addName" name="txtName" required>
+                                <input type="text" class="form-control" id="addName" name="txtName" required>
                                 <div class="invalid-feedback">Por favor ingrese el nombre.</div>
                             </div>
                             <div class="col-md-4">
-                                <label for="addLastnamePa" class="form-label fw-semibold">
+                                <label for="addLastnamePa" class="form-label">
                                     <i class="bi bi-person me-1"></i>
                                     Apellido Paterno:
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addLastnamePa" name="txtLastnamePa" required>
+                                <input type="text" class="form-control" id="addLastnamePa" name="txtLastnamePa" required>
                                 <div class="invalid-feedback">Por favor ingrese el apellido paterno.</div>
                             </div>
                             <div class="col-md-4">
-                                <label for="addLastnameMa" class="form-label fw-semibold">
+                                <label for="addLastnameMa" class="form-label">
                                     <i class="bi bi-person me-1"></i>
                                     Apellido Materno:
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addLastnameMa" name="txtLastnameMa" required>
+                                <input type="text" class="form-control" id="addLastnameMa" name="txtLastnameMa" required>
                                 <div class="invalid-feedback">Por favor ingrese el apellido materno.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="addGender" class="form-label fw-semibold">
+                                <label for="addGender" class="form-label">
                                     <i class="bi bi-gender-ambiguous me-1"></i>
                                     Género:
                                 </label>
-                                <select class="form-select border-secondary" id="addGender" name="txtGender" required>
+                                <select class="form-select" id="addGender" name="txtGender" required>
                                     <option value="">Seleccione...</option>
                                     <option value="Masculino">Masculino</option>
                                     <option value="Femenino">Femenino</option>
@@ -464,11 +447,11 @@ if (!$resultado) {
                                 <div class="invalid-feedback">Por favor seleccione el género.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="addTypeTeacher" class="form-label fw-semibold">
+                                <label for="addTypeTeacher" class="form-label">
                                     <i class="bi bi-mortarboard me-1"></i>
                                     Tipo de Docente:
                                 </label>
-                                <select class="form-select border-secondary" id="addTypeTeacher" name="txtTypeTeacher" required>
+                                <select class="form-select" id="addTypeTeacher" name="txtTypeTeacher" required>
                                     <option value="">Seleccione...</option>
                                     <option value="ME">Maestro Especial</option>
                                     <option value="MS">Maestro de Escolarizado</option>
@@ -478,67 +461,67 @@ if (!$resultado) {
 
                             <!-- Información Profesional -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-black border-bottom pb-2 mb-3">
+                                <h6>
                                     <i class="bi bi-briefcase me-2"></i>
                                     Información Profesional
                                 </h6>
                             </div>
                             <div class="col-md-6">
-                                <label for="addIne" class="form-label fw-semibold">
+                                <label for="addIne" class="form-label">
                                     <i class="bi bi-card-heading me-1"></i>
                                     INE:
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addIne" name="txtIne" required>
+                                <input type="text" class="form-control" id="addIne" name="txtIne" required>
                                 <div class="invalid-feedback">Por favor ingrese el número de INE.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="addProfesional" class="form-label fw-semibold">
+                                <label for="addProfesional" class="form-label">
                                     <i class="bi bi-award me-1"></i>
                                     Cédula Profesional:
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addProfesional" name="txtProfesional" required>
+                                <input type="text" class="form-control" id="addProfesional" name="txtProfesional" required>
                                 <div class="invalid-feedback">Por favor ingrese la cédula profesional.</div>
                             </div>
 
                             <!-- Información de Contacto -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-black border-bottom pb-2 mb-3">
+                                <h6>
                                     <i class="bi bi-telephone me-2"></i>
                                     Información de Contacto
                                 </h6>
                             </div>
                             <div class="col-md-4">
-                                <label for="addPhone" class="form-label fw-semibold">
+                                <label for="addPhone" class="form-label">
                                     <i class="bi bi-telephone me-1"></i>
                                     Teléfono:
                                 </label>
-                                <input type="tel" class="form-control border-secondary" id="addPhone" name="txtPhone" required>
+                                <input type="tel" class="form-control" id="addPhone" name="txtPhone" required>
                                 <div class="invalid-feedback">Por favor ingrese el teléfono.</div>
                             </div>
                             <div class="col-md-4">
-                                <label for="addEmail" class="form-label fw-semibold">
+                                <label for="addEmail" class="form-label">
                                     <i class="bi bi-envelope me-1"></i>
                                     Email:
                                 </label>
-                                <input type="email" class="form-control border-secondary" id="addEmail" name="txtEmail" required>
+                                <input type="email" class="form-control" id="addEmail" name="txtEmail" required>
                                 <div class="invalid-feedback">Por favor ingrese un email válido.</div>
                             </div>
                             <div class="col-md-4">
-                                <label for="addAddress" class="form-label fw-semibold">
+                                <label for="addAddress" class="form-label">
                                     <i class="bi bi-geo-alt me-1"></i>
                                     Dirección:
                                 </label>
-                                <input type="text" class="form-control border-secondary" id="addAddress" name="txtAddress" required>
+                                <input type="text" class="form-control" id="addAddress" name="txtAddress" required>
                                 <div class="invalid-feedback">Por favor ingrese la dirección.</div>
                             </div>
                         </div>
 
-                        <div class="modal-footer border-0 bg-light mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <div class="modal-footer mt-4">
+                            <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
                                 <i class="bi bi-x-circle me-1"></i>
                                 Cancelar
                             </button>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="tch-btn tch-btn--primary">
                                 <i class="bi bi-floppy me-1"></i>
                                 Guardar Docente
                             </button>
@@ -550,123 +533,101 @@ if (!$resultado) {
     </div> 
 
     <!-- Modal para editar docente -->
-    <div class="modal fade modal-lg" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade tch-modal" id="editTeacherModal" tabindex="-1" aria-labelledby="editTeacherModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="editModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
-                        <i class="bi bi-pencil me-2"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTeacherModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>
                         Editar Docente
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="updateTeacher.php" method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                         <input type="hidden" id="edit-id" name="teacherId">
                         <div class="row g-3">
                             <!-- Información Personal -->
                             <div class="col-12">
-                                <h6 class="text-black mb-3">
-                                    <i class="bi bi-person-lines-fill me-2"></i>Información Personal
-                                </h6>
+                                <h6><i class="bi bi-person-badge me-2"></i>Datos Personales</h6>
                             </div>
-                            <div class="col-md-6">
-                                <label for="edit-nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
+                            <div class="col-md-4">
+                                <label for="edit-nombres" class="form-label">Nombre(s):</label>
                                 <input type="text" class="form-control" id="edit-nombres" name="txtName" required>
                                 <div class="invalid-feedback">Por favor ingrese los nombres.</div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="edit-apellido-paterno" class="form-label">Apellido Paterno <span class="text-danger">*</span></label>
+                            <div class="col-md-4">
+                                <label for="edit-apellido-paterno" class="form-label">Apellido Paterno:</label>
                                 <input type="text" class="form-control" id="edit-apellido-paterno" name="txtLastnamePa" required>
                                 <div class="invalid-feedback">Por favor ingrese el apellido paterno.</div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="edit-apellido-materno" class="form-label">Apellido Materno <span class="text-danger">*</span></label>
+                            <div class="col-md-4">
+                                <label for="edit-apellido-materno" class="form-label">Apellido Materno:</label>
                                 <input type="text" class="form-control" id="edit-apellido-materno" name="txtLastnameMa" required>
                                 <div class="invalid-feedback">Por favor ingrese el apellido materno.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="edit-genero" class="form-label">Género <span class="text-danger">*</span></label>
+                                <label for="edit-genero" class="form-label">Género:</label>
                                 <select class="form-select" id="edit-genero" name="txtGender" required>
-                                    <option value="">Seleccionar género</option>
+                                    <option value="">Seleccione...</option>
                                     <option value="Masculino">Masculino</option>
                                     <option value="Femenino">Femenino</option>
                                 </select>
-                                <div class="invalid-feedback">Por favor seleccione un género.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-tipo-maestro" class="form-label">Tipo de Docente:</label>
+                                <select class="form-select" id="edit-tipo-maestro" name="txtTypeTeacher" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="ME">Maestro Especial</option>
+                                    <option value="MS">Maestro de Escolarizado</option>
+                                </select>
                             </div>
 
-                            <!-- Documentos e Identificación -->
+                            <!-- Información Profesional -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-black mb-3">
-                                    <i class="bi bi-file-text me-2"></i>Documentos e Identificación
-                                </h6>
+                                <h6><i class="bi bi-briefcase me-2"></i>Información Profesional</h6>
                             </div>
-                            <div class="col-md-6">
-                                <label for="edit-ine" class="form-label">INE <span class="text-danger">*</span></label>
+                            <div class="col-md-4">
+                                <label for="edit-ine" class="form-label">INE:</label>
                                 <input type="text" class="form-control" id="edit-ine" name="txtIne" required>
-                                <div class="invalid-feedback">Por favor ingrese el INE.</div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="edit-cedula" class="form-label">Cédula Profesional <span class="text-danger">*</span></label>
+                            <div class="col-md-4">
+                                <label for="edit-cedula" class="form-label">Cédula Profesional:</label>
                                 <input type="text" class="form-control" id="edit-cedula" name="txtProfesional" required>
-                                <div class="invalid-feedback">Por favor ingrese la cédula profesional.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="edit-status" class="form-label">Estado:</label>
+                                <select class="form-select" id="edit-status" name="txtStatus" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="1">Activo</option>
+                                    <option value="2">Inactivo</option>
+                                </select>
                             </div>
 
                             <!-- Información de Contacto -->
                             <div class="col-12 mt-4">
-                                <h6 class="text-black mb-3">
-                                    <i class="bi bi-envelope me-2"></i>Información de Contacto
-                                </h6>
+                                <h6><i class="bi bi-telephone me-2"></i>Información de Contacto</h6>
                             </div>
                             <div class="col-md-6">
-                                <label for="edit-telefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                                <label for="edit-telefono" class="form-label">Teléfono:</label>
                                 <input type="tel" class="form-control" id="edit-telefono" name="txtPhone" required>
-                                <div class="invalid-feedback">Por favor ingrese un teléfono válido.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="edit-email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <label for="edit-email" class="form-label">Email:</label>
                                 <input type="email" class="form-control" id="edit-email" name="txtEmail" required>
-                                <div class="invalid-feedback">Por favor ingrese un email válido.</div>
                             </div>
                             <div class="col-12">
-                                <label for="edit-direccion" class="form-label">Dirección <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="edit-direccion" name="txtAddress" rows="2" required></textarea>
-                                <div class="invalid-feedback">Por favor ingrese la dirección.</div>
-                            </div>
-
-                            <!-- Información Laboral -->
-                            <div class="col-12 mt-4">
-                                <h6 class="text-muted mb-3">
-                                    <i class="bi bi-briefcase me-2"></i>Información Laboral
-                                </h6>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="edit-tipo-maestro" class="form-label">Tipo de Maestro <span class="text-danger">*</span></label>
-                                <select class="form-select" id="edit-tipo-maestro" name="txtTypeTeacher" required>
-                                    <option value="">Seleccionar tipo</option>
-                                    <option value="ME">Maestro Especial</option>
-                                    <option value="MS">Maestro de Escolarizado</option>
-                                </select>
-                                <div class="invalid-feedback">Por favor seleccione un tipo.</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="edit-status" class="form-label">Estado <span class="text-danger">*</span></label>
-                                <select class="form-select" id="edit-status" name="txtStatus" required>
-                                    <option value="">Seleccionar estado</option>
-                                    <option value="1">Activo</option>
-                                    <option value="2">Inactivo</option>
-                                </select>
-                                <div class="invalid-feedback">Por favor seleccione un estado.</div>
+                                <label for="edit-direccion" class="form-label">Dirección:</label>
+                                <input type="text" class="form-control" id="edit-direccion" name="txtAddress" required>
                             </div>
                         </div>
-                        <div class="modal-footer border-0 pt-3">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-2"></i>
-                                Cancelar
+                        <div class="modal-footer mt-4">
+                            <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>
-                                Actualizar Docente
+                            <button type="submit" class="tch-btn tch-btn--primary">
+                                <i class="bi bi-check-circle me-1"></i> Actualizar Docente
                             </button>
                         </div>
                     </form>
@@ -675,12 +636,64 @@ if (!$resultado) {
         </div>
     </div>
 
-    <!-- Modal para eliminar docente -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <!-- Modal para editar materia del docente -->
+    <div class="modal fade tch-modal" id="editSubjectModal" tabindex="-1" aria-labelledby="editSubjectModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0" style="background-color: #192E4E;">
-                    <h5 class="modal-title text-white fw-bold" id="deleteModalLabel" style="font-family: 'League Spartan', sans-serif; font-size: 1.5rem;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">
+                        <i class="bi bi-book me-2"></i>
+                        Editar Materia
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="tch-modal__field">
+                        <label class="tch-modal__label">Docente</label>
+                        <div class="tch-modal__readonly" id="edit-teacher-name"></div>
+                    </div>
+                    <div class="tch-modal__field">
+                        <label class="tch-modal__label">Materia actual</label>
+                        <div class="tch-modal__readonly" id="edit-current-subject"></div>
+                    </div>
+                    <div class="tch-modal__field">
+                        <label for="edit-new-subject" class="tch-modal__label">Nueva materia</label>
+                        <select class="form-select" id="edit-new-subject" required>
+                            <option value="">Seleccionar materia</option>
+                            <?php
+                            $sqlSubjects = "SELECT idSubject, name FROM subjects ORDER BY name";
+                            $resultSubjects = $conexion->query($sqlSubjects);
+                            while ($subject = $resultSubjects->fetch_assoc()) {
+                                echo '<option value="' . $subject['idSubject'] . '">' . htmlspecialchars($subject['name']) . '</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <input type="hidden" id="edit-idDFM">
+                    <input type="hidden" id="edit-idTeacher">
+                    <input type="hidden" id="edit-idSubjectOld">
+                    <div id="editSubjectInfo" class="tch-modal__info"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="tch-btn tch-btn--primary" id="btnSaveSubject">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para eliminar docente -->
+    <div class="modal fade tch-modal tch-modal--delete" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         Confirmar Eliminación
                     </h5>
@@ -688,17 +701,17 @@ if (!$resultado) {
                 </div>
                 <div class="modal-body">
                     <div class="text-center">
-                        <i class="bi bi-person-x text-danger display-1 mb-3"></i>
+                        <i class="bi bi-person-x display-1 mb-3"></i>
                         <h5>¿Está seguro que desea eliminar este docente?</h5>
                         <p class="text-muted" id="delete-teacher-info">Esta acción no se puede deshacer.</p>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer">
+                    <button type="button" class="tch-btn tch-btn--outline" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-2"></i>
                         Cancelar
                     </button>
-                    <button type="button" class="btn" id="confirm-delete" style="background-color: #192E4E; color: white; border: none;">
+                    <button type="button" class="tch-btn tch-btn--danger" id="confirm-delete">
                         <i class="bi bi-trash me-2"></i>
                         Eliminar Docente
                     </button>
@@ -792,11 +805,11 @@ if (!$resultado) {
                     // Manejar el estado con badge
                     const statusElement = document.getElementById('modal-status');
                     if (data.status === 'Activo') {
-                        statusElement.innerHTML = '<span class="badge bg-success">Activo</span>';
+                        statusElement.innerHTML = '<span class="tch-badge tch-badge--active">Activo</span>';
                     } else if (data.status === 'Inactivo') {
-                        statusElement.innerHTML = '<span class="badge bg-danger">Inactivo</span>';
+                        statusElement.innerHTML = '<span class="tch-badge tch-badge--inactive">Inactivo</span>';
                     } else {
-                        statusElement.innerHTML = '<span class="badge bg-secondary">' + (data.status || '-') + '</span>';
+                        statusElement.innerHTML = '<span class="tch-badge tch-badge--info">' + (data.status || '-') + '</span>';
                     }
                     
                     // Manejar grupos con badges
@@ -804,7 +817,7 @@ if (!$resultado) {
                     if (data.grupos && data.grupos.trim()) {
                         const gruposArray = data.grupos.split(',');
                         gruposElement.innerHTML = gruposArray.map(grupo => 
-                            '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' + grupo.trim() + '</span>'
+                            '<span class="tch-badge tch-badge--institutional me-1 mb-1">' + grupo.trim() + '</span>'
                         ).join('');
                     } else {
                         gruposElement.innerHTML = '<span class="text-muted">Sin asignaciones</span>';
@@ -813,10 +826,12 @@ if (!$resultado) {
                     // Manejar materias con badges
                     const materiasElement = document.getElementById('modal-materias');
                     if (data.materias && data.materias.trim()) {
-                        const materiasArray = data.materias.split(',');
-                        materiasElement.innerHTML = materiasArray.map(materia => 
-                            '<span class="badge text-white me-1 mb-1" style="background-color: #192E4E;">' + materia.trim() + '</span>'
-                        ).join('');
+                        const materiasItems = data.materias.split('|||').filter(s => s.trim());
+                        materiasElement.innerHTML = materiasItems.map(item => {
+                            const parts = item.split(':');
+                            const name = parts.length >= 3 ? parts.slice(2).join(':').trim() : item.trim();
+                            return '<span class="tch-badge tch-badge--institutional me-1 mb-1">' + name + '</span>';
+                        }).join('');
                     } else {
                         materiasElement.innerHTML = '<span class="text-muted">Sin materias</span>';
                     }
@@ -835,38 +850,130 @@ if (!$resultado) {
                 });
             });
 
-            // Manejar botones de editar
-            document.querySelectorAll('.btn-editar').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const editModal = document.getElementById('editModal');
-                    if (!editModal) {
+            // Manejar clic en badges de materia para editar
+            document.querySelectorAll('.tch-badge--clickable').forEach(function(badge) {
+                badge.addEventListener('click', function() {
+                    var idDFM = this.dataset.iddfm;
+                    var idSubject = this.dataset.idsubject;
+                    var subjectName = this.dataset.subjectname;
+                    var idTeacher = this.dataset.idteacher;
+                    var teacherName = this.dataset.teachername;
+
+                    document.getElementById('edit-teacher-name').textContent = teacherName;
+                    document.getElementById('edit-current-subject').textContent = subjectName;
+                    document.getElementById('edit-idDFM').value = idDFM;
+                    document.getElementById('edit-idTeacher').value = idTeacher;
+                    document.getElementById('edit-idSubjectOld').value = idSubject;
+
+                    var select = document.getElementById('edit-new-subject');
+                    select.value = '';
+                    select.classList.remove('is-invalid', 'is-valid');
+                    document.getElementById('editSubjectInfo').innerHTML = '';
+
+                    var modal = new bootstrap.Modal(document.getElementById('editSubjectModal'));
+                    modal.show();
+                });
+            });
+
+            // Guardar cambio de materia
+            var btnSaveSubject = document.getElementById('btnSaveSubject');
+            if (btnSaveSubject) {
+                btnSaveSubject.addEventListener('click', function() {
+                    var select = document.getElementById('edit-new-subject');
+                    var idSubjectNew = select.value;
+
+                    if (!idSubjectNew) {
+                        select.classList.add('is-invalid');
+                        return;
+                    }
+                    select.classList.remove('is-invalid');
+
+                    var idDFM = document.getElementById('edit-idDFM').value;
+                    var idTeacher = document.getElementById('edit-idTeacher').value;
+                    var idSubjectOld = document.getElementById('edit-idSubjectOld').value;
+
+                    if (idSubjectNew === idSubjectOld) {
+                        document.getElementById('editSubjectInfo').innerHTML = '<div class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">La materia seleccionada es la misma que la actual.</div>';
                         return;
                     }
 
-                    console.log('Botón de editar clickeado'); // Debug
-                    
-                    // Llenar el formulario de edición usando getAttribute
-                    if(editModal.querySelector('#edit-id')) editModal.querySelector('#edit-id').value = this.getAttribute('data-id') || '';
-                    if(editModal.querySelector('#edit-nombres')) editModal.querySelector('#edit-nombres').value = this.getAttribute('data-nombres') || '';
-                    if(editModal.querySelector('#edit-apellido-paterno')) editModal.querySelector('#edit-apellido-paterno').value = this.getAttribute('data-paterno') || '';
-                    if(editModal.querySelector('#edit-apellido-materno')) editModal.querySelector('#edit-apellido-materno').value = this.getAttribute('data-materno') || '';
-                    if(editModal.querySelector('#edit-genero')) editModal.querySelector('#edit-genero').value = this.getAttribute('data-genero') || '';
-                    if(editModal.querySelector('#edit-ine')) editModal.querySelector('#edit-ine').value = this.getAttribute('data-ine') || '';
-                    if(editModal.querySelector('#edit-cedula')) editModal.querySelector('#edit-cedula').value = this.getAttribute('data-cedula') || '';
-                    if(editModal.querySelector('#edit-telefono')) editModal.querySelector('#edit-telefono').value = this.getAttribute('data-telefono') || '';
-                    if(editModal.querySelector('#edit-email')) editModal.querySelector('#edit-email').value = this.getAttribute('data-email') || '';
-                    if(editModal.querySelector('#edit-direccion')) editModal.querySelector('#edit-direccion').value = this.getAttribute('data-direccion') || '';
-                    if(editModal.querySelector('#edit-tipo-maestro')) editModal.querySelector('#edit-tipo-maestro').value = this.getAttribute('data-tipo') || '';
-                    if(editModal.querySelector('#edit-status')) editModal.querySelector('#edit-status').value = this.getAttribute('data-status-id') || '';
-                    
-                    // Limpiar validaciones previas
-                    const form = editModal.querySelector('form');
-                    if (form) {
-                        form.classList.remove('was-validated');
-                    }
+                    var self = this;
+                    self.disabled = true;
+                    self.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
 
-                    // Abrir el modal manualmente
-                    var modal = new bootstrap.Modal(editModal);
+                    fetch('updateTeacherSubject.php', {
+                        method: 'POST',
+                headers: {
+
+                            'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            idDFM: parseInt(idDFM),
+                            idSubjectNew: parseInt(idSubjectNew),
+                            idSubjectOld: parseInt(idSubjectOld),
+                            idTeacher: parseInt(idTeacher)
+                        })
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Materia actualizada',
+                                text: data.message,
+                                confirmButtonColor: '#192E4E'
+                            }).then(function() {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message,
+                                confirmButtonColor: '#192E4E'
+                            });
+                        }
+                    })
+                    .catch(function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de conexión',
+                            text: 'No se pudo conectar con el servidor',
+                            confirmButtonColor: '#192E4E'
+                        });
+                    })
+                    .finally(function() {
+                        self.disabled = false;
+                        self.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Cambios';
+                    });
+                });
+            }
+
+            // Manejar botones de editar docente
+            document.querySelectorAll('.btn-editar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const editTeacherModal = document.getElementById('editTeacherModal');
+                    if (!editTeacherModal) return;
+
+                    // Llenar el formulario
+                    const setVal = (id, val) => { const el = editTeacherModal.querySelector('#' + id); if (el) el.value = val || ''; };
+                    
+                    setVal('edit-id', this.getAttribute('data-id'));
+                    setVal('edit-nombres', this.getAttribute('data-nombres'));
+                    setVal('edit-apellido-paterno', this.getAttribute('data-paterno'));
+                    setVal('edit-apellido-materno', this.getAttribute('data-materno'));
+                    setVal('edit-genero', this.getAttribute('data-genero'));
+                    setVal('edit-tipo-maestro', this.getAttribute('data-tipo'));
+                    setVal('edit-ine', this.getAttribute('data-ine'));
+                    setVal('edit-cedula', this.getAttribute('data-cedula'));
+                    
+                    const statusVal = this.getAttribute('data-status');
+                    setVal('edit-status', statusVal === 'Activo' ? '1' : (statusVal === 'Inactivo' ? '2' : ''));
+                    
+                    setVal('edit-telefono', this.getAttribute('data-telefono'));
+                    setVal('edit-email', this.getAttribute('data-email'));
+                    setVal('edit-direccion', this.getAttribute('data-direccion'));
+
+                    var modal = new bootstrap.Modal(editTeacherModal);
                     modal.show();
                 });
             });
@@ -902,8 +1009,28 @@ if (!$resultado) {
             if (confirmDeleteBtn) {
                 confirmDeleteBtn.addEventListener('click', function() {
                     if (deleteTeacherId) {
-                        // Redirigir a la página de eliminación
-                        window.location.href = `deleteTeacher.php?id=${deleteTeacherId}`;
+                        // Redirigir a la página de eliminación usando POST
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = 'deleteTeacher.php';
+                        
+                        const inputId = document.createElement('input');
+                        inputId.type = 'hidden';
+                        inputId.name = 'id';
+                        inputId.value = deleteTeacherId;
+                        form.appendChild(inputId);
+
+                        const inputCsrf = document.createElement('input');
+                        inputCsrf.type = 'hidden';
+                        inputCsrf.name = 'csrf_token';
+                        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                        if(csrfMeta) {
+                            inputCsrf.value = csrfMeta.content;
+                        }
+                        form.appendChild(inputCsrf);
+
+                        document.body.appendChild(form);
+                        form.submit();
                     }
                 });
             }
