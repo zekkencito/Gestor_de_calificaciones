@@ -556,4 +556,192 @@
     font-size: var(--ds-text-xs);
     padding: 8px 8px;
   }
+
+  /* =========================================================
+     GRADES SUBJECT — teléfono: tabla → tarjeta por alumno
+     Solo gradesSubject.php. Sin JS. El renombrado de criterios
+     funciona porque los .criteria-header siguen en el DOM (chips).
+     ========================================================= */
+  .page-tch-gradesSubject .gra-table-responsive {
+    overflow-x: visible;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  .page-tch-gradesSubject .gra-table,
+  .page-tch-gradesSubject .gra-table thead,
+  .page-tch-gradesSubject .gra-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* -- Leyenda de criterios (fila 1 del thead) -- */
+  .page-tch-gradesSubject .gra-table thead tr:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: var(--ds-space-3);
+    background-color: var(--ds-gray-50);
+    border-bottom: 1px solid var(--ds-gray-200);
+  }
+
+  .page-tch-gradesSubject .gra-table thead tr:first-child th {
+    position: static;
+  }
+
+  /* Etiquetas de identidad redundantes en las tarjetas */
+  .page-tch-gradesSubject .gra-table thead tr:first-child th:nth-child(-n+4) {
+    display: none;
+  }
+
+  /* Chips de criterios (conservan dblclick → renombrar) */
+  .page-tch-gradesSubject .gra-table thead tr:first-child th.criteria-header {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 46px;
+    padding: 6px 10px;
+    font-size: var(--ds-text-sm);
+    color: var(--ds-primary-700);
+    background-color: var(--ds-white);
+    border: 1px solid var(--ds-gray-300);
+    border-radius: var(--ds-radius-sm);
+  }
+
+  /* Chip "Promedio" */
+  .page-tch-gradesSubject .gra-table thead tr:first-child th:last-child {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: var(--ds-text-sm);
+    color: var(--ds-gray-600);
+    background-color: var(--ds-white);
+    border: 1px solid var(--ds-gray-300);
+    border-radius: var(--ds-radius-sm);
+  }
+
+  /* -- Fila de porcentajes (fila 2 del thead) -- */
+  .page-tch-gradesSubject #percentageRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 6px;
+    padding: var(--ds-space-3);
+    background-color: var(--ds-white);
+    border-bottom: 1px solid var(--ds-gray-200);
+  }
+
+  .page-tch-gradesSubject #percentageRow th {
+    position: static;
+  }
+
+  .page-tch-gradesSubject #percentageRow .percentage-row-label {
+    flex: 1 0 100%;
+    padding: 0;
+    background: none;
+    font-size: var(--ds-text-sm);
+  }
+
+  .page-tch-gradesSubject #percentageRow th:not(.percentage-row-label) {
+    flex: 0 1 72px;
+    min-width: 64px;
+  }
+
+  /* El "-" final de la fila de porcentajes no aplica en tarjetas */
+  .page-tch-gradesSubject #percentageRow th:last-child {
+    display: none;
+  }
+
+  /* -- Tarjetas por alumno (tbody) -- */
+  .page-tch-gradesSubject .gra-table tbody {
+    display: block;
+    padding: var(--ds-space-3);
+    background-color: var(--ds-gray-50);
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 6px;
+    margin-bottom: var(--ds-space-3);
+    padding: var(--ds-space-3);
+    background-color: var(--ds-white);
+    border: 1px solid var(--ds-gray-200);
+    border-radius: var(--ds-radius-md);
+    transition: none;
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr:hover {
+    background-color: var(--ds-white);
+  }
+
+  /* Índice: la tarjeta ya delimita al alumno */
+  .page-tch-gradesSubject .gra-table tbody tr > td:first-child {
+    display: none;
+  }
+
+  /* Nombre del alumno: primera línea de la tarjeta */
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(2),
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(3),
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(4) {
+    order: -1;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 0;
+    text-align: left;
+    font-size: var(--ds-text-sm);
+    white-space: normal;
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(2) {
+    font-weight: var(--ds-font-semibold);
+    color: var(--ds-gray-800);
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(2)::after,
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(3)::after {
+    content: '\00a0';
+  }
+
+  /* Celdas de criterios: cajas numeradas debajo del nombre */
+  .page-tch-gradesSubject .gra-table tbody tr > td:nth-child(n+5):not(.promedio-cell) {
+    flex: 1 1 60px;
+    min-width: 60px;
+    padding: 2px;
+    text-align: center;
+  }
+
+  /* Promedio: su propia línea al final de la tarjeta */
+  .page-tch-gradesSubject .gra-table tbody tr > td.promedio-cell {
+    flex: 1 0 100%;
+    margin-top: var(--ds-space-1);
+    padding: var(--ds-space-2);
+    text-align: center;
+    font-size: var(--ds-text-base);
+    background-color: var(--ds-gray-50);
+    border-radius: var(--ds-radius-sm);
+  }
+
+  .page-tch-gradesSubject .gra-table tbody tr > td.promedio-cell::before {
+    content: 'Promedio';
+    display: block;
+    font-size: var(--ds-text-xs);
+    font-weight: var(--ds-font-semibold);
+    color: var(--ds-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+
+  /* Inputs más táctiles en tarjeta */
+  .page-tch-gradesSubject .gra-table tbody td .grade-input {
+    padding: 8px 4px;
+    font-size: var(--ds-text-base);
+  }
 }
