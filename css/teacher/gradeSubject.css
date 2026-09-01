@@ -524,7 +524,7 @@
    RESPONSIVE — gradesSubject.php
    ========================================================================== */
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
   .page-tch-grades .page-content,
   .page-tch-gradesSubject .page-content {
     padding: var(--ds-space-4);
