@@ -161,12 +161,12 @@ if ($selectedGroup) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Design System -->
-    <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/components.css">
-    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/design-system.css?v=5">
+    <link rel="stylesheet" href="../css/components.css?v=5">
+    <link rel="stylesheet" href="../css/layout.css?v=5">
     <!-- Page styles -->
-    <link rel="stylesheet" href="../css/teacher/list.css">
-    <link rel="stylesheet" href="../css/admin/student.css">
+    <link rel="stylesheet" href="../css/teacher/list.css?v=5">
+    <link rel="stylesheet" href="../css/admin/student.css?v=5">
     <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -186,26 +186,24 @@ if ($selectedGroup) {
             include "../layouts/headerTeacher.php"; 
         ?> 
         
-        <!-- Header de la página -->
+        <!-- Contenedor de la página -->
         <div class="page-content">
             <div class="page-header">
                 <h1 class="page-title">Lista de Alumnos</h1>
                 <p class="page-subtitle">Consulta y gestiona la información de tus estudiantes</p>
             </div>
 
-        <!-- Contenido principal -->
-        <div class="container-fluid px-4">
             <!-- Panel de filtros -->
             <div class="tch-filters">
                 <div class="tch-filter--info">
                     <div class="tch-filter__info-bar">
-                        <div>
-                            <i class="bi bi-calendar-date"></i> <strong>Año Escolar:</strong>
-                            <?php echo substr($currentSchoolYear['startDate'], 0, 4); ?>
+                        <div class="tch-info-item">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Año Escolar: <strong><?php echo substr($currentSchoolYear['startDate'], 0, 4); ?></strong></span>
                         </div>
-                        <div>
-                            <i class="bi bi-calendar3"></i> <strong>Trimestre:</strong>
-                            <?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>
+                        <div class="tch-info-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span>Trimestre: <strong><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></strong></span>
                         </div>
                     </div>
                 </div>

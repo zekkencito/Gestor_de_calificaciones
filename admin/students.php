@@ -102,12 +102,12 @@ if (!$resultado) {
     <title>Alumnos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/components.css">
-    <link rel="stylesheet" href="../css/layout.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/admin/time.css">
-    <link rel="stylesheet" href="../css/admin/student.css">
+    <link rel="stylesheet" href="../css/design-system.css?v=5">
+    <link rel="stylesheet" href="../css/components.css?v=5">
+    <link rel="stylesheet" href="../css/layout.css?v=5">
+    <link rel="stylesheet" href="../css/styles.css?v=5">
+    <link rel="stylesheet" href="../css/admin/time.css?v=5">
+    <link rel="stylesheet" href="../css/admin/student.css?v=5">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
     
@@ -474,7 +474,7 @@ if (!$resultado) {
                                     <select required name="txtSchoolYear" class="form-select border-secondary">
                                         <option value="">Seleccionar año</option>
                                         <?php
-                                        $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                                        $sqlYears = "SELECT idSchoolYear, LEFT(startDate, 4) as year FROM schoolYear ORDER BY startDate DESC";
                                         $resultYears = $conexion->query($sqlYears);
                                         while ($year = $resultYears->fetch_assoc()) {
                                             echo "<option value='" . $year['idSchoolYear'] . "'>" . $year['year'] . "</option>";
@@ -832,7 +832,7 @@ if (!$resultado) {
                                 <select class="form-select border-secondary" id="editSchoolYear" name="txtSchoolYear" required>
                                     <option value="">Seleccionar año</option>
                                     <?php
-                                    $sqlYears = "SELECT idSchoolYear, CONCAT(LEFT(startDate, 4), '-', LEFT(endDate, 4)) as year FROM schoolYear ORDER BY startDate DESC";
+                                    $sqlYears = "SELECT idSchoolYear, LEFT(startDate, 4) as year FROM schoolYear ORDER BY startDate DESC";
                                     $resultYears = $conexion->query($sqlYears);
                                     while ($year = $resultYears->fetch_assoc()) {
                                         echo "<option value='" . $year['idSchoolYear'] . "'>" . $year['year'] . "</option>";

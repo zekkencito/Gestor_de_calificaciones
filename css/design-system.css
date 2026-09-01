@@ -159,6 +159,14 @@
   --ds-sidebar-collapsed: 64px;
   --ds-header-height:     64px;
   --ds-breakpoint-mobile: 768px;
+
+  /* -----------------------------------------------------------------------
+     PATTERNS & TEXTURES
+     Trama de micropuntos azul marino suave para el fondo de páginas.
+     ----------------------------------------------------------------------- */
+  --ds-pattern-dots-light: radial-gradient(circle, rgba(25, 46, 78, 0.08) 1.2px, transparent 1.2px);
+  --ds-pattern-dots-dark: radial-gradient(circle, rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+  --ds-pattern-size: 22px 22px;
 }
 
 /* =========================================================================

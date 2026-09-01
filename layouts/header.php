@@ -18,9 +18,9 @@ $result = $stmt->get_result();
 $user_data = $result->fetch_assoc();
 ?>
 <!-- Design System -->
-<link rel="stylesheet" href="../css/design-system.css">
-<link rel="stylesheet" href="../css/components.css">
-<link rel="stylesheet" href="../css/layout.css">
+<link rel="stylesheet" href="../css/design-system.css?v=5">
+<link rel="stylesheet" href="../css/components.css?v=5">
+<link rel="stylesheet" href="../css/layout.css?v=5">
 <link rel="icon" href="../img/logo.ico">
 <header class="ds-header">
     <!-- Hamburger toggle (mobile only) -->

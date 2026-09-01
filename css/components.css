@@ -9,15 +9,16 @@
    BOTONES
    
    Jerarquía: primary > secondary > ghost > danger > icon-only
-   Padding con escala de spacing. Transiciones con easing físico.
+   Padding con escala de spacing. Transiciones con easing físico (Emil Kowalski).
    ========================================================================= */
 
-.ds-btn {
+.ds-btn,
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--ds-space-2);
-  padding: var(--ds-space-2) var(--ds-space-4);
+  padding: 8px 16px;
   font-family: var(--ds-font-family);
   font-size: var(--ds-text-sm);
   font-weight: var(--ds-font-semibold);
@@ -27,65 +28,93 @@
   border-radius: var(--ds-radius-md);
   cursor: pointer;
   transition:
-    background-color var(--ds-duration-fast) var(--ds-ease-out),
-    border-color var(--ds-duration-fast) var(--ds-ease-out),
-    color var(--ds-duration-fast) var(--ds-ease-out),
-    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-user-select: none;
   user-select: none;
+  letter-spacing: 0.01em;
 }
 
-.ds-btn:focus-visible {
+.ds-btn:focus-visible,
+.btn:focus-visible {
   outline: none;
-  box-shadow: var(--ds-shadow-focus);
+  box-shadow: 0 0 0 2px var(--ds-white, #fff), 0 0 0 4px var(--ds-primary-500, #3562a3);
 }
 
 .ds-btn:disabled,
-.ds-btn[disabled] {
+.ds-btn[disabled],
+.btn:disabled,
+.btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .ds-btn i,
-.ds-btn .bi {
-  font-size: 1em;
+.ds-btn .bi,
+.btn i,
+.btn .bi {
+  font-size: 1.05em;
   line-height: 1;
 }
 
 /* — Primary — */
-.ds-btn--primary {
+.ds-btn--primary,
+.btn-primary {
   background-color: var(--ds-primary-800);
   border-color: var(--ds-primary-800);
   color: var(--ds-white);
+  box-shadow: 0 1px 3px rgba(25, 46, 78, 0.12);
 }
 
-.ds-btn--primary:hover {
+.ds-btn--primary:hover,
+.btn-primary:hover {
   background-color: var(--ds-primary-700);
   border-color: var(--ds-primary-700);
   color: var(--ds-white);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 46, 78, 0.22);
 }
 
-.ds-btn--primary:active {
+.ds-btn--primary:active,
+.btn-primary:active {
   background-color: var(--ds-primary-900);
   border-color: var(--ds-primary-900);
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 1px 2px rgba(25, 46, 78, 0.15);
 }
 
 /* — Secondary — */
-.ds-btn--secondary {
+.ds-btn--secondary,
+.btn-secondary,
+.btn-outline-secondary {
   background-color: var(--ds-white);
   border-color: var(--ds-gray-300);
   color: var(--ds-gray-700);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.ds-btn--secondary:hover {
+.ds-btn--secondary:hover,
+.btn-secondary:hover,
+.btn-outline-secondary:hover {
   background-color: var(--ds-gray-50);
   border-color: var(--ds-gray-400);
-  color: var(--ds-gray-800);
+  color: var(--ds-gray-900);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
 }
 
-.ds-btn--secondary:active {
+.ds-btn--secondary:active,
+.btn-secondary:active,
+.btn-outline-secondary:active {
   background-color: var(--ds-gray-100);
+  transform: scale(0.98) translateY(0);
+  box-shadow: none;
 }
 
 /* — Ghost — */
@@ -98,31 +127,84 @@
 .ds-btn--ghost:hover {
   background-color: var(--ds-primary-50);
   color: var(--ds-primary-800);
+  transform: translateY(-1px);
 }
 
 .ds-btn--ghost:active {
   background-color: var(--ds-primary-100);
+  transform: scale(0.98) translateY(0);
 }
 
 /* — Danger — */
-.ds-btn--danger {
+.ds-btn--danger,
+.btn-danger {
   background-color: var(--ds-error);
   border-color: var(--ds-error);
   color: var(--ds-white);
+  box-shadow: 0 1px 3px rgba(185, 28, 28, 0.15);
 }
 
-.ds-btn--danger:hover {
+.ds-btn--danger:hover,
+.btn-danger:hover {
   background-color: #991b1b;
   border-color: #991b1b;
   color: var(--ds-white);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.22);
 }
 
-.ds-btn--danger:active {
+.ds-btn--danger:active,
+.btn-danger:active {
   background-color: #7f1d1d;
+  border-color: #7f1d1d;
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 1px 2px rgba(185, 28, 28, 0.15);
 }
 
-.ds-btn--danger:focus-visible {
-  box-shadow: var(--ds-shadow-focus-error);
+.ds-btn--danger:focus-visible,
+.btn-danger:focus-visible {
+  box-shadow: 0 0 0 2px var(--ds-white), 0 0 0 4px var(--ds-error);
+}
+
+/* — Success — */
+.btn-success {
+  background-color: var(--ds-success);
+  border-color: var(--ds-success);
+  color: var(--ds-white);
+  box-shadow: 0 1px 3px rgba(26, 127, 75, 0.15);
+}
+
+.btn-success:hover {
+  background-color: #15663c;
+  border-color: #15663c;
+  color: var(--ds-white);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 127, 75, 0.22);
+}
+
+.btn-success:active {
+  background-color: #0f4c2c;
+  transform: scale(0.98) translateY(0);
+}
+
+/* — Outline Primary — */
+.btn-outline-primary {
+  background-color: transparent;
+  border-color: var(--ds-primary-800);
+  color: var(--ds-primary-800);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--ds-primary-800);
+  border-color: var(--ds-primary-800);
+  color: var(--ds-white);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 46, 78, 0.18);
+}
+
+.btn-outline-primary:active {
+  transform: scale(0.98) translateY(0);
+  background-color: var(--ds-primary-900);
 }
 
 /* — Icon Only — */
@@ -132,110 +214,135 @@
   color: var(--ds-gray-500);
   padding: var(--ds-space-2);
   border-radius: var(--ds-radius-sm);
+  transition: background-color 140ms var(--ds-ease-out), color 140ms var(--ds-ease-out), transform 120ms var(--ds-ease-out);
 }
 
 .ds-btn--icon:hover {
   background-color: var(--ds-gray-100);
   color: var(--ds-primary-700);
+  transform: scale(1.06);
 }
 
 .ds-btn--icon:active {
   background-color: var(--ds-gray-200);
+  transform: scale(0.92);
 }
 
 /* — Sizes — */
-.ds-btn--sm {
-  padding: var(--ds-space-1) var(--ds-space-3);
+.ds-btn--sm,
+.btn-sm {
+  padding: 5px 12px;
   font-size: var(--ds-text-xs);
   gap: var(--ds-space-1);
+  border-radius: var(--ds-radius-sm);
 }
 
-.ds-btn--lg {
-  padding: var(--ds-space-3) var(--ds-space-6);
+.ds-btn--lg,
+.btn-lg {
+  padding: 12px 24px;
   font-size: var(--ds-text-base);
+  border-radius: var(--ds-radius-md);
 }
 
 /* =========================================================================
    FORMULARIOS
    
-   Inputs y selects con focus rings accesibles.
+   Inputs y selects con focus rings accesibles estilo Login.
    Labels con peso y tamaño consistentes.
    ========================================================================= */
 
-.ds-label {
+.ds-label,
+.form-label {
   display: block;
   font-family: var(--ds-font-family);
   font-size: var(--ds-text-sm);
-  font-weight: var(--ds-font-medium);
+  font-weight: var(--ds-font-semibold);
   color: var(--ds-gray-700);
-  margin-bottom: var(--ds-space-1);
+  margin-bottom: 6px;
   line-height: var(--ds-leading-normal);
 }
 
 .ds-input,
-.ds-select {
+.ds-select,
+.form-control,
+.form-select {
   width: 100%;
-  padding: var(--ds-space-2) var(--ds-space-3);
+  padding: 10px 14px;
   font-family: var(--ds-font-family);
-  font-size: var(--ds-text-base);
+  font-size: var(--ds-text-sm);
   font-weight: var(--ds-font-regular);
   line-height: var(--ds-leading-normal);
   color: var(--ds-gray-900);
   background-color: var(--ds-white);
   border: 1px solid var(--ds-gray-300);
-  border-radius: var(--ds-radius-sm);
+  border-radius: var(--ds-radius-md);
   transition:
-    border-color var(--ds-duration-fast) var(--ds-ease-out),
-    box-shadow var(--ds-duration-fast) var(--ds-ease-out);
+    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-appearance: none;
   appearance: none;
 }
 
-.ds-input::placeholder {
+.ds-input::placeholder,
+.form-control::placeholder {
   color: var(--ds-gray-400);
-  font-weight: var(--ds-font-light);
+  font-weight: var(--ds-font-regular);
 }
 
 .ds-input:hover,
-.ds-select:hover {
-  border-color: var(--ds-gray-400);
+.ds-select:hover,
+.form-control:hover,
+.form-select:hover {
+  border-color: #94a3b8;
 }
 
 .ds-input:focus,
-.ds-select:focus {
+.ds-select:focus,
+.form-control:focus,
+.form-select:focus {
   outline: none;
-  border-color: var(--ds-primary-500);
-  box-shadow: var(--ds-shadow-focus);
+  border-color: var(--ds-primary-800);
+  box-shadow: 0 0 0 3px rgba(25, 46, 78, 0.12);
+  background-color: var(--ds-white);
 }
 
 .ds-input--error,
-.ds-select--error {
+.ds-select--error,
+.form-control.is-invalid {
   border-color: var(--ds-error);
 }
 
 .ds-input--error:focus,
-.ds-select--error:focus {
-  box-shadow: var(--ds-shadow-focus-error);
+.ds-select--error:focus,
+.form-control.is-invalid:focus {
+  border-color: var(--ds-error);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
 }
 
 .ds-input:disabled,
-.ds-select:disabled {
+.ds-select:disabled,
+.form-control:disabled,
+.form-select:disabled {
   background-color: var(--ds-gray-50);
   color: var(--ds-gray-400);
   cursor: not-allowed;
+  border-color: var(--ds-gray-200);
 }
 
 /* Select arrow */
-.ds-select {
+.ds-select,
+.form-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235a6070' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
+  background-position: right 0.85rem center;
   background-size: 14px 10px;
   padding-right: 2.5rem;
 }
 
 /* Form group */
-.ds-form-group {
+.ds-form-group,
+.mb-3 {
   margin-bottom: var(--ds-space-4);
 }
 
@@ -411,26 +518,31 @@
 /* =========================================================================
    CARDS
    
-   Contenedor genérico. Borde sutil, sin sombra exagerada.
-   Profundidad de contraste, no de elevación.
+   Contenedor refinado con elevación sutil y borde estructurado.
    ========================================================================= */
 
-.ds-card {
+.ds-card,
+.card {
   background-color: var(--ds-white);
-  border: 1px solid var(--ds-gray-200);
+  border: 1px solid rgba(25, 46, 78, 0.08);
   border-radius: var(--ds-radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 14px rgba(25, 46, 78, 0.04);
   overflow: hidden;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease;
 }
 
-.ds-card__header {
+.ds-card__header,
+.card-header {
   padding: var(--ds-space-4) var(--ds-space-5);
   border-bottom: 1px solid var(--ds-gray-100);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background-color: var(--ds-white);
 }
 
-.ds-card__title {
+.ds-card__title,
+.card-title {
   font-size: var(--ds-text-lg);
   font-weight: var(--ds-font-semibold);
   color: var(--ds-gray-900);
@@ -440,7 +552,8 @@
   gap: var(--ds-space-2);
 }
 
-.ds-card__body {
+.ds-card__body,
+.card-body {
   padding: var(--ds-space-5);
 }
 
@@ -448,7 +561,8 @@
   padding: 0;
 }
 
-.ds-card__footer {
+.ds-card__footer,
+.card-footer {
   padding: var(--ds-space-3) var(--ds-space-5);
   border-top: 1px solid var(--ds-gray-100);
   background-color: var(--ds-gray-50);
@@ -494,45 +608,93 @@
 /* =========================================================================
    MODAL OVERRIDES
    
-   Mejoras para los modales de Bootstrap sin romper funcionalidad.
+   Modales institucionales con cabecera en gradiente marino y micro-trama.
    ========================================================================= */
 
-.ds-modal .modal-content {
-  border: none;
-  border-radius: var(--ds-radius-lg);
-  box-shadow: var(--ds-shadow-xl);
+.ds-modal .modal-content,
+.modal-content {
+  border: 1px solid rgba(25, 46, 78, 0.1);
+  border-radius: var(--ds-radius-xl, 14px);
+  box-shadow: 0 16px 40px rgba(12, 22, 36, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
-.ds-modal .modal-header {
-  background-color: var(--ds-primary-800);
+.ds-modal .modal-header,
+.modal-header {
+  background: linear-gradient(135deg, #0c1624 0%, #112038 45%, #192E4E 100%);
   color: var(--ds-white);
   border-bottom: none;
   padding: var(--ds-space-4) var(--ds-space-5);
+  position: relative;
 }
 
-.ds-modal .modal-title {
-  font-family: var(--ds-font-family);
-  font-size: var(--ds-text-lg);
-  font-weight: var(--ds-font-semibold);
-  color: var(--ds-white);
+.ds-modal .modal-header::before,
+.modal-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
 }
 
-.ds-modal .modal-header .btn-close {
-  filter: brightness(0) invert(1);
-  opacity: 0.7;
-  transition: opacity var(--ds-duration-fast) var(--ds-ease-out);
+.ds-modal .modal-title,
+.modal-title,
+.modal-header .modal-title,
+.modal-header h1,
+.modal-header h2,
+.modal-header h3,
+.modal-header h4,
+.modal-header h5,
+.modal-header h6,
+.modal-header #tituloModal {
+  font-family: var(--ds-font-family) !important;
+  font-size: var(--ds-text-lg) !important;
+  font-weight: var(--ds-font-semibold) !important;
+  color: #ffffff !important;
+  position: relative;
+  z-index: 1;
 }
 
-.ds-modal .modal-header .btn-close:hover {
-  opacity: 1;
+.ds-modal .modal-header i,
+.ds-modal .modal-header .bi,
+.modal-header i,
+.modal-header .bi,
+.modal-header .modal-title i,
+.modal-header .modal-title .bi {
+  color: #ffffff !important;
+  position: relative;
+  z-index: 1;
 }
 
-.ds-modal .modal-body {
+.ds-modal .modal-header .btn-close,
+.modal-header .btn-close {
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.8 !important;
+  transition: opacity 120ms var(--ds-ease-out), transform 120ms var(--ds-ease-out);
+  position: relative;
+  z-index: 1;
+}
+
+.ds-modal .modal-header .btn-close:hover,
+.modal-header .btn-close:hover {
+  opacity: 1 !important;
+  transform: scale(1.08);
+}
+
+.ds-modal .modal-header .btn-close:active,
+.modal-header .btn-close:active {
+  transform: scale(0.92);
+}
+
+.ds-modal .modal-body,
+.modal-body {
   padding: var(--ds-space-5);
+  background-color: var(--ds-white);
 }
 
-.ds-modal .modal-footer {
+.ds-modal .modal-footer,
+.modal-footer {
   padding: var(--ds-space-3) var(--ds-space-5);
   border-top: 1px solid var(--ds-gray-100);
   background-color: var(--ds-gray-50);

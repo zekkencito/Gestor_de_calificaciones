@@ -390,41 +390,75 @@
 /* MODALS */
 
 .page-teachers .tch-modal .modal-content {
-  border: 1px solid var(--ds-gray-200);
-  border-radius: var(--ds-radius-md);
-  overflow: visible;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(25, 46, 78, 0.1);
+  border-radius: var(--ds-radius-xl, 14px);
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(12, 22, 36, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .page-teachers .tch-modal .modal-header {
-  background-color: var(--ds-white) !important;
-  border-bottom: 1px solid var(--ds-gray-200);
-  padding: 20px 24px;
+  background: linear-gradient(135deg, #0c1624 0%, #112038 45%, #192E4E 100%) !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 
-.page-teachers .tch-modal .modal-title {
+.page-teachers .tch-modal .modal-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.page-teachers .tch-modal .modal-title,
+.page-teachers .tch-modal .modal-title *,
+.page-teachers .tch-modal .modal-header h1,
+.page-teachers .tch-modal .modal-header h2,
+.page-teachers .tch-modal .modal-header h3,
+.page-teachers .tch-modal .modal-header h4,
+.page-teachers .tch-modal .modal-header h5,
+.page-teachers .tch-modal .modal-header h6 {
   font-family: var(--ds-font-family) !important;
   font-size: var(--ds-text-base) !important;
   font-weight: var(--ds-font-bold) !important;
-  color: var(--ds-primary-800) !important;
+  color: #ffffff !important;
   letter-spacing: 0;
   margin: 0 !important;
+  position: relative;
+  z-index: 1;
+}
+
+.page-teachers .tch-modal .modal-header i,
+.page-teachers .tch-modal .modal-header .bi {
+  color: #ffffff !important;
+  position: relative;
+  z-index: 1;
 }
 
 .page-teachers .tch-modal .btn-close {
-  filter: none;
-  opacity: 0.4;
-  transition: opacity 150ms var(--ds-ease-out);
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.8 !important;
+  transition: opacity 150ms var(--ds-ease-out), transform 120ms var(--ds-ease-out);
   padding: 8px;
   margin: -4px -4px -4px auto;
   background-size: 0.8em;
+  position: relative;
+  z-index: 1;
 }
 
 .page-teachers .tch-modal .btn-close:hover {
-  opacity: 0.8;
+  opacity: 1 !important;
+  transform: scale(1.08);
+}
+
+.page-teachers .tch-modal .btn-close:active {
+  transform: scale(0.92);
 }
 
 .page-teachers .tch-modal .modal-body {

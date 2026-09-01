@@ -23,6 +23,14 @@ $resetUserId = null;
 $pageMessage = '';
 $pageMessageType = '';
 
+if (isset($_GET['expired'])) {
+    $pageMessage = 'Tu sesión ha expirado por inactividad. Por favor inicia sesión nuevamente.';
+    $pageMessageType = 'info';
+} elseif (isset($_GET['updated']) || isset($_GET['pw_changed'])) {
+    $pageMessage = 'Tu contraseña ha sido actualizada correctamente. Inicia sesión con tus nuevas credenciales.';
+    $pageMessageType = 'success';
+}
+
 function getMailConfig(): array
 {
     return [
@@ -263,19 +271,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recovery_email'])) {
                 $safeName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
 
                 $htmlMessage = '
-                    <html>
-                    <head><meta charset="UTF-8"></head>
-                    <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
-                        <div style="max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
-                            <h2 style="color: #1e3a8a; margin-top: 0;">Recuperación de contraseña</h2>
-                            <p>Hola ' . $safeName . ',</p>
-                            <p>Recibimos una solicitud para restablecer tu contraseña. Da clic en el siguiente enlace para crear una nueva contraseña:</p>
-                            <p style="margin: 24px 0;">
-                                <a href="' . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block; background:#1e3a8a; color:#ffffff; text-decoration:none; padding:12px 18px; border-radius:8px;">Restablecer contraseña</a>
-                            </p>
-                            <p>Este enlace expira en 60 minutos.</p>
-                            <p style="font-size: 0.9rem; color: #6b7280;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
-                        </div>
+                    <!DOCTYPE html>
+                    <html lang="es">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin:0; padding:0; background-color:#f8fafc; font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif; color:#0f172a; line-height:1.6;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:32px 16px;">
+                            <tr>
+                                <td align="center">
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                                        <tr>
+                                            <td style="background:linear-gradient(145deg, #0c1624 0%, #112038 50%, #192E4E 100%); padding:28px 32px; text-align:center; color:#ffffff;">
+                                                <div style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#adc4df; margin-bottom:4px;">Escuela Primaria Gregorio Torres Quintero</div>
+                                                <div style="font-size:22px; font-weight:700; color:#ffffff; letter-spacing:-0.01em;">Gestor de Calificaciones</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:32px 32px 28px 32px;">
+                                                <h2 style="font-size:18px; font-weight:700; color:#0f172a; margin:0 0 16px 0;">Recuperación de contraseña</h2>
+                                                <p style="font-size:14px; color:#334155; margin:0 0 16px 0;">Hola <strong>' . $safeName . '</strong>,</p>
+                                                <p style="font-size:14px; color:#475569; margin:0 0 24px 0;">Recibimos una solicitud para restablecer la contraseña de tu cuenta institucional. Haz clic en el botón siguiente para crear una nueva clave de acceso:</p>
+                                                <div style="text-align:center; margin:28px 0;">
+                                                    <a href="' . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block; background:#192E4E; color:#ffffff; text-decoration:none; font-size:14px; font-weight:600; padding:14px 28px; border-radius:10px; box-shadow:0 2px 6px rgba(25,46,78,0.25);">Restablecer mi contraseña</a>
+                                                </div>
+                                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin:24px 0 0 0;">
+                                                    <p style="font-size:12px; color:#64748b; margin:0;"><strong>Importante:</strong> Este enlace de un solo uso expirará en <strong>60 minutos</strong> por seguridad.</p>
+                                                </div>
+                                                <p style="font-size:12px; color:#94a3b8; margin:20px 0 0 0; line-height:1.5;">Si tú no solicitaste este cambio, puedes ignorar este mensaje; tu contraseña actual seguirá siendo segura.</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px 32px; text-align:center; font-size:11px; color:#94a3b8;">
+                                                Plataforma Académica Oficial • Sistema de Control Escolar
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
                     </body>
                     </html>
                 ';
@@ -493,9 +528,11 @@ if (!$showRecoveryForm && !$showResetForm && isset($_SESSION['user_id']) && isse
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
-    <title>Inicio de Sesión - Gestor de Calificaciones</title>
+    <title>Gestor de Calificaciones — Escuela Primaria Gregorio Torres Quintero</title>
     <link rel="icon" href="./img/logo.ico">
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="./css/design-system.css">
     <link rel="stylesheet" href="./css/components.css">
@@ -504,213 +541,399 @@ if (!$showRecoveryForm && !$showResetForm && isset($_SESSION['user_id']) && isse
 
 <body class="login-layout">
 
+    <!-- ==================== LEFT BRAND PANEL ==================== -->
     <aside class="login-layout__brand">
-        <img src="./img/logo.webp" alt="Logo" class="login-brand__logo" onerror="this.outerHTML='<div class=\'login-brand__fallback\'><i class=\'bi bi-mortarboard-fill\'></i></div>'">
-        <h1 class="login-brand__title">Gestor de Calificaciones</h1>
-        <p class="login-brand__subtitle">Plataforma de administración académica</p>
+        <div class="login-brand__header">
+            <div class="login-brand__pill">
+                <i class="bi bi-shield-lock-fill"></i> Acceso Institucional
+            </div>
+            <div class="login-brand__emblem-wrap">
+                <img src="./img/logo.webp" alt="Logo Escuela Gregorio Torres Quintero" class="login-brand__logo" onerror="this.outerHTML='<div class=\'login-brand__fallback\'><i class=\'bi bi-mortarboard-fill\'></i></div>'">
+                <div>
+                    <p class="login-brand__school">Escuela Primaria</p>
+                    <h2 class="login-brand__title">Gregorio Torres Quintero</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-brand__features">
+            <div class="login-brand__feature-item">
+                <div class="login-brand__feature-icon">
+                    <i class="bi bi-person-workspace"></i>
+                </div>
+                <div class="login-brand__feature-text">
+                    <h4>Gestión Docente y Grupos</h4>
+                    <p>Captura y administración ágil de evaluaciones por periodos escolares.</p>
+                </div>
+            </div>
+            <div class="login-brand__feature-item">
+                <div class="login-brand__feature-icon">
+                    <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                </div>
+                <div class="login-brand__feature-text">
+                    <h4>Boletas y Reportes Oficiales</h4>
+                    <p>Emisión automatizada de reportes individuales y concentrados de aprovechamiento.</p>
+                </div>
+            </div>
+            <div class="login-brand__feature-item">
+                <div class="login-brand__feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="login-brand__feature-text">
+                    <h4>Seguridad y Control Institucional</h4>
+                    <p>Acceso seguro con cifrado y trazabilidad para docentes y directivos.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-brand__footer">
+            <span>Gestor de Calificaciones v2.0</span>
+            <span class="login-brand__security-badge">
+                <i class="bi bi-lock-fill"></i> Conexión Segura SSL
+            </span>
+        </div>
     </aside>
 
+    <!-- ==================== RIGHT MAIN AREA ==================== -->
     <main class="login-layout__main">
 
+        <!-- Mobile Brand (Header shown on tablet/phone) -->
+        <div class="login-mobile-brand">
+            <img src="./img/logo.webp" alt="Logo" class="login-mobile-brand__logo" onerror="this.style.display='none'">
+            <p class="login-mobile-brand__school">Escuela Primaria Gregorio Torres Quintero</p>
+            <h2 class="login-mobile-brand__title">Gestor de Calificaciones</h2>
+        </div>
+
         <?php if ($showResetForm): ?>
-        <!-- ==================== RESET PASSWORD ==================== -->
+        <!-- ==================== VIEW: RESET PASSWORD ==================== -->
         <div class="login-card">
             <div class="login-card__header">
-                <h5><i class="bi bi-shield-lock"></i> Restablecer contraseña</h5>
+                <div class="login-card__icon-badge">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div class="login-card__titles">
+                    <h3 class="login-card__title">Restablecer contraseña</h3>
+                    <p class="login-card__subtitle">Configura una nueva contraseña segura para tu cuenta</p>
+                </div>
             </div>
-            <div class="login-card__body">
 
+            <div class="login-card__body">
                 <?php if ($pageMessage): ?>
-                <div class="ds-alert ds-alert--<?php echo $pageMessageType === 'success' ? 'success' : 'error'; ?> login-alert">
-                    <i class="bi bi-<?php echo $pageMessageType === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'; ?>"></i>
-                    <?php echo htmlspecialchars($pageMessage); ?>
+                <div class="login-alert login-alert--<?php echo $pageMessageType === 'success' ? 'success' : ($pageMessageType === 'info' ? 'info' : 'error'); ?>">
+                    <i class="bi bi-<?php echo $pageMessageType === 'success' ? 'check-circle-fill' : ($pageMessageType === 'info' ? 'info-circle-fill' : 'exclamation-triangle-fill'); ?>"></i>
+                    <span><?php echo htmlspecialchars($pageMessage); ?></span>
                 </div>
                 <?php endif; ?>
 
                 <?php if ($resetUserId): ?>
-                <form method="POST" action="index.php" class="login-form">
+                <form method="POST" action="index.php" class="login-form" id="resetPasswordForm" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($resetToken, ENT_QUOTES, 'UTF-8'); ?>">
 
-                    <div class="ds-form-group">
-                        <label for="new_password" class="ds-label">Nueva contraseña</label>
-                        <div class="login-input-wrapper">
-                            <input type="password" id="new_password" name="new_password" class="ds-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                    <!-- New Password -->
+                    <div class="login-field">
+                        <label for="new_password" class="login-label">Nueva contraseña</label>
+                        <div class="login-input-wrap">
+                            <i class="bi bi-lock-fill login-input-icon"></i>
+                            <input
+                                type="password"
+                                id="new_password"
+                                name="new_password"
+                                class="login-input"
+                                placeholder="Mínimo 6 caracteres"
+                                required
+                                minlength="6"
+                                autocomplete="new-password"
+                            >
                             <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="new_password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="ds-form-group">
-                        <label for="confirm_password" class="ds-label">Confirmar contraseña</label>
-                        <div class="login-input-wrapper">
-                            <input type="password" id="confirm_password" name="confirm_password" class="ds-input" placeholder="Repite la nueva contraseña" required minlength="6">
+                    <!-- Password strength bar -->
+                    <div class="login-strength-wrap" id="reset-strength-wrap" style="display: none;">
+                        <div class="login-strength-bar">
+                            <div class="login-strength-segment" id="reset-str-1"></div>
+                            <div class="login-strength-segment" id="reset-str-2"></div>
+                            <div class="login-strength-segment" id="reset-str-3"></div>
+                            <div class="login-strength-segment" id="reset-str-4"></div>
+                        </div>
+                        <div class="login-strength-label">
+                            <span>Seguridad:</span>
+                            <span id="reset-str-text" style="font-weight: 600;">Débil</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="login-field">
+                        <label for="confirm_password" class="login-label">Confirmar nueva contraseña</label>
+                        <div class="login-input-wrap">
+                            <i class="bi bi-shield-check login-input-icon"></i>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                class="login-input"
+                                placeholder="Repite la nueva contraseña"
+                                required
+                                minlength="6"
+                                autocomplete="new-password"
+                            >
                             <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="confirm_password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
 
+                    <!-- Live Requirements Checklist -->
                     <div class="login-requirements" id="passwordRequirements">
-                        <p class="login-requirements__title">Requisitos</p>
+                        <div class="login-requirements__title">Requisitos de seguridad</div>
                         <ul class="login-requirements__list">
                             <li class="login-requirements__item" id="req-length">
-                                <i class="bi bi-circle"></i> Mínimo 6 caracteres
+                                <i class="bi bi-circle"></i> <span>Mínimo 6 caracteres</span>
+                            </li>
+                            <li class="login-requirements__item" id="req-upper">
+                                <i class="bi bi-circle"></i> <span>Al menos una letra mayúscula</span>
+                            </li>
+                            <li class="login-requirements__item" id="req-number">
+                                <i class="bi bi-circle"></i> <span>Al menos un número</span>
                             </li>
                             <li class="login-requirements__item" id="req-match">
-                                <i class="bi bi-circle"></i> Las contraseñas coinciden
+                                <i class="bi bi-circle"></i> <span>Las contraseñas coinciden</span>
                             </li>
                         </ul>
                     </div>
 
-                    <button type="submit" class="ds-btn ds-btn--primary login-submit">
-                        <i class="bi bi-check-lg"></i> Actualizar contraseña
+                    <button type="submit" class="login-btn-primary" id="btnResetSubmit">
+                        <i class="bi bi-check2-circle"></i>
+                        <span id="btnResetText">Actualizar contraseña</span>
                     </button>
 
-                    <div class="login-back">
-                        <a href="index.php"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+                    <div class="login-card__footer">
+                        <a href="index.php" class="login-back-link">
+                            <i class="bi bi-arrow-left"></i> Volver al inicio de sesión
+                        </a>
                     </div>
                 </form>
                 <?php else: ?>
                 <div class="login-token-error">
                     <div class="login-token-error__icon">
-                        <i class="bi bi-x-lg"></i>
+                        <i class="bi bi-link-45deg"></i>
                     </div>
-                    <h5>Enlace no válido</h5>
-                    <p><?php echo htmlspecialchars($pageMessage ?: 'El enlace ya expiró o ya fue usado. Solicita uno nuevo.'); ?></p>
-                    <div class="login-back login-back--spaced">
-                        <a href="index.php?action=recover"><i class="bi bi-arrow-left"></i> Solicitar nuevo enlace</a>
-                    </div>
+                    <h5>Enlace no válido o expirado</h5>
+                    <p><?php echo htmlspecialchars($pageMessage ?: 'El enlace ya expiró o ya fue utilizado previamente. Por favor solicita uno nuevo.'); ?></p>
+                    <a href="index.php?action=recover" class="login-btn-primary" style="max-width: 260px; margin: 0 auto;">
+                        <i class="bi bi-arrow-repeat"></i> Solicitar nuevo enlace
+                    </a>
+                </div>
+                <div class="login-card__footer">
+                    <a href="index.php" class="login-back-link">
+                        <i class="bi bi-arrow-left"></i> Volver al inicio de sesión
+                    </a>
                 </div>
                 <?php endif; ?>
-
             </div>
         </div>
 
         <?php elseif ($showRecoveryForm): ?>
-        <!-- ==================== RECOVER PASSWORD ==================== -->
+        <!-- ==================== VIEW: RECOVER PASSWORD ==================== -->
         <div class="login-card">
             <div class="login-card__header">
-                <h5><i class="bi bi-envelope-lock"></i> Recuperar contraseña</h5>
+                <div class="login-card__icon-badge">
+                    <i class="bi bi-key-fill"></i>
+                </div>
+                <div class="login-card__titles">
+                    <h3 class="login-card__title">Recuperar contraseña</h3>
+                    <p class="login-card__subtitle">Solicitud de restablecimiento de cuenta</p>
+                </div>
             </div>
-            <div class="login-card__body">
 
+            <div class="login-card__body">
                 <?php
                 if (isset($_SESSION['error'])) {
-                    echo '<div class="ds-alert ds-alert--error login-alert"><i class="bi bi-exclamation-triangle-fill"></i> ' . $_SESSION['error'] . '</div>';
+                    echo '<div class="login-alert login-alert--error"><i class="bi bi-exclamation-triangle-fill"></i> <span>' . htmlspecialchars($_SESSION['error']) . '</span></div>';
                     unset($_SESSION['error']);
                 }
                 if (isset($_SESSION['success'])) {
-                    echo '<div class="ds-alert ds-alert--success login-alert"><i class="bi bi-check-circle-fill"></i> ' . $_SESSION['success'] . '</div>';
+                    echo '<div class="login-alert login-alert--success"><i class="bi bi-check-circle-fill"></i> <span>' . htmlspecialchars($_SESSION['success']) . '</span></div>';
                     unset($_SESSION['success']);
                 }
                 ?>
 
-                <div class="login-recovery-desc">
-                    <p>Escribe el correo registrado para enviarte un enlace de recuperación temporal.</p>
+                <div class="login-callout">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <p>Ingresa el correo electrónico institucional registrado. Te enviaremos un enlace seguro con vigencia de <strong>60 minutos</strong>.</p>
                 </div>
 
-                <form method="POST" action="index.php?action=recover" class="login-form">
+                <form method="POST" action="index.php?action=recover" class="login-form" id="recoveryForm" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
-                    <div class="ds-form-group">
-                        <label for="recovery_email" class="ds-label">Correo electrónico</label>
-                        <input type="email" id="recovery_email" name="recovery_email" class="ds-input" placeholder="correo@ejemplo.com" required>
+
+                    <div class="login-field">
+                        <label for="recovery_email" class="login-label">Correo electrónico institucional</label>
+                        <div class="login-input-wrap">
+                            <i class="bi bi-envelope-fill login-input-icon"></i>
+                            <input
+                                type="email"
+                                id="recovery_email"
+                                name="recovery_email"
+                                class="login-input login-input--no-toggle"
+                                placeholder="ejemplo@escuela.edu.mx"
+                                required
+                                autocomplete="email"
+                            >
+                        </div>
                     </div>
 
-                    <button type="submit" class="ds-btn ds-btn--primary login-submit">
-                        <i class="bi bi-send"></i> Enviar enlace
+                    <button type="submit" class="login-btn-primary" id="btnRecovery">
+                        <i class="bi bi-send-fill"></i>
+                        <span id="btnRecoveryText">Enviar enlace de recuperación</span>
                     </button>
 
-                    <div class="login-back">
-                        <a href="index.php"><i class="bi bi-arrow-left"></i> Volver al inicio de sesión</a>
+                    <div class="login-card__footer">
+                        <a href="index.php" class="login-back-link">
+                            <i class="bi bi-arrow-left"></i> Volver al inicio de sesión
+                        </a>
                     </div>
                 </form>
-
             </div>
         </div>
 
         <?php else: ?>
-        <!-- ==================== LOGIN ==================== -->
+        <!-- ==================== VIEW: LOGIN ==================== -->
         <div class="login-card">
             <div class="login-card__header">
-                <h5><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</h5>
+                <div class="login-card__icon-badge">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div class="login-card__titles">
+                    <h3 class="login-card__title">Iniciar sesión</h3>
+                    <p class="login-card__subtitle">Ingresa tus credenciales para acceder a la plataforma</p>
+                </div>
             </div>
-            <div class="login-card__body">
 
+            <div class="login-card__body">
                 <?php
+                if (!empty($pageMessage)) {
+                    $alertClass = $pageMessageType === 'success' ? 'login-alert--success' : ($pageMessageType === 'info' ? 'login-alert--info' : 'login-alert--error');
+                    $iconClass = $pageMessageType === 'success' ? 'bi-check-circle-fill' : ($pageMessageType === 'info' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill');
+                    echo '<div class="login-alert ' . $alertClass . '"><i class="bi ' . $iconClass . '"></i> <span>' . htmlspecialchars($pageMessage) . '</span></div>';
+                }
                 if (isset($_SESSION['error'])) {
-                    echo '<div class="ds-alert ds-alert--error login-alert"><i class="bi bi-exclamation-triangle-fill"></i> ' . $_SESSION['error'] . '</div>';
+                    echo '<div class="login-alert login-alert--error"><i class="bi bi-exclamation-triangle-fill"></i> <span>' . htmlspecialchars($_SESSION['error']) . '</span></div>';
                     unset($_SESSION['error']);
                 }
                 if (isset($_SESSION['success'])) {
-                    echo '<div class="ds-alert ds-alert--success login-alert"><i class="bi bi-check-circle-fill"></i> ' . $_SESSION['success'] . '</div>';
+                    echo '<div class="login-alert login-alert--success"><i class="bi bi-check-circle-fill"></i> <span>' . htmlspecialchars($_SESSION['success']) . '</span></div>';
                     unset($_SESSION['success']);
                 }
                 ?>
 
-                <div id="message" class="ds-alert ds-alert--error login-alert login-alert--hidden"></div>
+                <!-- Dynamic client validation alert -->
+                <div id="message" class="login-alert login-alert--error login-alert--hidden"></div>
 
-                <form id="loginForm" action="./admin/php/login.php" method="POST" class="login-form">
+                <form id="loginForm" action="./admin/php/login.php" method="POST" class="login-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
-                    <div class="ds-form-group">
-                        <label for="username" class="ds-label">Usuario</label>
-                        <input type="text" id="username" name="username" class="ds-input" placeholder="Ingresa tu usuario" required>
+
+                    <!-- Username Field -->
+                    <div class="login-field">
+                        <label for="username" class="login-label">Usuario</label>
+                        <div class="login-input-wrap">
+                            <i class="bi bi-person-fill login-input-icon"></i>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="login-input login-input--no-toggle"
+                                placeholder="Ingresa tu usuario"
+                                required
+                                autocomplete="username"
+                                autofocus
+                            >
+                        </div>
                     </div>
 
-                    <div class="ds-form-group">
-                        <label for="password" class="ds-label">Contraseña</label>
-                        <div class="login-input-wrapper">
-                            <input type="password" id="password" name="password" class="ds-input" placeholder="••••••••" required>
-                            <button type="button" class="login-eye-toggle" aria-label="Mostrar contraseña" data-target="password">
+                    <!-- Password Field -->
+                    <div class="login-field">
+                        <label for="password" class="login-label">Contraseña</label>
+                        <div class="login-input-wrap">
+                            <i class="bi bi-lock-fill login-input-icon"></i>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="login-input"
+                                placeholder="••••••••"
+                                required
+                                autocomplete="current-password"
+                            >
+                            <button type="button" class="login-eye-toggle" aria-label="Mostrar u ocultar contraseña" data-target="password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="ds-btn ds-btn--primary login-submit" id="loginBtn">
-                        <i class="bi bi-box-arrow-in-right"></i>
-                        <span id="buttonText">Acceder</span>
-                    </button>
+                    <!-- Options Row: Remember Me & Forgot Password -->
+                    <div class="login-options-row">
+                        <label class="login-remember" for="rememberMe">
+                            <input type="checkbox" name="rememberMe" id="rememberMe" value="1" class="login-checkbox">
+                            <span class="login-checkbox-custom"><i class="bi bi-check"></i></span>
+                            <span class="login-remember-text">Recordar mi sesión</span>
+                        </label>
 
-                    <div class="login-link-row">
-                        <a href="index.php?action=recover">¿Olvidaste tu contraseña?</a>
+                        <a href="index.php?action=recover" class="login-forgot-link">¿Olvidaste tu contraseña?</a>
                     </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="login-btn-primary" id="loginBtn">
+                        <i class="bi bi-box-arrow-in-right" id="loginIcon"></i>
+                        <span id="buttonText">Acceder a la plataforma</span>
+                    </button>
                 </form>
 
+                <div class="login-card__footer">
+                    <span style="font-size: 0.75rem; color: var(--ds-gray-400, #94a3b8); display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <i class="bi bi-shield-check"></i> Acceso seguro para personal docente y directivo
+                    </span>
+                </div>
             </div>
         </div>
         <?php endif; ?>
 
     </main>
 
+    <!-- ==================== CLIENT INTERACTIVITY SCRIPT ==================== -->
     <script>
     (function () {
         'use strict';
 
-        /* ---- Eye toggles (all views) ---- */
+        /* ---- Eye Toggles with tactile feedback ---- */
         document.querySelectorAll('.login-eye-toggle').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var target = document.getElementById(btn.dataset.target);
+                var targetId = btn.getAttribute('data-target');
+                var target = document.getElementById(targetId);
                 if (!target) return;
                 var icon = btn.querySelector('i');
                 var isPassword = target.type === 'password';
                 target.type = isPassword ? 'text' : 'password';
-                icon.classList.toggle('bi-eye');
-                icon.classList.toggle('bi-eye-slash');
+                if (icon) {
+                    icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                }
+                btn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
             });
         });
 
-        /* ---- Login form validation ---- */
-        var form = document.getElementById('loginForm');
+        /* ---- Login Form Validation & Loading State ---- */
+        var loginForm = document.getElementById('loginForm');
         var usernameInput = document.getElementById('username');
         var passwordInput = document.getElementById('password');
         var messageDiv = document.getElementById('message');
         var loginBtn = document.getElementById('loginBtn');
         var buttonText = document.getElementById('buttonText');
+        var loginIcon = document.getElementById('loginIcon');
 
-        if (form) {
-            form.addEventListener('submit', function (e) {
+        if (loginForm) {
+            loginForm.addEventListener('submit', function (e) {
                 var username = usernameInput ? usernameInput.value.trim() : '';
                 var password = passwordInput ? passwordInput.value.trim() : '';
 
@@ -718,48 +941,146 @@ if (!$showRecoveryForm && !$showResetForm && isset($_SESSION['user_id']) && isse
 
                 if (!username || !password) {
                     e.preventDefault();
-                    showMessage('Por favor completa todos los campos', 'error');
+                    showMessage('Por favor completa todos los campos para continuar.', 'error');
+                    if (!username && usernameInput) usernameInput.focus();
+                    else if (!password && passwordInput) passwordInput.focus();
                     return;
                 }
 
+                // Loading feedback
                 setLoading(true);
             });
         }
 
         function showMessage(text, type) {
             if (!messageDiv) return;
-            messageDiv.textContent = text;
-            messageDiv.className = 'ds-alert ds-alert--' + type + ' login-alert';
+            messageDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> <span>' + text + '</span>';
+            messageDiv.className = 'login-alert login-alert--' + (type === 'success' ? 'success' : 'error');
         }
 
         function hideMessage() {
-            if (messageDiv) messageDiv.className = 'ds-alert ds-alert--error login-alert login-alert--hidden';
+            if (messageDiv) messageDiv.className = 'login-alert login-alert--error login-alert--hidden';
         }
 
         function setLoading(loading) {
-            if (loginBtn) loginBtn.disabled = loading;
-            if (buttonText) buttonText.textContent = loading ? 'Verificando...' : 'Acceder';
+            if (!loginBtn) return;
+            loginBtn.disabled = loading;
+            if (loading) {
+                if (loginIcon) loginIcon.className = 'login-spinner';
+                if (buttonText) buttonText.textContent = 'Verificando credenciales...';
+            } else {
+                if (loginIcon) loginIcon.className = 'bi bi-box-arrow-in-right';
+                if (buttonText) buttonText.textContent = 'Acceder a la plataforma';
+            }
         }
 
-        /* ---- Reset form: live password requirements ---- */
+        /* ---- Recovery Form Validation ---- */
+        var recoveryForm = document.getElementById('recoveryForm');
+        var recoveryEmail = document.getElementById('recovery_email');
+        var btnRecovery = document.getElementById('btnRecovery');
+        var btnRecoveryText = document.getElementById('btnRecoveryText');
+
+        if (recoveryForm) {
+            recoveryForm.addEventListener('submit', function (e) {
+                var email = recoveryEmail ? recoveryEmail.value.trim() : '';
+                if (!email) {
+                    e.preventDefault();
+                    if (recoveryEmail) recoveryEmail.focus();
+                    return;
+                }
+                if (btnRecovery) btnRecovery.disabled = true;
+                if (btnRecoveryText) btnRecoveryText.innerHTML = '<span class="login-spinner" style="margin-right: 6px;"></span> Enviando enlace...';
+            });
+        }
+
+        /* ---- Reset Form Live Password Strength & Requirements ---- */
         var newPw = document.getElementById('new_password');
         var confirmPw = document.getElementById('confirm_password');
+        var resetForm = document.getElementById('resetPasswordForm');
+        var btnResetSubmit = document.getElementById('btnResetSubmit');
+        var btnResetText = document.getElementById('btnResetText');
+
         var reqLength = document.getElementById('req-length');
+        var reqUpper = document.getElementById('req-upper');
+        var reqNumber = document.getElementById('req-number');
         var reqMatch = document.getElementById('req-match');
 
-        if (newPw && confirmPw && reqLength && reqMatch) {
-            function updateReqs() {
-                var lenOk = newPw.value.length >= 6;
-                var matchOk = confirmPw.value.length > 0 && newPw.value === confirmPw.value;
+        var strWrap = document.getElementById('reset-strength-wrap');
+        var strSegments = [
+            document.getElementById('reset-str-1'),
+            document.getElementById('reset-str-2'),
+            document.getElementById('reset-str-3'),
+            document.getElementById('reset-str-4')
+        ];
+        var strText = document.getElementById('reset-str-text');
 
-                reqLength.classList.toggle('met', lenOk);
-                reqLength.querySelector('i').className = lenOk ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+        function updateResetRequirements() {
+            if (!newPw) return;
+            var val = newPw.value || '';
+            var conf = (confirmPw && confirmPw.value) || '';
 
-                reqMatch.classList.toggle('met', matchOk);
-                reqMatch.querySelector('i').className = matchOk ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+            var lenOk = val.length >= 6;
+            var upperOk = /[A-Z]/.test(val);
+            var numOk = /[0-9]/.test(val);
+            var matchOk = conf.length > 0 && val === conf;
+
+            function updateItem(el, ok) {
+                if (!el) return;
+                el.classList.toggle('met', ok);
+                var icon = el.querySelector('i');
+                if (icon) {
+                    icon.className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+                }
             }
-            newPw.addEventListener('input', updateReqs);
-            confirmPw.addEventListener('input', updateReqs);
+
+            updateItem(reqLength, lenOk);
+            updateItem(reqUpper, upperOk);
+            updateItem(reqNumber, numOk);
+            updateItem(reqMatch, matchOk);
+
+            // Strength calculation
+            if (val.length > 0 && strWrap) {
+                strWrap.style.display = 'flex';
+                var score = 0;
+                if (lenOk) score++;
+                if (upperOk) score++;
+                if (numOk) score++;
+                if (/[^A-Za-z0-9]/.test(val) || val.length >= 10) score++;
+
+                var labels = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Excelente'];
+                var classes = ['', 'active-weak', 'active-fair', 'active-good', 'active-strong'];
+
+                if (strText) strText.textContent = labels[score] || 'Débil';
+
+                strSegments.forEach(function(seg, i) {
+                    if (!seg) return;
+                    seg.className = 'login-strength-segment';
+                    if (i < score) {
+                        seg.classList.add(classes[score]);
+                    }
+                });
+            } else if (strWrap) {
+                strWrap.style.display = 'none';
+            }
+        }
+
+        if (newPw) newPw.addEventListener('input', updateResetRequirements);
+        if (confirmPw) confirmPw.addEventListener('input', updateResetRequirements);
+
+        if (resetForm) {
+            resetForm.addEventListener('submit', function (e) {
+                var p1 = newPw ? newPw.value : '';
+                var p2 = confirmPw ? confirmPw.value : '';
+
+                if (p1.length < 6 || p1 !== p2) {
+                    e.preventDefault();
+                    updateResetRequirements();
+                    return;
+                }
+
+                if (btnResetSubmit) btnResetSubmit.disabled = true;
+                if (btnResetText) btnResetText.innerHTML = '<span class="login-spinner" style="margin-right: 6px;"></span> Actualizando...';
+            });
         }
     })();
     </script>

@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     } else {
         $_SESSION['error'] = 'Usuario o contraseña incorrectos';
-        echo "ERROR: " . $_SESSION['error'];
+        header('Location: ../../index.php');
         exit();
     }
 }
