@@ -92,31 +92,31 @@ if (!$result) {
     exit;
 }
 while ($row = $result->fetch_assoc()) {
-    echo "<tr data-schoolyear='" . htmlspecialchars($row['idSchoolYear']) . "' data-grupo='" . htmlspecialchars($row['idGroup']) . "'>";
-    echo "<td>" . htmlspecialchars($row['idStudent']) . "</td>";
-    echo "<td>" . htmlspecialchars($row['lastnamePa']) . "</td>";
-    echo "<td>" . htmlspecialchars($row['lastnameMa']) . "</td>";
-    echo "<td>" . htmlspecialchars($row['names']) . "</td>";
-    echo "<td>" . htmlspecialchars($row['grupo']) . "</td>";
-    echo "<td>" . htmlspecialchars($row['schoolYear']) . "</td>";
+    echo "<tr data-schoolyear='" . (isset($row['idSchoolYear']) ? htmlspecialchars($row['idSchoolYear']) : '') . "' data-grupo='" . (isset($row['idGroup']) ? htmlspecialchars($row['idGroup']) : '') . "'>";
+    echo "<td>" . (isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : '') . "</td>";
+    echo "<td>" . (isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : '') . "</td>";
+    echo "<td>" . (isset($row['lastnameMa']) ? htmlspecialchars($row['lastnameMa']) : '') . "</td>";
+    echo "<td>" . (isset($row['names']) ? htmlspecialchars($row['names']) : '') . "</td>";
+    echo "<td>" . (isset($row['grupo']) ? htmlspecialchars($row['grupo']) : '') . "</td>";
+    echo "<td>" . (isset($row['schoolYear']) ? htmlspecialchars($row['schoolYear']) : '') . "</td>";
     echo "<td>";
     // Estado con badge de color
     if ($row['nomenclature'] == 'AC') {
-        echo '<span class="badge bg-success">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-success">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'BA') {
-        echo '<span class="badge bg-danger">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-danger">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'RE') {
-        echo '<span class="badge bg-warning">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-warning">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'EG') {
-        echo '<span class="badge bg-primary">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-primary">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'IN') {
-        echo '<span class="badge bg-secondary">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-secondary">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'TR') {
-        echo '<span class="badge bg-info">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-info">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'RC') {
-        echo '<span class="badge bg-dark">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-dark">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     } elseif ($row['nomenclature'] == 'EX') {
-        echo '<span class="badge bg-light">' . htmlspecialchars($row['status']) . '</span>';
+        echo '<span class="badge bg-light">' . (isset($row['status']) ? htmlspecialchars($row['status']) : '') . '</span>';
     }
     echo "</td>";
     // Botón Boleta

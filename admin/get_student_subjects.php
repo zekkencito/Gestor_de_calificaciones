@@ -9,9 +9,6 @@ try {
     $idSchoolYear = isset($_GET['idSchoolYear']) ? intval($_GET['idSchoolYear']) : 0;
     $idSchoolQuarter = isset($_GET['idSchoolQuarter']) ? intval($_GET['idSchoolQuarter']) : 0;
 
-    // LOG para depuración
-    file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - idStudent=$idStudent, idSchoolYear=$idSchoolYear, idSchoolQuarter=$idSchoolQuarter\n", FILE_APPEND);
-
     $subjects = [];
 
     if ($idStudent) {
@@ -35,9 +32,6 @@ try {
         
         $query .= " ORDER BY la.name, s.name";
         
-        file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - Query: $query\n", FILE_APPEND);
-        file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - Params: ".json_encode($params)."\n", FILE_APPEND);
-        
         $stmt = $conexion->prepare($query);
         if (!$stmt) {
             throw new Exception("Error preparando la consulta: " . $conexion->error);
@@ -53,17 +47,11 @@ try {
         while ($row = $result->fetch_assoc()) {
             $subjects[] = $row;
         }
-        
-        // LOG para depuración
-        file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - SQL subjects: ".json_encode($subjects)."\n", FILE_APPEND);
-    } else {
-        file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - Error: No se proporcionó idStudent\n", FILE_APPEND);
     }
 
     echo json_encode(['success' => true, 'subjects' => $subjects]);
     
 } catch (Exception $e) {
-    file_put_contents(__DIR__.'/debug_get_student_subjects.txt', date('Y-m-d H:i:s')." - Exception: ".$e->getMessage()."\n", FILE_APPEND);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

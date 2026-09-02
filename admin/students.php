@@ -219,13 +219,13 @@ if (!$resultado) {
                         </thead>
                         <tbody id="alumnosBody">
                     <?php while ($row = $resultado->fetch_assoc()) { ?>
-                        <tr data-schoolyear="<?php echo htmlspecialchars($row['idSchoolYear']); ?>" data-grupo="<?php echo htmlspecialchars($row['idGroup']); ?>">
-                            <td><?php echo htmlspecialchars($row['idStudent']); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnamePa']); ?></td>
-                            <td><?php echo htmlspecialchars($row['lastnameMa']); ?></td>
-                            <td><?php echo htmlspecialchars($row['names']); ?></td>
-                            <td><?php echo htmlspecialchars($row['grupo']); ?></td>
-                            <td><?php echo htmlspecialchars($row['schoolYear']); ?></td>
+                        <tr data-schoolyear="<?php echo isset($row['idSchoolYear']) ? htmlspecialchars($row['idSchoolYear']) : ''; ?>" data-grupo="<?php echo isset($row['idGroup']) ? htmlspecialchars($row['idGroup']) : ''; ?>">
+                            <td><?php echo isset($row['idStudent']) ? htmlspecialchars($row['idStudent']) : ''; ?></td>
+                            <td><?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?></td>
+                            <td><?php echo isset($row['lastnameMa']) ? htmlspecialchars($row['lastnameMa']) : ''; ?></td>
+                            <td><?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?></td>
+                            <td><?php echo isset($row['grupo']) ? htmlspecialchars($row['grupo']) : ''; ?></td>
+                            <td><?php echo isset($row['schoolYear']) ? htmlspecialchars($row['schoolYear']) : ''; ?></td>
                             <td><?php
                                 if ($row['nomenclature'] == 'AC') {
                                     echo '<span class="stu-badge stu-badge--active">' . $row['status'] . '</span>';
@@ -250,11 +250,11 @@ if (!$resultado) {
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalCamposFormativos"
                                     data-id="<?php echo $row['idStudent']; ?>"
-                                    data-nombres="<?php echo htmlspecialchars($row['names']); ?>"
-                                    data-paterno="<?php echo htmlspecialchars($row['lastnamePa']); ?>"
-                                    data-materno="<?php echo htmlspecialchars($row['lastnameMa']); ?>"
-                                    data-grade="<?php echo htmlspecialchars($row['grade']); ?>"
-                                    data-grupo="<?php echo htmlspecialchars($row['grupo']); ?>"
+                                    data-nombres="<?php echo isset($row['names']) ? htmlspecialchars($row['names']) : ''; ?>"
+                                    data-paterno="<?php echo isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : ''; ?>"
+                                    data-materno="<?php echo isset($row['lastnameMa']) ? htmlspecialchars($row['lastnameMa']) : ''; ?>"
+                                    data-grade="<?php echo isset($row['grade']) ? htmlspecialchars($row['grade']) : ''; ?>"
+                                    data-grupo="<?php echo isset($row['grupo']) ? htmlspecialchars($row['grupo']) : ''; ?>"
                                     title="Ver boleta">
                                     <i class="bi bi-file-earmark-text-fill"></i>
                                 </button>

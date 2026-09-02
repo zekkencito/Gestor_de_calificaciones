@@ -61,7 +61,4 @@ while ($row = $result->fetch_assoc()) {
     $students[] = $row;
 }
 
-// DEBUG: imprime los alumnos enviados en JSON
-file_put_contents(__DIR__.'/debug_students_ajax.txt', json_encode(['params'=>[$idSubject, $idSchoolYear, $idSchoolQuarter], 'students'=>$students], JSON_PRETTY_PRINT)."\n", FILE_APPEND);
-
 echo json_encode(['success' => true, 'students' => $students]);

@@ -218,19 +218,19 @@ $resultYears2 = $conexion->query($sqlYears1);
                     } else if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
                             // Deduplicar: si ya mostramos este teacherGroup, saltar
-                            $rowIdTG = htmlspecialchars($row['idTeacherGroup']);
+                            $rowIdTG = isset($row['idTeacherGroup']) ? htmlspecialchars($row['idTeacherGroup']) : '';
                             if ($rowIdTG && isset($seenTG[$rowIdTG])) continue;
                             if ($rowIdTG) $seenTG[$rowIdTG] = true;
 
                             // Datos generales de la fila (Grupo, Docente, Ciclo)
-                            $rowIdGroup = htmlspecialchars($row['idGroup']);
-                            $rowIdTeacher = htmlspecialchars($row['idTeacher']);
-                            $rowIdYear = htmlspecialchars($row['idSchoolYear']);
+                            $rowIdGroup = isset($row['idGroup']) ? htmlspecialchars($row['idGroup']) : '';
+                            $rowIdTeacher = isset($row['idTeacher']) ? htmlspecialchars($row['idTeacher']) : '';
+                            $rowIdYear = isset($row['idSchoolYear']) ? htmlspecialchars($row['idSchoolYear']) : '';
                             
                             // Nombres para data attributes
-                            $rowTxtGrupo = htmlspecialchars($row['grupo']);
-                            $rowTxtCiclo = htmlspecialchars($row['ciclo']);
-                            $rowTxtDocente = htmlspecialchars($row['names'] . ' ' . $row['lastnamePa'] . ' ' . $row['lastnameMa']);
+                            $rowTxtGrupo = isset($row['grupo']) ? htmlspecialchars($row['grupo']) : '';
+                            $rowTxtCiclo = isset($row['ciclo']) ? htmlspecialchars($row['ciclo']) : '';
+                            $rowTxtDocente = htmlspecialchars((isset($row['names']) ? $row['names'] : '') . ' ' . (isset($row['lastnamePa']) ? $row['lastnamePa'] : '') . ' ' . (isset($row['lastnameMa']) ? $row['lastnameMa'] : ''));
                             
                             echo '<tr class="align-middle" data-idgrupo="' . $rowIdGroup . '" data-idteacher="' . $rowIdTeacher . '" data-idyear="' . $rowIdYear . '">';
                             echo '<td class="text-center">' . $rowTxtCiclo . '</td>';
@@ -295,9 +295,9 @@ $resultYears2 = $conexion->query($sqlYears1);
                             echo '</div>';
                             echo '</td>';
                             
-                            echo '<td class="text-center">' . htmlspecialchars($row['lastnamePa']) . '</td>';
-                            echo '<td class="text-center">' . htmlspecialchars($row['lastnameMa']) . '</td>';
-                            echo '<td class="text-center">' . htmlspecialchars($row['names']) . '</td>';
+                            echo '<td class="text-center">' . (isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : '') . '</td>';
+                            echo '<td class="text-center">' . (isset($row['lastnameMa']) ? htmlspecialchars($row['lastnameMa']) : '') . '</td>';
+                            echo '<td class="text-center">' . (isset($row['names']) ? htmlspecialchars($row['names']) : '') . '</td>';
                             
                             echo '</tr>';
                         }

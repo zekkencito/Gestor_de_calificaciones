@@ -7,9 +7,6 @@ $idStudent = isset($_GET['idStudent']) ? intval($_GET['idStudent']) : 0;
 $idSchoolYear = isset($_GET['idSchoolYear']) ? intval($_GET['idSchoolYear']) : 0;
 $idSchoolQuarter = isset($_GET['idSchoolQuarter']) ? intval($_GET['idSchoolQuarter']) : 0;
 
-// LOG para depuración
-file_put_contents(__DIR__.'/debug_get_subjects.txt', "idStudent=$idStudent, idSchoolYear=$idSchoolYear, idSchoolQuarter=$idSchoolQuarter\n", FILE_APPEND);
-
 $subjects = [];
 
 if ($idStudent) {
@@ -54,9 +51,7 @@ if ($idStudent) {
     }
     
     $query .= ") ORDER BY la.name, s.name";
-    
-    file_put_contents(__DIR__.'/debug_get_subjects.txt', "Query: $query\nParams: ".json_encode($params)."\nTypes: $types\n", FILE_APPEND);
-    
+
     $stmt = $conexion->prepare($query);
     if ($stmt) {
         $stmt->bind_param($types, ...$params);
@@ -67,7 +62,7 @@ if ($idStudent) {
         }
         $stmt->close();
     } else {
-        file_put_contents(__DIR__.'/debug_get_subjects.txt', "Error preparando statement: " . $conexion->error . "\n", FILE_APPEND);
+        error_log('Error preparando statement en get_subjects.php: ' . $conexion->error);
     }
 } else {
     // Lógica original para profesores
@@ -96,9 +91,6 @@ if ($idStudent) {
         }
     }
 }
-
-// LOG para depuración
-file_put_contents(__DIR__.'/debug_get_subjects.txt', "SQL subjects: ".json_encode($subjects)."\n", FILE_APPEND);
 
 if (empty($subjects)) {
     echo json_encode(['success' => false, 'message' => 'No se encontraron materias para este estudiante']);

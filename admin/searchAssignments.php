@@ -64,24 +64,24 @@ if ($result && $result->num_rows > 0) {
         $idSubjects = explode(',', $row['idSubjects']);
         
         echo '<tr class="align-middle" ';
-        echo 'data-idgrupo="' . htmlspecialchars($row['idGroup']) . '" ';
-        echo 'data-idsubject="' . htmlspecialchars($idSubjects[0]) . '" ';
-        echo 'data-idsubjects="' . htmlspecialchars($row['idSubjects']) . '" ';
-        echo 'data-idteacher="' . htmlspecialchars($row['idTeacher']) . '" ';
-        echo 'data-idyear="' . htmlspecialchars($row['idSchoolYear']) . '">';
-        echo '<td class="text-center">' . htmlspecialchars($row['ciclo']) . '</td>';
-        echo '<td class="text-center"><span class="badge bg-primary">' . htmlspecialchars($row['grupo']) . '</span></td>';
+        echo 'data-idgrupo="' . (isset($row['idGroup']) ? htmlspecialchars($row['idGroup']) : '') . '" ';
+        echo 'data-idsubject="' . (isset($idSubjects[0]) ? htmlspecialchars($idSubjects[0]) : '') . '" ';
+        echo 'data-idsubjects="' . (isset($row['idSubjects']) ? htmlspecialchars($row['idSubjects']) : '') . '" ';
+        echo 'data-idteacher="' . (isset($row['idTeacher']) ? htmlspecialchars($row['idTeacher']) : '') . '" ';
+        echo 'data-idyear="' . (isset($row['idSchoolYear']) ? htmlspecialchars($row['idSchoolYear']) : '') . '">';
+        echo '<td class="text-center">' . (isset($row['ciclo']) ? htmlspecialchars($row['ciclo']) : '') . '</td>';
+        echo '<td class="text-center"><span class="badge bg-primary">' . (isset($row['grupo']) ? htmlspecialchars($row['grupo']) : '') . '</span></td>';
         
         // Mostrar materias como badges
         echo '<td class="text-center">';
         foreach ($materias as $materia) {
-            echo '<span class="badge bg-info text-dark me-1 mb-1">' . htmlspecialchars($materia) . '</span>';
+            echo '<span class="badge bg-info text-dark me-1 mb-1">' . (isset($materia) ? htmlspecialchars($materia) : '') . '</span>';
         }
         echo '</td>';
         
-        echo '<td class="text-center">' . htmlspecialchars($row['lastnamePa']) . '</td>';
-        echo '<td class="text-center">' . htmlspecialchars($row['lastnameMa']) . '</td>';
-        echo '<td class="text-center fw-semibold">' . htmlspecialchars($row['names']) . '</td>';
+        echo '<td class="text-center">' . (isset($row['lastnamePa']) ? htmlspecialchars($row['lastnamePa']) : '') . '</td>';
+        echo '<td class="text-center">' . (isset($row['lastnameMa']) ? htmlspecialchars($row['lastnameMa']) : '') . '</td>';
+        echo '<td class="text-center fw-semibold">' . (isset($row['names']) ? htmlspecialchars($row['names']) : '') . '</td>';
         echo '<td class="text-center">';
         echo '<button class="btn btn-sm text-warning botonVerEdit me-2" data-bs-toggle="modal" data-bs-target="#editModal" data-uid="' . $uid . '" title="Editar asignación" style="border: none; background: none;">';
         echo '<i class="bi bi-pencil-fill fs-5"></i>';
