@@ -8,6 +8,41 @@ ini_set('error_log', 'group_pdf_errors.log');
 require_once "check_session.php";
 require_once '../conection.php';
 
+// Genera un ZIP en PHP puro cuando la extensión "zip" no está disponible.
+function crearZipSinExtension(array $generatedFiles, string $archivePath): bool {
+    $fp = @fopen($archivePath, 'wb');
+    if (!$fp) return false;
+
+    $central = '';
+    $offset = 0;
+    $count = 0;
+
+    foreach ($generatedFiles as $file) {
+        $data = @file_get_contents($file);
+        if ($data === false) continue;
+        $name = basename($file);
+        $nameLen = strlen($name);
+        $size = strlen($data);
+        $crc = crc32($data);
+
+        $localHeader = pack('VvvvvvVVVvv', 0x04034b50, 20, 0, 0, 0, 0, $crc, $size, $size, $nameLen, 0) . $name;
+        fwrite($fp, $localHeader);
+        fwrite($fp, $data);
+
+        $central .= pack('VvvvvvvVVVvvvvvVV', 0x02014b50, 20, 20, 0, 0, 0, 0, $crc, $size, $size, $nameLen, 0, 0, 0, 0, 0, $offset) . $name;
+        $offset += strlen($localHeader) + $size;
+        $count++;
+    }
+
+    $centralSize = strlen($central);
+    $eocd = pack('VvvvvVVv', 0x06054b50, 0, 0, $count, $count, $centralSize, $offset, 0);
+    fwrite($fp, $central);
+    fwrite($fp, $eocd);
+    fclose($fp);
+
+    return $count > 0 && filesize($archivePath) > 0;
+}
+
 // --- VERIFICACIÓN DE FECHA LIMITE PARA DESCARGAS GRUPALES ---
 $fechaLimite = null;
 $res = $conexion->query("SELECT limitDate FROM limitDate WHERE idLimitDate = 1 LIMIT 1");
@@ -155,7 +190,7 @@ try {
         
         try {
             // Usar la función directamente
-            $pdfContent = generateStudentPDF($student['idStudent'], $schoolYear, $quarterId, $idTeacher, $conexion);
+            $pdfContent = generateStudentPDF($student['idStudent'], $schoolYear, $quarterId, $conexion);
             
             if (!empty($pdfContent) && strlen($pdfContent) > 1000) {
                 $filename = $tempDir . '/' . $safeStudentName . '.pdf';
@@ -191,7 +226,8 @@ try {
     $archiveName = "Boletas_Grupo_{$groupInfo['grupo']}_Año_{$groupInfo['year']}.zip";
     $archivePath = $tempDir . '/' . $archiveName;
     
-    // Usar ZipArchive
+    // Crear el ZIP. Prioriza la extensión "zip"; si no está, usa el generador en PHP puro.
+    $zipOk = false;
     if (class_exists('ZipArchive')) {
         $zip = new ZipArchive();
         if ($zip->open($archivePath, ZipArchive::CREATE) === TRUE) {
@@ -199,42 +235,38 @@ try {
                 $zip->addFile($file, basename($file));
             }
             $zip->close();
-            
-            // Enviar el archivo al navegador
-            if (file_exists($archivePath) && filesize($archivePath) > 0) {
-                // Limpiar cualquier salida previa
-                if (ob_get_level()) {
-                    ob_end_clean();
-                }
-                
-                // Establecer headers para descarga
-                header('Content-Type: application/zip');
-                header('Content-Disposition: attachment; filename="' . $archiveName . '"');
-                header('Content-Length: ' . filesize($archivePath));
-                header('Cache-Control: must-revalidate');
-                header('Pragma: public');
-                
-                // Enviar el archivo
-                readfile($archivePath);
-                
-                // Limpiar archivos temporales
-                array_map('unlink', $generatedFiles);
-                unlink($archivePath);
-                rmdir($tempDir);
-                
-                exit;
-            } else {
-                http_response_code(500);
-                die('Error al crear el archivo ZIP');
-            }
-        } else {
-            http_response_code(500);
-            die('No se pudo crear el archivo ZIP');
+            $zipOk = (file_exists($archivePath) && filesize($archivePath) > 0);
         }
     } else {
-        http_response_code(500);
-        die('ZipArchive no está disponible en este servidor');
+        $zipOk = crearZipSinExtension($generatedFiles, $archivePath);
     }
+
+    if ($zipOk) {
+        // Limpiar cualquier salida previa
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Establecer headers para descarga
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $archiveName . '"');
+        header('Content-Length: ' . filesize($archivePath));
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+
+        // Enviar el archivo
+        readfile($archivePath);
+
+        // Limpiar archivos temporales
+        array_map('unlink', $generatedFiles);
+        unlink($archivePath);
+        rmdir($tempDir);
+
+        exit;
+    }
+
+    http_response_code(500);
+    die('No se pudo crear el archivo ZIP');
     
 } catch (Exception $e) {
     error_log("Error general: " . $e->getMessage());
