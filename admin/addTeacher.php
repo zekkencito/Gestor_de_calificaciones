@@ -18,6 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $grupos = isset($_POST['grupos']) ? $_POST['grupos'] : [];
     $materias = isset($_POST['materias']) ? $_POST['materias'] : [];
 
+    $currentYear = date('Y');
+    $stmtSchoolYear = $conexion->prepare("SELECT idSchoolYear FROM schoolYear WHERE CURDATE() BETWEEN startDate AND endDate ORDER BY startDate DESC LIMIT 1");
+    $stmtSchoolYear->execute();
+    $currentSchoolYear = $stmtSchoolYear->get_result()->fetch_assoc();
+    $stmtSchoolYear->close();
+
+    if (!$currentSchoolYear) {
+        header("Location: teachers.php?status=error");
+        exit();
+    }
+    $idSchoolYear = (int) $currentSchoolYear['idSchoolYear'];
+
     // Verificar si ya existe un maestro con los mismos datos
     $checkSql = "SELECT t.idTeacher 
                 FROM teachers t 
@@ -75,6 +87,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($grupos) && !empty($materias)) {
             $sqlAssignment = "INSERT INTO teacherGroupsSubjects (idTeacher, idGroup, idSubject) VALUES (?, ?, ?)";
             $stmtAssignment = $conexion->prepare($sqlAssignment);
+
+            $sqlTeacherSubject = "INSERT INTO teacherSubject (idTeacher, idSubject, idSchoolYear)
+                                  SELECT ?, ?, ?
+                                  WHERE NOT EXISTS (
+                                      SELECT 1 FROM teacherSubject
+                                      WHERE idTeacher = ? AND idSubject = ? AND idSchoolYear = ?
+                                  )";
+            $stmtTeacherSubject = $conexion->prepare($sqlTeacherSubject);
+
+            foreach ($materias as $subjectId) {
+                $subjectId = (int) $subjectId;
+                $stmtTeacherSubject->bind_param("iiiiii", $idTeacher, $subjectId, $idSchoolYear, $idTeacher, $subjectId, $idSchoolYear);
+                $stmtTeacherSubject->execute();
+            }
             
             foreach ($grupos as $groupId) {
                 foreach ($materias as $subjectId) {
