@@ -334,8 +334,8 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     $pdf->SetTextColor(0, 0, 0);
     foreach ($learningAreas as $area) {
         // Fila de campo formativo (área)
-        $pdf->SetFont('Helvetica', '', $tableRowFontSize);
-        $pdf->Cell($subjectColW, $tableRowHeight, utf8_decode_safe($area['name']), 1, 0, 'L');
+        $pdf->SetFont('Helvetica', 'B', $tableRowFontSize);
+        $pdf->Cell($subjectColW, $tableRowHeight, utf8_decode_safe('Campo formativo: ' . $area['name']), 1, 0, 'L');
         foreach ($quartersToShow as $q) {
             $qid = (int)$q['idSchoolQuarter'];
             $avg = $area['avgByQ'][$qid] ?? null;
@@ -351,7 +351,9 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
         // Filas de materias
         foreach ($area['subjects'] as $subject) {
             $pdf->SetFont('Helvetica', '', $tableRowFontSize);
-            $pdf->Cell($subjectColW, $tableRowHeight, utf8_decode_safe($subject['name']), 1, 0, 'L');
+            $subjectIndent = 4;
+            $pdf->Cell($subjectIndent, $tableRowHeight, '', 'LTB', 0, 'L');
+            $pdf->Cell($subjectColW - $subjectIndent, $tableRowHeight, utf8_decode_safe($subject['name']), 'RTB', 0, 'L');
             foreach ($quartersToShow as $q) {
                 $qid = (int)$q['idSchoolQuarter'];
                 $g = $subject['gradesByQ'][$qid] ?? null;
