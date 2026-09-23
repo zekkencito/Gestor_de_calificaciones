@@ -13,7 +13,10 @@ $rowT = $resT->fetch_assoc();
 $idTeacher = $rowT['idTeacher'];
 
 // Obtener grupos asignados al maestro
-$sqlGroups = "SELECT DISTINCT idGroup FROM teacherGroupsSubjects WHERE idTeacher = ?";
+$sqlGroups = "SELECT DISTINCT tgs.idGroup
+              FROM teacherGroupsSubjects tgs
+              JOIN schoolYear sy ON CURDATE() BETWEEN sy.startDate AND sy.endDate
+              WHERE tgs.idTeacher = ?";
 $stmtG = $conexion->prepare($sqlGroups);
 $stmtG->bind_param('i', $idTeacher);
 $stmtG->execute();
@@ -33,7 +36,11 @@ $total = 0;
 $aprobados = 0;
 foreach ($groups as $idGroup) {
     // Obtener alumnos del grupo
-    $sqlAlumnos = "SELECT idStudent FROM students WHERE idGroup = ?";
+        $sqlAlumnos = "SELECT s.idStudent
+                                     FROM students s
+                                     JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
+                                     WHERE s.idGroup = ?
+                                         AND CURDATE() BETWEEN sy.startDate AND sy.endDate";
     $stmtA = $conexion->prepare($sqlAlumnos);
     $stmtA->bind_param('i', $idGroup);
     $stmtA->execute();
@@ -44,8 +51,14 @@ foreach ($groups as $idGroup) {
     }
     if (empty($alumnos)) continue;
     $in = implode(',', $alumnos);
-    // Obtener promedios finales de cada alumno (último año y trimestre)
-    $sqlAvg = "SELECT AVG(average) as prom FROM average WHERE idStudent IN ($in)";
+        // Obtener promedios del ciclo y bimestre vigentes.
+        $sqlAvg = "SELECT AVG(a.average) AS prom
+                             FROM average a
+                             JOIN schoolYear sy ON a.idSchoolYear = sy.idSchoolYear
+                             JOIN schoolQuarter sq ON a.idSchoolQuarter = sq.idSchoolQuarter
+                             WHERE a.idStudent IN ($in)
+                                 AND CURDATE() BETWEEN sy.startDate AND sy.endDate
+                                 AND CURDATE() BETWEEN sq.startDate AND sq.endDate";
     $resAvg = $conexion->query($sqlAvg);
     $rowAvg = $resAvg->fetch_assoc();
     $prom = floatval($rowAvg['prom']);

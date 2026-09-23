@@ -11,6 +11,9 @@ function cargarPromediosDashboard(tipo) {
     .then(data => {
       if (data.success) {
         const ctx2 = document.getElementById('chartCategorias');
+        if (!ctx2 || typeof Chart === 'undefined') {
+          return;
+        }
         new Chart(ctx2, {
           type: 'bar',
           data: {

@@ -3,17 +3,14 @@ require_once 'check_session.php';
 require_once '../conection.php';
 header('Content-Type: application/json');
 
-$currentYear = date('Y');
 $sqlPeriod = "SELECT sy.idSchoolYear, sq.idSchoolQuarter
               FROM schoolYear sy
-              LEFT JOIN schoolQuarter sq ON sq.idSchoolYear = sy.idSchoolYear
-              WHERE (YEAR(sy.startDate) = ? OR YEAR(sy.endDate) = ?)
-              AND (CURDATE() BETWEEN sq.startDate AND sq.endDate
-                   OR sq.idSchoolQuarter IS NULL)
-              ORDER BY sy.startDate DESC, sq.idSchoolQuarter ASC
+                            JOIN schoolQuarter sq ON sq.idSchoolYear = sy.idSchoolYear
+                            WHERE CURDATE() BETWEEN sy.startDate AND sy.endDate
+                                AND CURDATE() BETWEEN sq.startDate AND sq.endDate
+                            ORDER BY sy.startDate DESC, sq.idSchoolQuarter ASC
               LIMIT 1";
 $stmtPeriod = $conexion->prepare($sqlPeriod);
-$stmtPeriod->bind_param('ii', $currentYear, $currentYear);
 $stmtPeriod->execute();
 $period = $stmtPeriod->get_result()->fetch_assoc();
 $stmtPeriod->close();
