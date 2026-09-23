@@ -301,6 +301,9 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     }
     if ($showFinalAverage) $colLabels[] = 'Prom. Final';
 
+    $tableRowHeight = 7;
+    $tableRowFontSize = 9;
+
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->SetTextColor(0, 0, 0);
     $pdf->Cell($subjectColW, 7, utf8_decode_safe('CAMPO FORMATIVO / MATERIA'), 1, 0, 'C');
@@ -311,34 +314,32 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
 
     $pdf->SetTextColor(0, 0, 0);
     foreach ($learningAreas as $area) {
-        $pdf->SetFont('Helvetica', 'B', 10);
-        $pdf->SetFillColor(160, 160, 160);
-        $pdf->Cell($subjectColW, 9, utf8_decode_safe($area['name']), 1, 0, 'C', true);
+        $pdf->SetFont('Helvetica', '', $tableRowFontSize);
+        $pdf->Cell($subjectColW, $tableRowHeight, utf8_decode_safe($area['name']), 1, 0, 'L');
         foreach ($quartersToShow as $q) {
             $qid = (int)$q['idSchoolQuarter'];
             $avg = $area['avgByQ'][$qid] ?? null;
             $val = $avg !== null ? number_format($avg, 1) : '';
-            $pdf->Cell($gradeColW, 9, $val, 1, 0, 'C', true);
+            $pdf->Cell($gradeColW, $tableRowHeight, $val, 1, 0, 'C');
         }
         if ($showFinalAverage) {
             $val = $area['finalAverage'] !== null ? number_format($area['finalAverage'], 1) : '';
-            $pdf->Cell($gradeColW, 9, $val, 1, 0, 'C', true);
+            $pdf->Cell($gradeColW, $tableRowHeight, $val, 1, 0, 'C');
         }
         $pdf->Ln();
 
         foreach ($area['subjects'] as $subject) {
-            $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetFillColor(245, 245, 245);
-            $pdf->Cell($subjectColW, 6, utf8_decode_safe($subject['name']), 1, 0, 'L');
+            $pdf->SetFont('Helvetica', '', $tableRowFontSize);
+            $pdf->Cell($subjectColW, $tableRowHeight, utf8_decode_safe($subject['name']), 1, 0, 'L');
             foreach ($quartersToShow as $q) {
                 $qid = (int)$q['idSchoolQuarter'];
                 $g = $subject['gradesByQ'][$qid] ?? null;
                 $val = $g !== null ? number_format($g, 1) : '';
-                $pdf->Cell($gradeColW, 6, $val, 1, 0, 'C');
+                $pdf->Cell($gradeColW, $tableRowHeight, $val, 1, 0, 'C');
             }
             if ($showFinalAverage) {
                 $val = $subject['finalGrade'] !== null ? number_format($subject['finalGrade'], 1) : '';
-                $pdf->Cell($gradeColW, 6, $val, 1, 0, 'C');
+                $pdf->Cell($gradeColW, $tableRowHeight, $val, 1, 0, 'C');
             }
             $pdf->Ln();
         }
@@ -347,18 +348,17 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     // PROMEDIO GENERAL
     $pdf->Ln(8);
     $pdf->SetFont('Helvetica', 'B', 11);
-    $pdf->SetFillColor(80, 80, 80);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell($subjectColW, 8, utf8_decode_safe('PROMEDIO GENERAL'), 1, 0, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->Cell($subjectColW, 8, utf8_decode_safe('PROMEDIO GENERAL'), 1, 0, 'C');
     foreach ($quartersToShow as $q) {
         $qid = (int)$q['idSchoolQuarter'];
         $avg = $generalAvgByQ[$qid] ?? null;
         $val = $avg !== null ? number_format($avg, 1) : '';
-        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C', true);
+        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C');
     }
     if ($showFinalAverage) {
         $val = $generalFinalAvg !== null ? number_format($generalFinalAvg, 1) : '';
-        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C', true);
+        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C');
     }
     $pdf->Ln(15);
 
