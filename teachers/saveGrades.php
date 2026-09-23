@@ -13,7 +13,7 @@ try {
         error_log('Error: No se recibieron calificaciones en saveGrades');
         throw new Exception('No se encontraron calificaciones para guardar.');
     }
-    $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter LIMIT 1");
+    $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY startDate DESC, idSchoolQuarter LIMIT 1");
     $stmtQuarter->bind_param("i", $data['idSchoolYear']);
     $stmtQuarter->execute();
     $activeQuarter = $stmtQuarter->get_result()->fetch_assoc();

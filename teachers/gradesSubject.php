@@ -58,17 +58,15 @@ if ($idSubject > 0) {
     $stmtSubject->close();
 }
 
-// Obtener automáticamente el ciclo escolar del año actual
-$currentYear = date('Y');
+// Obtener el ciclo escolar que contiene la fecha actual.
 $sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
                    FROM schoolYear 
-                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                   WHERE CURDATE() BETWEEN startDate AND endDate
                    ORDER BY startDate DESC LIMIT 1";
 $stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
 if (!$stmtCurrentYear) {
     die("Error al preparar consulta del año escolar: " . $conexion->error);
 }
-$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
 $stmtCurrentYear->execute();
 $resultCurrentYear = $stmtCurrentYear->get_result();
 $currentSchoolYear = $resultCurrentYear->fetch_assoc();
