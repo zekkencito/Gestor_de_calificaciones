@@ -48,33 +48,45 @@ function utf8_decode_safe($text) {
 // Función para generar PDF programáticamente (para uso desde otros archivos)
 function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexion) {
     require_once "../fpdf.php";
-    
-    // Obtener información del estudiante
-    $sqlStudent = "SELECT s.idStudent, s.schoolNum, ui.lastnamePa, ui.lastnameMa, ui.names, g.grade, g.group_, s.curp,
-                   sy.startDate as schoolYear, sy.endDate,
-                   sq.name as quarterName
+
+    // ─── 1. Información del estudiante ──────────────────────────────────
+    $sqlStudent = "SELECT s.idStudent, s.schoolNum, ui.lastnamePa, ui.lastnameMa, ui.names,
+                          g.grade, g.group_, s.curp,
+                          sy.startDate as schoolYear, sy.endDate,
+                          sq.name as quarterName
                    FROM students s
                    JOIN usersInfo ui ON s.idUserInfo = ui.idUserInfo
                    JOIN groups g ON s.idGroup = g.idGroup
                    JOIN schoolYear sy ON s.idSchoolYear = sy.idSchoolYear
                    CROSS JOIN schoolQuarter sq
                    WHERE s.idStudent = ? AND s.idSchoolYear = ? AND sq.idSchoolQuarter = ?";
-
     $stmtStudent = $conexion->prepare($sqlStudent);
-    if (!$stmtStudent) {
-        throw new Exception("Error preparando consulta student: " . $conexion->error);
-    }
-
+    if (!$stmtStudent) throw new Exception("Error preparando consulta student: " . $conexion->error);
     $stmtStudent->bind_param("iii", $idStudent, $idSchoolYear, $idSchoolQuarter);
     $stmtStudent->execute();
-    $result = $stmtStudent->get_result();
-    $student = $result->fetch_assoc();
+    $student = $stmtStudent->get_result()->fetch_assoc();
+    $stmtStudent->close();
+    if (!$student) throw new Exception("No se encontró información del estudiante");
 
-    if (!$student) {
-        throw new Exception("No se encontró información del estudiante");
+    // ─── 2. Todos los bimestres del ciclo escolar ────────────────────────
+    $stmtAllQ = $conexion->prepare(
+        "SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? ORDER BY idSchoolQuarter ASC"
+    );
+    $stmtAllQ->bind_param('i', $idSchoolYear);
+    $stmtAllQ->execute();
+    $allQuarters = $stmtAllQ->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmtAllQ->close();
+
+    // Solo mostrar bimestres hasta el actual (inclusive)
+    $quartersToShow = [];
+    foreach ($allQuarters as $q) {
+        $quartersToShow[] = $q;
+        if ((int)$q['idSchoolQuarter'] === (int)$idSchoolQuarter) break;
     }
+    // Columna "Promedio Final" solo cuando se muestran TODOS los bimestres
+    $showFinalAverage = count($quartersToShow) === count($allQuarters) && count($allQuarters) >= 2;
 
-    // Obtener las materias del estudiante basándose en su grupo con sus áreas de aprendizaje
+    // ─── 3. Materias y calificaciones por bimestre ──────────────────────
     $sqlSubjects = "SELECT DISTINCT s.idSubject, s.name as subjectName, s.idLearningArea, la.name as learningAreaName
                     FROM subjects s
                     JOIN learningArea la ON s.idLearningArea = la.idLearningArea
@@ -82,161 +94,150 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
                     JOIN students st ON st.idGroup = tgs.idGroup
                     WHERE st.idStudent = ? AND st.idSchoolYear = ?
                     ORDER BY la.name, s.name";
-
     $stmtSubjects = $conexion->prepare($sqlSubjects);
-    if (!$stmtSubjects) {
-        throw new Exception("Error preparando consulta subjects: " . $conexion->error);
-    }
+    if (!$stmtSubjects) throw new Exception("Error preparando consulta subjects: " . $conexion->error);
     $stmtSubjects->bind_param("ii", $idStudent, $idSchoolYear);
     $stmtSubjects->execute();
     $resultSubjects = $stmtSubjects->get_result();
 
     $learningAreas = [];
-    $subjects = [];
-    $totalGrade = 0;
-    $validGrades = 0;
+    $generalSumByQ = array_fill_keys(array_column($quartersToShow, 'idSchoolQuarter'), 0.0);
+    $generalCntByQ = array_fill_keys(array_column($quartersToShow, 'idSchoolQuarter'), 0);
 
     while ($subject = $resultSubjects->fetch_assoc()) {
-        // Obtener el promedio calculado correctamente desde la tabla average
-        $sqlAverage = "SELECT a.average
-                       FROM average a
-                       WHERE a.idStudent = ? AND a.idSubject = ? AND a.idSchoolYear = ? AND a.idSchoolQuarter = ?";
-        
-        $stmtAverage = $conexion->prepare($sqlAverage);
-        if (!$stmtAverage) {
-            throw new Exception("Error preparando consulta average: " . $conexion->error);
+        $gradesByQ = [];
+        foreach ($quartersToShow as $q) {
+            $qid = (int)$q['idSchoolQuarter'];
+            $stmtAvg = $conexion->prepare(
+                "SELECT average FROM average WHERE idStudent=? AND idSubject=? AND idSchoolYear=? AND idSchoolQuarter=?"
+            );
+            if (!$stmtAvg) throw new Exception("Error preparando consulta average");
+            $stmtAvg->bind_param('iiii', $idStudent, $subject['idSubject'], $idSchoolYear, $qid);
+            $stmtAvg->execute();
+            $avgData = $stmtAvg->get_result()->fetch_assoc();
+            $stmtAvg->close();
+            // null = sin calificación capturada (celda en blanco)
+            $grade = ($avgData && $avgData['average'] !== null)
+                ? ceil(floatval($avgData['average']) * 10) / 10
+                : null;
+            $gradesByQ[$qid] = $grade;
+            if ($grade !== null) {
+                $generalSumByQ[$qid] += $grade;
+                $generalCntByQ[$qid]++;
+            }
         }
-        $stmtAverage->bind_param("iiii", $idStudent, $subject['idSubject'], $idSchoolYear, $idSchoolQuarter);
-        $stmtAverage->execute();
-        $resultAverage = $stmtAverage->get_result();
-        $averageData = $resultAverage->fetch_assoc();
-        $stmtAverage->close();
-        
-        // Usar directamente el promedio calculado o 0 si no existe
-        $average = ($averageData && isset($averageData['average']) && $averageData['average'] !== null) 
-                   ? ceil(floatval($averageData['average']) * 10) / 10  // Redondear hacia arriba como en saveGrades.php
-                   : 0;
-        
+
+        $nonNull = array_filter($gradesByQ, fn($v) => $v !== null);
+        $finalGrade = count($nonNull) > 0 ? round(array_sum($nonNull) / count($nonNull), 1) : null;
+
         $subjectData = [
-            'name' => $subject['subjectName'],
-            'average' => $average,
-            'idLearningArea' => $subject['idLearningArea'],
-            'learningAreaName' => $subject['learningAreaName']
+            'name'          => $subject['subjectName'],
+            'gradesByQ'     => $gradesByQ,
+            'finalGrade'    => $finalGrade,
+            'idLearningArea'=> $subject['idLearningArea'],
         ];
-        
-        $subjects[] = $subjectData;
-        
-        // Agrupar por área de aprendizaje
+
         $areaId = $subject['idLearningArea'];
         if (!isset($learningAreas[$areaId])) {
             $learningAreas[$areaId] = [
-                'name' => $subject['learningAreaName'],
-                'subjects' => [],
-                'totalGrade' => 0,
-                'subjectCount' => 0
+                'name'         => $subject['learningAreaName'],
+                'subjects'     => [],
+                'sumByQ'       => array_fill_keys(array_column($quartersToShow, 'idSchoolQuarter'), 0.0),
+                'cntByQ'       => array_fill_keys(array_column($quartersToShow, 'idSchoolQuarter'), 0),
+                'subjectCount' => 0,
             ];
         }
-        
         $learningAreas[$areaId]['subjects'][] = $subjectData;
-        $learningAreas[$areaId]['totalGrade'] += $average;
+        foreach ($quartersToShow as $q) {
+            $qid = (int)$q['idSchoolQuarter'];
+            if ($gradesByQ[$qid] !== null) {
+                $learningAreas[$areaId]['sumByQ'][$qid] += $gradesByQ[$qid];
+                $learningAreas[$areaId]['cntByQ'][$qid]++;
+            }
+        }
         $learningAreas[$areaId]['subjectCount']++;
-        
-        // Incluir TODAS las materias en el promedio general (vacías como 0)
-        $totalGrade += $average;
-        $validGrades++;
     }
     $stmtSubjects->close();
 
-    // Calcular promedio por área de aprendizaje
-    foreach ($learningAreas as $areaId => &$area) {
-        $area['average'] = $area['subjectCount'] > 0 ? ceil(($area['totalGrade'] / $area['subjectCount']) * 10) / 10 : 0;
+    foreach ($learningAreas as &$area) {
+        $area['avgByQ'] = [];
+        $nonNullAreaAvgs = [];
+        foreach ($quartersToShow as $q) {
+            $qid = (int)$q['idSchoolQuarter'];
+            $avg = $area['cntByQ'][$qid] > 0
+                ? round($area['sumByQ'][$qid] / $area['cntByQ'][$qid], 1)
+                : null;
+            $area['avgByQ'][$qid] = $avg;
+            if ($avg !== null) $nonNullAreaAvgs[] = $avg;
+        }
+        $area['finalAverage'] = count($nonNullAreaAvgs) > 0
+            ? round(array_sum($nonNullAreaAvgs) / count($nonNullAreaAvgs), 1)
+            : null;
     }
-    unset($area); // Liberar la referencia para evitar problemas en bucles posteriores
+    unset($area);
 
-    // Si no se encontraron materias, agregar mensaje explicativo
+    $generalAvgByQ  = [];
+    $nonNullGenAvgs = [];
+    foreach ($quartersToShow as $q) {
+        $qid = (int)$q['idSchoolQuarter'];
+        $avg = $generalCntByQ[$qid] > 0
+            ? round($generalSumByQ[$qid] / $generalCntByQ[$qid], 1)
+            : null;
+        $generalAvgByQ[$qid] = $avg;
+        if ($avg !== null) $nonNullGenAvgs[] = $avg;
+    }
+    $generalFinalAvg = count($nonNullGenAvgs) > 0
+        ? round(array_sum($nonNullGenAvgs) / count($nonNullGenAvgs), 1)
+        : null;
+
     if (empty($learningAreas)) {
         $learningAreas[0] = [
-            'name' => 'Sin áreas asignadas',
-            'subjects' => [[
-                'name' => 'No se encontraron materias asignadas',
-                'average' => 0
-            ]],
-            'average' => 0,
-            'totalGrade' => 0,
-            'subjectCount' => 1
+            'name'         => 'Sin áreas asignadas',
+            'subjects'     => [['name' => 'No se encontraron materias asignadas', 'gradesByQ' => [], 'finalGrade' => 0]],
+            'avgByQ'       => [],
+            'finalAverage' => 0,
+            'subjectCount' => 1,
         ];
     }
 
-    // Calcular promedio general
-    $generalAverage = $validGrades > 0 ? round($totalGrade / $validGrades, 1) : 0;
+    if (empty($student['names'])) throw new Exception("Error: Información del estudiante incompleta");
 
-    // Verificar que tenemos información mínima para generar el PDF
-    if (empty($student['names'])) {
-        throw new Exception("Error: Información del estudiante incompleta");
-    }
-
-    // Crear el PDF con soporte para UTF-8
+    // ─── 4. Generar PDF ─────────────────────────────────────────────────
     $pdf = new FPDF('P', 'mm', 'Letter');
     $pdf->AddPage();
     $pdf->SetMargins(20, 15, 20);
 
-    // Logo y encabezado (FPDF solo soporta JPG, PNG, GIF)
-    $logoPaths = [
-        '../img/logo.png',
-        '../img/logo.jpg',
-        '../img/logo.jpeg',
-        '../img/logo.gif'
-    ];
-    
-    // Encabezado profesional con logo centrado
-    $pageWidth = 216; // Ancho de página Letter en mm
+    $logoPaths = ['../img/logo.png','../img/logo.jpg','../img/logo.jpeg','../img/logo.gif'];
+    $pageWidth = 216;
     $logoWidth = 20;
     $logoX = ($pageWidth - $logoWidth) / 2;
-    
     foreach ($logoPaths as $logoPath) {
         if (file_exists($logoPath)) {
-            try {
-                $pdf->Image($logoPath, $logoX, 12, $logoWidth, $logoWidth);
-                break;
-            } catch (Exception $e) {
-                error_log("Error al cargar logo: " . $e->getMessage());
-            }
+            try { $pdf->Image($logoPath, $logoX, 12, $logoWidth, $logoWidth); break; }
+            catch (Exception $e) { error_log("Error al cargar logo: " . $e->getMessage()); }
         }
     }
 
-    // Nombre de la escuela centrado debajo del logo
     $pdf->SetY(35);
     $pdf->SetFont('Helvetica', '', 10);
     $pdf->Cell(0, 5, utf8_decode_safe('Escuela Primaria'), 0, 1, 'C');
-    $pdf->SetFont('Helvetica', '', 10);
     $pdf->Cell(0, 5, utf8_decode_safe('Gregorio Torres Quintero No.2308'), 0, 1, 'C');
-    
-    $pdf->Ln(5);
-    
-    // Título de boleta centrado
-    //$pdf->SetFont('Helvetica', 'B', 12);
-    //$pdf->Cell(0, 10, utf8_decode_safe('BOLETA DE CALIFICACIONES'), 0, 1, 'C');
-
     $pdf->Ln(8);
 
-    // Asignar variables del estudiante
     $lastnamePa = $student['lastnamePa'] ?? '';
     $lastnameMa = $student['lastnameMa'] ?? '';
-    $names = $student['names'] ?? '';
-    $grade = $student['grade'] ?? '';
-    $group = $student['group_'] ?? '';
+    $names      = $student['names']      ?? '';
+    $grade      = $student['grade']      ?? '';
+    $group      = $student['group_']     ?? '';
 
-    // ===== DATOS DEL ALUMNO =====
-    $pdf->SetTextColor(0, 0, 0);
+    // DATOS DEL ALUMNO
     $pdf->SetFont('Helvetica', 'B', 11);
     $pdf->Cell(0, 6, utf8_decode_safe('DATOS DEL ALUMNO'), 0, 1, 'L');
-    
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(0, 1, '', 0, 1);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
     $pdf->Ln(3);
-    
-    // Información del estudiante en dos filas
+
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(45, 5, utf8_decode_safe('Apellido Paterno: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
@@ -245,7 +246,7 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     $pdf->Cell(35, 5, utf8_decode_safe('Apellido Materno: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->Cell(0, 5, utf8_decode_safe($lastnameMa), 0, 1, 'L');
-    
+
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(30, 5, utf8_decode_safe('Nombre(s): '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
@@ -258,19 +259,16 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     $pdf->Cell(15, 5, utf8_decode_safe('Grupo: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->Cell(0, 5, utf8_decode_safe($group), 0, 1, 'L');
-    
     $pdf->Ln(8);
-    
-    // ===== DATOS DE LA ESCUELA =====
+
+    // DATOS DE LA ESCUELA
     $pdf->SetFont('Helvetica', 'B', 11);
     $pdf->Cell(0, 6, utf8_decode_safe('DATOS DE LA ESCUELA'), 0, 1, 'L');
-    
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(0, 1, '', 0, 1);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
     $pdf->Ln(3);
-    
-    // Ciclo escolar, período, turno
+
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(50, 5, utf8_decode_safe('Ciclo Escolar: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
@@ -280,60 +278,91 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     $pdf->Cell(35, 5, utf8_decode_safe('Período: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->Cell(0, 5, utf8_decode_safe($student['quarterName']), 0, 1, 'L');
-    
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->Cell(50, 5, utf8_decode_safe('Turno: '), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->Cell(0, 5, utf8_decode_safe('Matutino'), 0, 1, 'L');
-    
     $pdf->Ln(10);
 
-    // Tabla de calificaciones
-    // Encabezado de la tabla
-    $pdf->SetFont('Helvetica', 'B', 10);
-    $pdf->SetFillColor(100, 100, 100);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(100, 7, utf8_decode_safe('CAMPO FORMATIVO / MATERIA'), 1, 0, 'C', true);
-    $pdf->Cell(90, 7, utf8_decode_safe('CALIFICACIÓN'), 1, 1, 'C', true);
+    // TABLA DE CALIFICACIONES
+    $totalW       = 176;
+    $numGradeCols = count($quartersToShow) + ($showFinalAverage ? 1 : 0);
+    $subjectColW  = match ($numGradeCols) {
+        1       => 116,
+        2       => 100,
+        3       => 90,
+        default => 82,
+    };
+    $gradeColW = ($totalW - $subjectColW) / max(1, $numGradeCols);
 
-    // Filas de la tabla por áreas de aprendizaje
+    $colLabels = [];
+    foreach ($quartersToShow as $i => $q) {
+        $colLabels[] = 'Bim. ' . ($i + 1);
+    }
+    if ($showFinalAverage) $colLabels[] = 'Prom. Final';
+
+    $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->SetTextColor(0, 0, 0);
+    $pdf->Cell($subjectColW, 7, utf8_decode_safe('CAMPO FORMATIVO / MATERIA'), 1, 0, 'C');
+    foreach ($colLabels as $lbl) {
+        $pdf->Cell($gradeColW, 7, utf8_decode_safe($lbl), 1, 0, 'C');
+    }
+    $pdf->Ln();
 
+    $pdf->SetTextColor(0, 0, 0);
     foreach ($learningAreas as $area) {
-        // Fila del campo formativo (encabezado de grupo)
-        $pdf->SetFont('Helvetica', 'B', 11);
+        $pdf->SetFont('Helvetica', 'B', 10);
         $pdf->SetFillColor(160, 160, 160);
-        $pdf->Cell(100, 9, utf8_decode_safe($area['name']), 1, 0, 'C', true);
-        
-        // Celda de calificación del área
-        $pdf->SetFont('Helvetica', 'B', 11);
-        $pdf->Cell(90, 9, number_format($area['average'], 1), 1, 1, 'C', true);
-        
-        // Filas de materias dentro del área
+        $pdf->Cell($subjectColW, 9, utf8_decode_safe($area['name']), 1, 0, 'C', true);
+        foreach ($quartersToShow as $q) {
+            $qid = (int)$q['idSchoolQuarter'];
+            $avg = $area['avgByQ'][$qid] ?? null;
+            $val = $avg !== null ? number_format($avg, 1) : '';
+            $pdf->Cell($gradeColW, 9, $val, 1, 0, 'C', true);
+        }
+        if ($showFinalAverage) {
+            $val = $area['finalAverage'] !== null ? number_format($area['finalAverage'], 1) : '';
+            $pdf->Cell($gradeColW, 9, $val, 1, 0, 'C', true);
+        }
+        $pdf->Ln();
+
         foreach ($area['subjects'] as $subject) {
-            $pdf->SetFont('Helvetica', '', 9);
+            $pdf->SetFont('Helvetica', '', 8);
             $pdf->SetFillColor(245, 245, 245);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(100, 6, utf8_decode_safe($subject['name']), 1, 0, 'C');
-            
-            // Celda de calificación
-            $pdf->SetFont('Helvetica', '', 9);
-            $pdf->Cell(90, 6, number_format($subject['average'], 1), 1, 1, 'C');
+            $pdf->Cell($subjectColW, 6, utf8_decode_safe($subject['name']), 1, 0, 'L');
+            foreach ($quartersToShow as $q) {
+                $qid = (int)$q['idSchoolQuarter'];
+                $g = $subject['gradesByQ'][$qid] ?? null;
+                $val = $g !== null ? number_format($g, 1) : '';
+                $pdf->Cell($gradeColW, 6, $val, 1, 0, 'C');
+            }
+            if ($showFinalAverage) {
+                $val = $subject['finalGrade'] !== null ? number_format($subject['finalGrade'], 1) : '';
+                $pdf->Cell($gradeColW, 6, $val, 1, 0, 'C');
+            }
+            $pdf->Ln();
         }
     }
 
-     $pdf->Ln(8);
-
-    // Promedio General (después de la tabla)
-    $pdf->SetFont('Helvetica', 'B', 12);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->Cell(144, 8, utf8_decode_safe('PROMEDIO GENERAL: '), 0, 0, 'R');
-    $pdf->SetFillColor(100, 100, 100);
+    // PROMEDIO GENERAL
+    $pdf->Ln(8);
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->SetFillColor(80, 80, 80);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(46, 8, number_format($generalAverage, 1), 1, 1, 'C', true);
+    $pdf->Cell($subjectColW, 8, utf8_decode_safe('PROMEDIO GENERAL'), 1, 0, 'C', true);
+    foreach ($quartersToShow as $q) {
+        $qid = (int)$q['idSchoolQuarter'];
+        $avg = $generalAvgByQ[$qid] ?? null;
+        $val = $avg !== null ? number_format($avg, 1) : '';
+        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C', true);
+    }
+    if ($showFinalAverage) {
+        $val = $generalFinalAvg !== null ? number_format($generalFinalAvg, 1) : '';
+        $pdf->Cell($gradeColW, 8, $val, 1, 0, 'C', true);
+    }
     $pdf->Ln(15);
 
-    // Escala de calificaciones
+    // ESCALA DE CALIFICACIONES
     $pdf->SetFont('Helvetica', 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
     $pdf->Cell(0, 6, utf8_decode_safe('ESCALA DE CALIFICACIONES:'), 0, 1, 'L');
