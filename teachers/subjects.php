@@ -69,7 +69,7 @@ while ($quarter = $resultQuarters->fetch_assoc()) {
 $stmtQuarters->close();
 
 $subjects = [];
-if ($teacher_id && $currentSchoolYear && $currentQuarter) {
+if ($teacher_id && $currentSchoolYear) {
     // Paso 2: Obtener las materias asignadas a este docente para el año y trimestre actual
     // Para materias especiales, incluir grupo y grado
     $query = "SELECT DISTINCT
