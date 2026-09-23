@@ -386,6 +386,15 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     }
     $pdf->Ln(15);
 
+    if ($showFinalAverage) {
+        $pdf->SetFont('Helvetica', 'B', 10);
+        $pdf->Cell($subjectColW, 8, utf8_decode_safe('CALIFICACIÓN FINAL'), 1, 0, 'C');
+        $pdf->SetFont('Helvetica', 'B', 11);
+        $finalValue = $generalFinalAvg !== null ? number_format($generalFinalAvg, 1) : '';
+        $pdf->Cell($gradeColW, 8, $finalValue, 1, 0, 'C');
+        $pdf->Ln(15);
+    }
+
     // ── ESCALA DE CALIFICACIONES ─────────────────────────────────────
     $pdf->SetFont('Helvetica', 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
