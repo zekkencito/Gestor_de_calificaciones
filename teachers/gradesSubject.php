@@ -58,15 +58,17 @@ if ($idSubject > 0) {
     $stmtSubject->close();
 }
 
-// Obtener el ciclo escolar que contiene la fecha actual.
+// Obtener el ciclo escolar actual por año (más robusto que BETWEEN en startDate/endDate).
+$currentYear = date('Y');
 $sqlCurrentYear = "SELECT idSchoolYear, startDate, endDate 
                    FROM schoolYear 
-                   WHERE CURDATE() BETWEEN startDate AND endDate
+                   WHERE YEAR(startDate) = ? OR YEAR(endDate) = ?
                    ORDER BY startDate DESC LIMIT 1";
 $stmtCurrentYear = $conexion->prepare($sqlCurrentYear);
 if (!$stmtCurrentYear) {
     die("Error al preparar consulta del año escolar: " . $conexion->error);
 }
+$stmtCurrentYear->bind_param('ii', $currentYear, $currentYear);
 $stmtCurrentYear->execute();
 $resultCurrentYear = $stmtCurrentYear->get_result();
 $currentSchoolYear = $resultCurrentYear->fetch_assoc();
@@ -141,7 +143,10 @@ $stmtQuarters->execute();
 $resultQuarters = $stmtQuarters->get_result();
 $schoolQuarters = [];
 $currentQuarter = null;
-$currentDate = date('Y-m-d');
+// Obtener la fecha actual DESDE MySQL para respetar la zona horaria de la BD (-06:00).
+// Si usamos PHP date(), puede retornar UTC y no coincidir con las fechas guardadas.
+$resHoy = $conexion->query("SELECT CURDATE() AS hoy");
+$currentDate = ($resHoy && ($rowHoy = $resHoy->fetch_assoc())) ? $rowHoy['hoy'] : date('Y-m-d');
 while ($quarter = $resultQuarters->fetch_assoc()) {
     $schoolQuarters[] = $quarter;
     if ($quarter['startDate'] && $quarter['endDate']) {

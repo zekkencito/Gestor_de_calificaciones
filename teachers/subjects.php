@@ -56,7 +56,9 @@ $stmtQuarters->execute();
 $resultQuarters = $stmtQuarters->get_result();
 $quarters = [];
 $currentQuarter = null;
-$currentDate = date('Y-m-d');
+// Obtener fecha actual desde MySQL para respetar la zona horaria -06:00 de la BD.
+$resHoy = $conexion->query("SELECT CURDATE() AS hoy");
+$currentDate = ($resHoy && ($rowHoy = $resHoy->fetch_assoc())) ? $rowHoy['hoy'] : date('Y-m-d');
 while ($quarter = $resultQuarters->fetch_assoc()) {
     $quarters[] = $quarter;
     // Detectar el trimestre actual basado en la fecha
