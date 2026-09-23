@@ -1,38 +1,63 @@
 <?php
 require_once 'check_session.php';
 require_once '../conection.php';
-$user_id = $_SESSION['user_id'];
+header('Content-Type: application/json');
 
-// Obtener idTeacher
-$sqlTeacher = "SELECT idTeacher FROM teachers WHERE idUser = ?";
-$stmtT = $conexion->prepare($sqlTeacher);
-$stmtT->bind_param('i', $user_id);
-$stmtT->execute();
-$resT = $stmtT->get_result();
-$rowT = $resT->fetch_assoc();
-$idTeacher = $rowT['idTeacher'];
+$userId = $_SESSION['user_id'];
+$stmtTeacher = $conexion->prepare("SELECT idTeacher FROM teachers WHERE idUser = ?");
+$stmtTeacher->bind_param('i', $userId);
+$stmtTeacher->execute();
+$teacher = $stmtTeacher->get_result()->fetch_assoc();
+$stmtTeacher->close();
 
-// Obtener alumnos asignados a materias del maestro
-$sql = "SELECT DISTINCT s.idStudent FROM students s
-JOIN groups g ON s.idGroup = g.idGroup
-JOIN teacherGroupsSubjects tgs ON tgs.idGroup = g.idGroup AND tgs.idTeacher = ?";
-$stmt = $conexion->prepare($sql);
-$stmt->bind_param('i', $idTeacher);
-$stmt->execute();
-$res = $stmt->get_result();
-$alumnos = [];
-while($row = $res->fetch_assoc()) {
-    $alumnos[] = $row['idStudent'];
-}
-if (empty($alumnos)) {
-    echo json_encode(['success' => true, 'total' => 0, 'aprobados' => 0, 'porcentaje' => 0]);
+if (!$teacher) {
+    echo json_encode(['success' => false, 'labels' => [], 'values' => []]);
     exit;
 }
-$in = implode(',', $alumnos);
-$sqlAvg = "SELECT COUNT(*) as total, SUM(CASE WHEN average >= 70 OR (average < 70 AND average >= 7) THEN 1 ELSE 0 END) as aprobados FROM average WHERE idStudent IN ($in)";
-$resAvg = $conexion->query($sqlAvg);
-$rowAvg = $resAvg->fetch_assoc();
-$total = intval($rowAvg['total']);
-$aprobados = intval($rowAvg['aprobados']);
-$porcentaje = ($total > 0) ? round($aprobados * 100 / $total, 2) : 0;
-echo json_encode(['success' => true, 'total' => $total, 'aprobados' => $aprobados, 'porcentaje' => $porcentaje]);
+
+$currentYear = date('Y');
+$sqlPeriod = "SELECT sy.idSchoolYear, sq.idSchoolQuarter
+              FROM schoolYear sy
+              LEFT JOIN schoolQuarter sq ON sq.idSchoolYear = sy.idSchoolYear
+              WHERE (YEAR(sy.startDate) = ? OR YEAR(sy.endDate) = ?)
+              AND (CURDATE() BETWEEN sq.startDate AND sq.endDate
+                   OR sq.idSchoolQuarter IS NULL)
+              ORDER BY sy.startDate DESC, sq.idSchoolQuarter ASC
+              LIMIT 1";
+$stmtPeriod = $conexion->prepare($sqlPeriod);
+$stmtPeriod->bind_param('ii', $currentYear, $currentYear);
+$stmtPeriod->execute();
+$period = $stmtPeriod->get_result()->fetch_assoc();
+$stmtPeriod->close();
+
+if (!$period || !$period['idSchoolQuarter']) {
+    echo json_encode(['success' => true, 'labels' => [], 'values' => []]);
+    exit;
+}
+
+$sql = "SELECT sub.name AS subject_name, ROUND(AVG(a.average), 2) AS subject_average
+        FROM teacherGroupsSubjects tgs
+        JOIN subjects sub ON sub.idSubject = tgs.idSubject
+        JOIN students s ON s.idGroup = tgs.idGroup
+        JOIN average a ON a.idStudent = s.idStudent
+                       AND a.idSubject = tgs.idSubject
+        WHERE tgs.idTeacher = ?
+          AND s.idSchoolYear = ?
+          AND a.idSchoolYear = ?
+          AND a.idSchoolQuarter = ?
+          AND a.average IS NOT NULL
+        GROUP BY sub.idSubject, sub.name
+        ORDER BY sub.name";
+$stmt = $conexion->prepare($sql);
+$stmt->bind_param('iiii', $teacher['idTeacher'], $period['idSchoolYear'], $period['idSchoolYear'], $period['idSchoolQuarter']);
+$stmt->execute();
+$result = $stmt->get_result();
+$labels = [];
+$values = [];
+while ($row = $result->fetch_assoc()) {
+    $labels[] = $row['subject_name'];
+    $values[] = (float) $row['subject_average'];
+}
+$stmt->close();
+
+echo json_encode(['success' => true, 'labels' => $labels, 'values' => $values]);

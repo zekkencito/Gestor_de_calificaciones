@@ -1,4 +1,4 @@
-function cargarAprobadosPorcentaje(tipo) {
+function cargarPromediosDashboard(tipo) {
   let url = '';
   // Detecta desde dónde se llama el dashboard y usa rutas absolutas relativas
   if (tipo === 'admin') {
@@ -12,16 +12,15 @@ function cargarAprobadosPorcentaje(tipo) {
       if (data.success) {
         const ctx2 = document.getElementById('chartCategorias');
         new Chart(ctx2, {
-          type: 'pie',
+          type: 'bar',
           data: {
-            labels: ['Aprobados', 'No Aprobados'],
+            labels: data.labels,
             datasets: [{
-              label: tipo === 'admin' ? 'Porcentaje de grupos' : 'Porcentaje de alumnos',
-              data: [data.porcentaje, 100 - data.porcentaje],
-              backgroundColor: ['#1a7f4b', '#b91c1c'],
-              borderWidth: 2,
-              borderColor: '#ffffff',
-              hoverOffset: 6
+              label: tipo === 'admin' ? 'Promedio general por grupo' : 'Promedio por materia',
+              data: data.values,
+              backgroundColor: tipo === 'admin' ? '#315b8a' : '#1a7f4b',
+              borderRadius: 4,
+              maxBarThickness: 42
             }]
           },
           options: {
@@ -59,6 +58,13 @@ function cargarAprobadosPorcentaje(tipo) {
                 cornerRadius: 6,
                 padding: 12
               }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: { stepSize: 1 }
+              }
             }
           }
         });
@@ -69,9 +75,9 @@ function cargarAprobadosPorcentaje(tipo) {
 document.addEventListener('DOMContentLoaded', function () {
   // Detecta si es dashboard admin o teacher
   if (window.location.pathname.includes('/admin/')) {
-    cargarAprobadosPorcentaje('admin');
+    cargarPromediosDashboard('admin');
   } else {
-    cargarAprobadosPorcentaje('teacher');
+    cargarPromediosDashboard('teacher');
   }
   'use strict';
   

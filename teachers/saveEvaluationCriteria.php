@@ -36,6 +36,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
+        $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter LIMIT 1");
+        $stmtQuarter->bind_param("i", $idSchoolYear);
+        $stmtQuarter->execute();
+        $activeQuarter = $stmtQuarter->get_result()->fetch_assoc();
+        if (!$activeQuarter) {
+            echo json_encode(['success' => false, 'message' => 'No hay un bimestre vigente para capturar calificaciones en este momento.']);
+            exit;
+        }
+        if ((int) $idSchoolQuarter !== (int) $activeQuarter['idSchoolQuarter']) {
+            echo json_encode(['success' => false, 'message' => 'El bimestre vigente cambió. Recarga la página antes de guardar.']);
+            exit;
+        }
+        $stmtQuarter->close();
+
         // Obtener criterios existentes para este subject, year y quarter
         $stmt = $conexion->prepare("SELECT idEvalCriteria FROM evaluationCriteria 
                                    WHERE idSubject = ? AND idSchoolYear = ? AND idSchoolQuarter = ?");

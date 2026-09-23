@@ -130,7 +130,7 @@ $totalMaterias = mysqli_fetch_assoc($resMaterias)['total'];
                 <!-- Chart Panel -->
                 <div class="dash-panel dash-panel--chart">
                     <div class="dash-panel__header">
-                        <h2 class="dash-panel__title">Aprobación por Grupo</h2>
+                        <h2 class="dash-panel__title">Promedio General por Grupo</h2>
                     </div>
                     <div class="dash-panel__body">
                         <div class="dash-chart-wrap">

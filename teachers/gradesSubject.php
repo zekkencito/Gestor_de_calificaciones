@@ -154,10 +154,6 @@ while ($quarter = $resultQuarters->fetch_assoc()) {
 }
 $stmtQuarters->close();
 
-if (!$currentQuarter && count($schoolQuarters) > 0) {
-    $currentQuarter = $schoolQuarters[0];
-}
-
 $idSchoolQuarter = $currentQuarter ? $currentQuarter['idSchoolQuarter'] : null;
 
 // --- Obtener promedios guardados ---
@@ -193,6 +189,7 @@ if ($selectedYear && $idSchoolQuarter) {
     <link rel="stylesheet" href="../css/design-system.css?v=5">
     <link rel="stylesheet" href="../css/components.css?v=5">
     <link rel="stylesheet" href="../css/layout.css?v=5">
+    <link rel="stylesheet" href="../css/admin/student.css?v=5">
     <!-- Page styles -->
     <link rel="stylesheet" href="../css/teacher/gradeSubject.css?v=5">
     <!-- Tipografía -->
@@ -233,7 +230,7 @@ if ($selectedYear && $idSchoolQuarter) {
         <div class="gsub-filters">
             <div class="gsub-filters__header">
                 <i class="bi bi-gear"></i>
-                Período Actual
+                    Período Actual
             </div>
             <div class="gsub-filters__body">
                 <div class="gsub-info-row">
@@ -244,9 +241,21 @@ if ($selectedYear && $idSchoolQuarter) {
                     </div>
                     <div class="gra-info">
                         <i class="bi bi-calendar3"></i>
-                        <span class="gra-info__label">Trimestre:</span>
-                        <span class="gra-info__value"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?></span>
+                        <span class="gra-info__label">Bimestre vigente:</span>
+                        <span class="gra-info__value"><?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No hay un bimestre vigente'; ?></span>
+                        <?php if ($currentQuarter && $currentQuarter['startDate'] && $currentQuarter['endDate']): ?>
+                            <span class="gra-info__dates">
+                                (<?php echo date('d/m/Y', strtotime($currentQuarter['startDate'])); ?> - <?php echo date('d/m/Y', strtotime($currentQuarter['endDate'])); ?>)
+                            </span>
+                        <?php endif; ?>
                     </div>
+                </div>
+                <div class="stu-filter">
+                    <label for="buscarAlumno" class="stu-filter__label">
+                        <i class="bi bi-search"></i>
+                        Buscar alumno
+                    </label>
+                    <input type="search" class="stu-filter__input" id="buscarAlumno" placeholder="Nombre del alumno..." autocomplete="off">
                 </div>
                 <div class="gsub-actions">
                     <button class="gra-btn gra-btn--outline" id="addColumnBtn">
@@ -372,6 +381,24 @@ endforeach; ?>
     const currentSchoolYearName = "<?php echo substr($currentSchoolYear['startDate'], 0, 4) . ' - ' . substr($currentSchoolYear['endDate'], 0, 4); ?>";
     const currentQuarterName = "<?php echo $currentQuarter ? htmlspecialchars($currentQuarter['name']) : 'No definido'; ?>";
     const idGroup = <?php echo json_encode($groupIds); ?>;
+
+    const buscarAlumno = document.getElementById('buscarAlumno');
+
+    function normalizeSearchText(text) {
+        return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function filterStudentsByName() {
+        const searchText = normalizeSearchText(buscarAlumno.value.trim());
+        document.querySelectorAll('#dataTable tbody tr[data-student-id]').forEach(row => {
+            const studentName = normalizeSearchText(
+                Array.from(row.cells).slice(1, 4).map(cell => cell.textContent).join(' ')
+            );
+            row.hidden = searchText !== '' && !studentName.includes(searchText);
+        });
+    }
+
+    buscarAlumno.addEventListener('input', filterStudentsByName);
 
     // -- CREAR INPUT DE PORCENTAJE --
     function createPercentageInput() {
@@ -600,6 +627,7 @@ endforeach; ?>
                             tbody.appendChild(row);
                         });
                         agregarValidacionCalificaciones();
+                        filterStudentsByName();
                     }
                     if (typeof callback === 'function') callback();
                 })

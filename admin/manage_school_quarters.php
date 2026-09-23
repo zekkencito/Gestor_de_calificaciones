@@ -9,15 +9,15 @@ $currentYear = date('Y');
 
 // Listar los 3 trimestres del ciclo escolar actual
 if ($action === 'list') {
-    // Primero obtener el ciclo escolar del año actual
+    // Obtener el ciclo que contiene la fecha actual, incluso si cruza dos años calendario.
     $stmtYear = $conexion->prepare("SELECT idSchoolYear FROM schoolYear 
-                                     WHERE YEAR(startDate) = ? OR YEAR(endDate) = ? 
+                                     WHERE CURDATE() BETWEEN startDate AND endDate
+                                     ORDER BY startDate DESC
                                      LIMIT 1");
     if (!$stmtYear) {
         echo json_encode(['success' => false, 'error' => 'Error al preparar consulta: ' . $conexion->error]);
         exit;
     }
-    $stmtYear->bind_param('ii', $currentYear, $currentYear);
     $stmtYear->execute();
     $resultYear = $stmtYear->get_result();
     
@@ -52,7 +52,27 @@ if ($action === 'edit') {
     $startDate = $_POST['startDate'] ?? '';
     $endDate = $_POST['endDate'] ?? '';
     
-    if ($id && $startDate && $endDate) {
+    if ($id && $startDate && $endDate && $startDate <= $endDate) {
+        $stmtDates = $conexion->prepare("SELECT idSchoolYear FROM schoolQuarter WHERE idSchoolQuarter = ?");
+        $stmtDates->bind_param('i', $id);
+        $stmtDates->execute();
+        $quarter = $stmtDates->get_result()->fetch_assoc();
+        $stmtDates->close();
+
+        if (!$quarter) {
+            echo json_encode(['success' => false, 'error' => 'El bimestre no existe.']);
+            exit;
+        }
+
+        $stmtOverlap = $conexion->prepare("SELECT idSchoolQuarter FROM schoolQuarter WHERE idSchoolYear = ? AND idSchoolQuarter <> ? AND startDate IS NOT NULL AND endDate IS NOT NULL AND NOT (? > endDate OR ? < startDate) LIMIT 1");
+        $stmtOverlap->bind_param('iiss', $quarter['idSchoolYear'], $id, $startDate, $endDate);
+        $stmtOverlap->execute();
+        if ($stmtOverlap->get_result()->fetch_assoc()) {
+            echo json_encode(['success' => false, 'error' => 'Las fechas se solapan con otro bimestre.']);
+            exit;
+        }
+        $stmtOverlap->close();
+
         $stmt = $conexion->prepare('UPDATE schoolQuarter SET startDate = ?, endDate = ? WHERE idSchoolQuarter = ?');
         $stmt->bind_param('ssi', $startDate, $endDate, $id);
         $ok = $stmt->execute();
@@ -64,7 +84,7 @@ if ($action === 'edit') {
         }
         exit;
     }
-    echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
+    echo json_encode(['success' => false, 'error' => 'Las fechas son incompletas o la fecha de inicio es posterior a la fecha final.']);
     exit;
 }
 

@@ -13,6 +13,18 @@ try {
         error_log('Error: No se recibieron calificaciones en saveGrades');
         throw new Exception('No se encontraron calificaciones para guardar.');
     }
+    $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter LIMIT 1");
+    $stmtQuarter->bind_param("i", $data['idSchoolYear']);
+    $stmtQuarter->execute();
+    $activeQuarter = $stmtQuarter->get_result()->fetch_assoc();
+    if (!$activeQuarter) {
+        throw new Exception('No hay un bimestre vigente para capturar calificaciones en este momento.');
+    }
+    if ((int) $data['idSchoolQuarter'] !== (int) $activeQuarter['idSchoolQuarter']) {
+        throw new Exception('El bimestre vigente cambió. Recarga la página antes de guardar.');
+    }
+    $data['idSchoolQuarter'] = (int) $activeQuarter['idSchoolQuarter'];
+    $stmtQuarter->close();
     // Validar que todas las calificaciones estén en el rango 6-10
     foreach ($data['grades'] as $studentGrade) {
         if (isset($studentGrade['grades']) && is_array($studentGrade['grades'])) {
@@ -28,11 +40,7 @@ try {
     }
     $conexion->begin_transaction();
     // Obtener el nombre del trimestre
-    $stmtQuarter = $conexion->prepare("SELECT name FROM schoolQuarter WHERE idSchoolQuarter = ?");
-    $stmtQuarter->bind_param("i", $data['idSchoolQuarter']);
-    $stmtQuarter->execute();
-    $resQuarter = $stmtQuarter->get_result()->fetch_assoc();
-    $quarter = $resQuarter ? $resQuarter['name'] : null;
+    $quarter = $activeQuarter['name'];
     // Preparar la consulta para insertar/actualizar calificaciones
     $stmt = $conexion->prepare("INSERT INTO gradesSubject (grade, evalDate, idStudent, idSubject, idEvalCriteria, idSchoolYear, idSchoolQuarter, quarter, status) VALUES (?, CURRENT_DATE(), ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE grade = ?, evalDate = CURRENT_DATE(), quarter = ?, status = ?");
     if ($stmt === false) {
@@ -63,7 +71,7 @@ try {
                     } // Si el grado no es numérico, no suma al promedio pero sí cuenta el porcentaje
                 }
                 $stmt->bind_param(
-                    "diiiiisdsis",
+                    "diiiiisidsi",
                     $grade,
                     $idStudent,
                     $data['idSubject'],
@@ -77,7 +85,7 @@ try {
                     $status
                 );
                 if (!$stmt->execute()) {
-                    error_log('SQL ERROR (execute stmt): ' . $stmt->error);
+                    throw new Exception('No se pudo guardar una calificación: ' . $stmt->error);
                 }
             }
             // Guardar promedio solo si hay porcentajes válidos
@@ -107,17 +115,17 @@ try {
                 $data['idSchoolQuarter'] // update
             );
             if (!$stmtAvg->execute()) {
-                error_log('SQL ERROR (execute stmtAvg): ' . $stmtAvg->error);
+                throw new Exception('No se pudo guardar un promedio: ' . $stmtAvg->error);
             }
         }
+    } else {
+        throw new Exception('No se pudo preparar el promedio de las calificaciones.');
     }
     $conexion->commit();
     echo json_encode(['success' => true, 'message' => 'Calificaciones guardadas correctamente']);
 }
 catch (Exception $e) {
-    if ($conexion->connect_errno) {
-        $conexion->rollback();
-    }
+    $conexion->rollback();
     error_log('Error en saveGrades: ' . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Ocurrió un error al guardar las calificaciones. Por favor, intente nuevamente.']);
 }

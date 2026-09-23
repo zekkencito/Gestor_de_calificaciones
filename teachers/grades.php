@@ -60,11 +60,6 @@ while ($quarter = $resultQuarters->fetch_assoc()) {
 }
 $stmtQuarters->close();
 
-// Si no se encontró trimestre actual por fecha, usar el primero disponible
-if (!$currentQuarter && count($quarters) > 0) {
-    $currentQuarter = $quarters[0];
-}
-
 $subjects = [];
 if ($teacher_id) {
     $query = "SELECT s.idSubject, s.name

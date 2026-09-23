@@ -303,7 +303,7 @@ try {
                 <!-- Chart Panel -->
                 <div class="dash-panel dash-panel--chart">
                     <div class="dash-panel__header">
-                        <h2 class="dash-panel__title">Alumnos Aprobados</h2>
+                        <h2 class="dash-panel__title">Promedio por Materia</h2>
                     </div>
                     <div class="dash-panel__body">
                         <div class="dash-chart-wrap">

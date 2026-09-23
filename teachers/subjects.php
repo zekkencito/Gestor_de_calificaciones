@@ -68,11 +68,6 @@ while ($quarter = $resultQuarters->fetch_assoc()) {
 }
 $stmtQuarters->close();
 
-// Si no se encontró trimestre actual por fecha, usar el primero disponible
-if (!$currentQuarter && count($quarters) > 0) {
-    $currentQuarter = $quarters[0];
-}
-
 $subjects = [];
 if ($teacher_id && $currentSchoolYear && $currentQuarter) {
     // Paso 2: Obtener las materias asignadas a este docente para el año y trimestre actual

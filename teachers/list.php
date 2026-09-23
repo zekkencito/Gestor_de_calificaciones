@@ -92,11 +92,6 @@ while ($quarter = $resultQuarters->fetch_assoc()) {
 }
 $stmtQuarters->close();
 
-// Si no se encontró trimestre actual por fecha, usar el primero disponible
-if (!$currentQuarter && count($quarters) > 0) {
-    $currentQuarter = $quarters[0];
-}
-
 $selectedQuarter = $currentQuarter ? $currentQuarter['idSchoolQuarter'] : null;
 
 // Obtener solo los grupos asignados al docente autenticado para el año escolar actual
@@ -217,6 +212,10 @@ if ($selectedGroup) {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="tch-filter">
+                    <label for="buscarAlumno" class="tch-filter__label">Buscar por alumno:</label>
+                    <input type="search" class="stu-filter__input" id="buscarAlumno" placeholder="Nombre del alumno..." autocomplete="off">
                 </div>
                 <div class="tch-actions" id="contenedorBotonDescargar">
                     <button type="button" id="descargarGrupoBtn"
@@ -1199,6 +1198,23 @@ if ($selectedGroup) {
         document.addEventListener('DOMContentLoaded', function() {
             const grupoSelect = document.getElementById('grupo');
             const alumnosBody = document.getElementById('alumnos-tbody');
+            const buscarAlumno = document.getElementById('buscarAlumno');
+
+            function normalizeSearchText(text) {
+                return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            }
+
+            function filterStudentsByName() {
+                const searchText = normalizeSearchText(buscarAlumno.value.trim());
+                alumnosBody.querySelectorAll('tr').forEach(row => {
+                    const studentName = normalizeSearchText(
+                        Array.from(row.cells).slice(1, 4).map(cell => cell.textContent).join(' ')
+                    );
+                    row.hidden = searchText !== '' && !studentName.includes(searchText);
+                });
+            }
+
+            buscarAlumno.addEventListener('input', filterStudentsByName);
 
             // Cargar grupos automáticamente para el año actual
             cargarGrupos(currentSchoolYearId);
@@ -1306,6 +1322,7 @@ if ($selectedGroup) {
                             `;
                             alumnosBody.appendChild(row);
                         });
+                        filterStudentsByName();
                     })
                     .catch(error => {
                         console.error('Error loading students:', error);
