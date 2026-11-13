@@ -53,9 +53,10 @@ function utf8_decode_safe($text) {
 // Función para generar PDF programáticamente (para uso desde otros archivos)
 function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexion) {
     require_once "../fpdf.php";
+    require_once dirname(__DIR__) . "/ensure_english.php";
 
     // ─── 1. Información del estudiante ──────────────────────────────────
-    $sqlStudent = "SELECT s.idStudent, s.schoolNum, ui.lastnamePa, ui.lastnameMa, ui.names,
+    $sqlStudent = "SELECT s.idStudent, s.idGroup, s.schoolNum, ui.lastnamePa, ui.lastnameMa, ui.names,
                           g.grade, g.group_, s.curp,
                           sy.startDate as schoolYear, sy.endDate,
                           sq.name as quarterName
@@ -72,6 +73,11 @@ function generateStudentPDF($idStudent, $idSchoolYear, $idSchoolQuarter, $conexi
     $student = $stmtStudent->get_result()->fetch_assoc();
     $stmtStudent->close();
     if (!$student) throw new Exception("No se encontró información del estudiante");
+
+    // Asegurar que el grupo del estudiante tenga asignada la materia de Inglés en la BD
+    if (!empty($student['idGroup'])) {
+        ensureEnglishAssignedToGroup($conexion, (int)$student['idGroup']);
+    }
 
     // ─── 2. Todos los bimestres del ciclo escolar ────────────────────────
     $stmtAllQ = $conexion->prepare(

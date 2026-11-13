@@ -1,6 +1,7 @@
 <?php
 require_once "../conection.php";
 require_once "check_session.php";
+require_once dirname(__DIR__) . "/ensure_english.php";
 
 header('Content-Type: application/json');
 
@@ -12,6 +13,17 @@ try {
     $subjects = [];
 
     if ($idStudent) {
+        // Asegurar que el grupo del alumno tenga asignada la materia de Inglés
+        $stmtGrp = $conexion->prepare("SELECT idGroup FROM students WHERE idStudent = ?");
+        if ($stmtGrp) {
+            $stmtGrp->bind_param("i", $idStudent);
+            $stmtGrp->execute();
+            $grpRow = $stmtGrp->get_result()->fetch_assoc();
+            $stmtGrp->close();
+            if ($grpRow && !empty($grpRow['idGroup'])) {
+                ensureEnglishAssignedToGroup($conexion, (int)$grpRow['idGroup']);
+            }
+        }
         // Obtener todas las materias asignadas al grupo del estudiante con sus áreas de aprendizaje
         $query = "SELECT DISTINCT s.idSubject, s.name, s.idLearningArea, la.name as learningAreaName
                   FROM subjects s

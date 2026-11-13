@@ -2,6 +2,7 @@
 require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
 require_once '../conection.php';
+require_once dirname(__DIR__) . '/ensure_english.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -76,6 +77,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // $sqlDelete = "DELETE FROM teacherSubject WHERE idTeacher=? AND idSubject=?";
                 // ...
             }
+        }
+
+        // 4. Asegurar que ambos grupos mantengan la materia de Inglés asignada
+        $idIngles = getIdSubjectIngles($conexion);
+        if ($oldSubject === $idIngles || $idSubject === $idIngles) {
+            ensureEnglishAssignedToGroup($conexion, $oldGroup);
+            ensureEnglishAssignedToGroup($conexion, $idGroup);
         }
 
         $conexion->commit();

@@ -2,6 +2,7 @@
 require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
 require_once '../conection.php';
+require_once dirname(__DIR__) . '/ensure_english.php';
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $idTeacher = isset($_POST['idTeacher']) ? intval($_POST['idTeacher']) : null;
@@ -14,8 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $conexion->begin_transaction();
     try {
-        // Eliminar de teacherGroupsSubjects
-        $sql1 = "DELETE FROM teacherGroupsSubjects WHERE idTeacher=? AND idGroup=? AND idSubject=?";
+        $idIngles = getIdSubjectIngles($conexion);
+
+        // Si la materia es Inglés, desvinculamos el docente (idTeacher = NULL) para mantener la materia en el grupo
+        if ($idSubject === $idIngles) {
+            $sql1 = "UPDATE teacherGroupsSubjects SET idTeacher = NULL WHERE idTeacher=? AND idGroup=? AND idSubject=?";
+        } else {
+            // Para otras materias, eliminar de teacherGroupsSubjects
+            $sql1 = "DELETE FROM teacherGroupsSubjects WHERE idTeacher=? AND idGroup=? AND idSubject=?";
+        }
         $stmt1 = $conexion->prepare($sql1);
         $stmt1->bind_param('iii', $idTeacher, $idGroup, $idSubject);
         $stmt1->execute();

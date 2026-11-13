@@ -2,6 +2,7 @@
 require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
 require_once '../conection.php';
+require_once dirname(__DIR__) . '/ensure_english.php';
 
 header('Content-Type: application/json');
 
@@ -104,6 +105,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (!$stmtUpdateStudent->execute()) {
             throw new Exception("Error al actualizar estudiante: " . $conexion->error);
+        }
+
+        // Asegurar que el grupo del alumno tenga asignada la materia de Inglés
+        if (!empty($idGroup)) {
+            ensureEnglishAssignedToGroup($conexion, (int)$idGroup);
         }
 
         // 5. Actualizar tutor (si existe)

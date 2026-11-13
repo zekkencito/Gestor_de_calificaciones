@@ -81,10 +81,24 @@ try {
         }
     }
 
-    // 1. Insert teacherGroupsSubjects
-    $stmtTGS = $conexion->prepare("INSERT INTO teacherGroupsSubjects (idTeacher, idGroup, idSubject) VALUES (?, ?, ?)");
-    $stmtTGS->bind_param('iii', $idTeacher, $idGroup, $idSubject);
-    $stmtTGS->execute();
+    // 1. Insert or update teacherGroupsSubjects (actualiza si ya existía sin docente)
+    $stmtCheckNull = $conexion->prepare("SELECT idDFM FROM teacherGroupsSubjects WHERE idGroup=? AND idSubject=? AND idTeacher IS NULL LIMIT 1");
+    $stmtCheckNull->bind_param('ii', $idGroup, $idSubject);
+    $stmtCheckNull->execute();
+    $nullRow = $stmtCheckNull->get_result()->fetch_assoc();
+    $stmtCheckNull->close();
+
+    if ($nullRow) {
+        $stmtTGS = $conexion->prepare("UPDATE teacherGroupsSubjects SET idTeacher=? WHERE idDFM=?");
+        $stmtTGS->bind_param('ii', $idTeacher, $nullRow['idDFM']);
+        $stmtTGS->execute();
+        $stmtTGS->close();
+    } else {
+        $stmtTGS = $conexion->prepare("INSERT INTO teacherGroupsSubjects (idTeacher, idGroup, idSubject) VALUES (?, ?, ?)");
+        $stmtTGS->bind_param('iii', $idTeacher, $idGroup, $idSubject);
+        $stmtTGS->execute();
+        $stmtTGS->close();
+    }
 
     // 2. Ensure teacherSubject exists
     $stmtCheckTS = $conexion->prepare("SELECT idTeacherSubject FROM teacherSubject WHERE idTeacher=? AND idSubject=? AND idSchoolYear=?");

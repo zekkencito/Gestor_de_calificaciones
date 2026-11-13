@@ -2,6 +2,7 @@
 require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "check_session.php";
 require_once '../conection.php';
+require_once dirname(__DIR__) . '/ensure_english.php';
 
 header('Content-Type: application/json');
 
@@ -165,6 +166,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         if (!$stmtStudent->execute()) {
             throw new Exception("Error al registrar estudiante: " . $stmtStudent->error);
+        }
+
+        // Asegurar que el grupo del alumno tenga asignada la materia de Inglés
+        if (!empty($_POST['txtGroup'])) {
+            ensureEnglishAssignedToGroup($conexion, (int)$_POST['txtGroup']);
         }
 
         // ================= CONFIRMAR TRANSACCIÓN =================

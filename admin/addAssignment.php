@@ -64,17 +64,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $conexion->begin_transaction();
     try {
-        // Insertar en teacherSubject
-        $sql1 = "INSERT INTO teacherSubject (idTeacher, idSubject, idSchoolYear) VALUES (?, ?, ?)";
-        $stmt1 = $conexion->prepare($sql1);
-        $stmt1->bind_param('iii', $idTeacher, $idSubject, $idSchoolYear);
-        $stmt1->execute();
+        // Asegurar relación en teacherSubject (evitar duplicados si el docente ya imparte la materia en este ciclo)
+        $stmtCheckTS = $conexion->prepare("SELECT idTeacherSubject FROM teacherSubject WHERE idTeacher=? AND idSubject=? AND idSchoolYear=?");
+        $stmtCheckTS->bind_param('iii', $idTeacher, $idSubject, $idSchoolYear);
+        $stmtCheckTS->execute();
+        if ($stmtCheckTS->get_result()->num_rows === 0) {
+            $sql1 = "INSERT INTO teacherSubject (idTeacher, idSubject, idSchoolYear) VALUES (?, ?, ?)";
+            $stmt1 = $conexion->prepare($sql1);
+            $stmt1->bind_param('iii', $idTeacher, $idSubject, $idSchoolYear);
+            $stmt1->execute();
+            $stmt1->close();
+        }
+        $stmtCheckTS->close();
 
-        // Insertar en teacherGroupsSubjects
-        $sql2 = "INSERT INTO teacherGroupsSubjects (idTeacher, idGroup, idSubject) VALUES (?, ?, ?)";
-        $stmt2 = $conexion->prepare($sql2);
-        $stmt2->bind_param('iii', $idTeacher, $idGroup, $idSubject);
-        $stmt2->execute();
+        // Si ya existía la materia en el grupo sin docente (ej. Inglés pre-asignado con idTeacher NULL), actualizar el docente
+        $stmtCheckNull = $conexion->prepare("SELECT idDFM FROM teacherGroupsSubjects WHERE idGroup = ? AND idSubject = ? AND idTeacher IS NULL LIMIT 1");
+        $stmtCheckNull->bind_param('ii', $idGroup, $idSubject);
+        $stmtCheckNull->execute();
+        $nullRow = $stmtCheckNull->get_result()->fetch_assoc();
+        $stmtCheckNull->close();
+
+        if ($nullRow) {
+            $stmtUpdTGS = $conexion->prepare("UPDATE teacherGroupsSubjects SET idTeacher = ? WHERE idDFM = ?");
+            $stmtUpdTGS->bind_param('ii', $idTeacher, $nullRow['idDFM']);
+            $stmtUpdTGS->execute();
+            $stmtUpdTGS->close();
+        } else {
+            // Insertar en teacherGroupsSubjects
+            $sql2 = "INSERT INTO teacherGroupsSubjects (idTeacher, idGroup, idSubject) VALUES (?, ?, ?)";
+            $stmt2 = $conexion->prepare($sql2);
+            $stmt2->bind_param('iii', $idTeacher, $idGroup, $idSubject);
+            $stmt2->execute();
+            $stmt2->close();
+        }
 
         $conexion->commit();
         header("Location: assignments.php?status=success");

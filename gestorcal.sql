@@ -754,7 +754,15 @@ INSERT INTO `teacherGroupsSubjects` (`idDFM`, `idGroup`, `idTeacher`, `idSubject
 (99, 4, 44, 15),
 (100, 4, 28, 17),
 (102, 3, 44, 15),
-(103, 9, 44, 15);
+(103, 9, 44, 15),
+(104, 2, NULL, 12),
+(105, 3, NULL, 12),
+(106, 4, NULL, 12),
+(107, 6, NULL, 12),
+(108, 7, NULL, 12),
+(109, 8, NULL, 12),
+(110, 9, NULL, 12),
+(111, 10, NULL, 12);
 
 -- --------------------------------------------------------
 
@@ -1292,7 +1300,7 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT de la tabla `teacherGroupsSubjects`
 --
 ALTER TABLE `teacherGroupsSubjects`
-  MODIFY `idDFM` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
+  MODIFY `idDFM` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
 
 --
 -- AUTO_INCREMENT de la tabla `teachers`
