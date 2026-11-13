@@ -560,9 +560,9 @@ if (!$resultado) {
                             </div>
                         </div>
 
-                        <div class="alert alert-danger d-none" id="divAlerta">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Favor de llenar todos los campos correctamente
+                        <div class="alert alert-danger d-none" id="divAlerta" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span id="divAlertaMsg">Favor de llenar todos los campos obligatorios antes de guardar.</span>
                         </div>
 
                         <div class="modal-footer mt-4">
@@ -2038,10 +2038,129 @@ document.getElementById('formEditStudent').addEventListener('submit', function(e
         });
     </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Variable para almacenar el ID del estudiante a eliminar
-    let studentIdToDelete = null;
+    <!-- Manejo y validación del formulario Inscribir Alumno -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formInscribir = document.getElementById('formInscribir');
+        const divAlerta = document.getElementById('divAlerta');
+        const divAlertaMsg = document.getElementById('divAlertaMsg');
+        const addStudentModal = document.getElementById('addStudentModal');
+
+        if (formInscribir) {
+            formInscribir.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Validar campos en el cliente antes de enviar
+                if (!this.checkValidity()) {
+                    e.stopPropagation();
+                    this.classList.add('was-validated');
+
+                    if (divAlerta) {
+                        divAlerta.classList.remove('d-none');
+                        if (divAlertaMsg) {
+                            divAlertaMsg.textContent = 'Favor de llenar todos los campos obligatorios antes de guardar.';
+                        }
+                    }
+
+                    // Enfocar automáticamente el primer campo faltante
+                    const firstInvalid = this.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                    }
+
+                    // Alerta interactiva: la modal NO se cierra y los datos NO se borran
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Faltan datos obligatorios',
+                        text: 'Por favor complete todos los campos marcados en rojo antes de guardar.',
+                        confirmButtonColor: '#192E4E'
+                    });
+                    return;
+                }
+
+                if (divAlerta) {
+                    divAlerta.classList.add('d-none');
+                }
+
+                // Mostrar estado de carga mientras se guarda
+                Swal.fire({
+                    title: 'Inscribiendo alumno',
+                    html: 'Guardando datos, por favor espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const formData = new FormData(this);
+
+                fetch('addStudent.php', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(response => response.json().catch(() => ({ success: false, message: 'Respuesta inesperada del servidor' })))
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Inscripción exitosa!',
+                            text: data.message || 'El alumno ha sido registrado correctamente.',
+                            confirmButtonColor: '#192E4E'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        // En caso de error del servidor, la modal permanece abierta con los datos ingresados
+                        if (divAlerta) {
+                            divAlerta.classList.remove('d-none');
+                            if (divAlertaMsg) {
+                                divAlertaMsg.textContent = data.message || 'Error al procesar la inscripción.';
+                            }
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al inscribir',
+                            text: data.message || 'Ocurrió un error al registrar al alumno.',
+                            confirmButtonColor: '#192E4E'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al inscribir estudiante:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo comunicar con el servidor.',
+                        confirmButtonColor: '#192E4E'
+                    });
+                });
+            });
+
+            // Si el usuario cierra la modal voluntariamente, restablecer estado de validación
+            if (addStudentModal) {
+                addStudentModal.addEventListener('hidden.bs.modal', function() {
+                    formInscribir.reset();
+                    formInscribir.classList.remove('was-validated');
+                    if (divAlerta) {
+                        divAlerta.classList.add('d-none');
+                        if (divAlertaMsg) {
+                            divAlertaMsg.textContent = 'Favor de llenar todos los campos obligatorios antes de guardar.';
+                        }
+                    }
+                });
+            }
+        }
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variable para almacenar el ID del estudiante a eliminar
+        let studentIdToDelete = null;
 
     // Cuando se abre el modal de eliminación, guardar el ID del estudiante
     document.querySelectorAll('.btn-ver').forEach(btn => {

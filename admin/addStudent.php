@@ -176,9 +176,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // ================= CONFIRMAR TRANSACCIÓN =================
         $conexion->commit();
 
-        // Redireccionar con éxito
-        header("Location: students.php?status=success");
-        exit();
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
+                  (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+
+        if ($isAjax) {
+            echo json_encode(['success' => true, 'message' => 'Estudiante inscrito correctamente']);
+            exit();
+        } else {
+            header("Location: students.php?status=success");
+            exit();
+        }
 
     } catch (Exception $e) {
         // Revertir en caso de error
@@ -188,10 +195,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Registrar error para depuración
         error_log("Error en addStudent: " . $e->getMessage());
-        
-        // Redireccionar con error
-        header("Location: students.php?status=error&message=" . urlencode($e->getMessage()));
-        exit();
+
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
+                  (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+
+        if ($isAjax) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            exit();
+        } else {
+            header("Location: students.php?status=error&message=" . urlencode($e->getMessage()));
+            exit();
+        }
     }
 } else {
     http_response_code(405);
