@@ -161,14 +161,14 @@ $idSchoolQuarter = $currentQuarter ? $currentQuarter['idSchoolQuarter'] : null;
 
 // --- Obtener promedios guardados ---
 $studentAverages = [];
-if ($selectedYear && $idSchoolQuarter) {
+if ($selectedYear && $idSchoolQuarter && $idSubject > 0) {
     $ids = array_column($students, 'idStudent');
     if (count($ids) > 0) {
         $in = implode(',', array_fill(0, count($ids), '?'));
-        $types = str_repeat('i', count($ids)) . 'ii';
-        $query = "SELECT idStudent, average FROM average WHERE idStudent IN ($in) AND idSchoolYear = ? AND idSchoolQuarter = ?";
+        $types = str_repeat('i', count($ids)) . 'iii';
+        $query = "SELECT idStudent, average FROM average WHERE idStudent IN ($in) AND idSchoolYear = ? AND idSchoolQuarter = ? AND idSubject = ?";
         $stmtAverages = $conexion->prepare($query);
-        $params = array_merge($ids, [$selectedYear, $idSchoolQuarter]);
+        $params = array_merge($ids, [$selectedYear, $idSchoolQuarter, $idSubject]);
         $stmtAverages->bind_param($types, ...$params);
         $stmtAverages->execute();
         $resultAverages = $stmtAverages->get_result();
@@ -661,7 +661,7 @@ endforeach; ?>
     }
 
     function loadEvaluationCriteria(idSubject, idSchoolYear, idSchoolQuarter, callback) {
-        fetch(`getEvaluationCriteria.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
+        fetch(`getEvaluationCriteria.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`, { cache: 'no-store' })
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data.length > 0) {
@@ -670,6 +670,10 @@ endforeach; ?>
                     if (neededColumns > currentColumns) {
                         for (let i = 0; i < neededColumns - currentColumns; i++) {
                             document.getElementById('addColumnBtn').click();
+                        }
+                    } else if (neededColumns < currentColumns) {
+                        for (let i = currentColumns; i > neededColumns; i--) {
+                            eliminateCriterioByIndex(i);
                         }
                     }
                     setTimeout(() => {
@@ -696,13 +700,15 @@ endforeach; ?>
                         asignarCriteriaIdInputs();
                         if (typeof callback === 'function') callback();
                     }, 150);
+                } else if (typeof callback === 'function') {
+                    callback();
                 }
             })
             .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cargar los criterios de evaluación' }));
     }
 
     function loadGrades(idSubject, idSchoolYear, idSchoolQuarter) {
-        fetch(`getGrades.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`)
+        fetch(`getGrades.php?idSubject=${idSubject}&idSchoolYear=${idSchoolYear}&idSchoolQuarter=${idSchoolQuarter}`, { cache: 'no-store' })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -716,7 +722,7 @@ endforeach; ?>
                         if (studentGradesData) {
                             inputs.forEach((input) => {
                                 const idEvalCriteria = input.getAttribute('data-criteria-id');
-                                if (idEvalCriteria && studentGradesData[idEvalCriteria] !== undefined) {
+                                if (idEvalCriteria && studentGradesData[idEvalCriteria] !== undefined && studentGradesData[idEvalCriteria] !== null) {
                                     input.value = studentGradesData[idEvalCriteria];
                                 }
                             });
@@ -795,22 +801,127 @@ endforeach; ?>
     }
 
     // =====================================================
+    // VALIDACIÓN DE PORCENTAJES ANTES DE CALIFICAR
+    // =====================================================
+    let isPercentageModalOpen = false;
+
+    function getTotalPercentage() {
+        let total = 0;
+        document.querySelectorAll('.percentage-input').forEach(input => {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val > 0) {
+                total += val;
+            }
+        });
+        return total;
+    }
+
+    function getColumnPercentage(colIndex) {
+        const pctInput = document.getElementById(`C${colIndex}-percentage`);
+        if (!pctInput || pctInput.value.trim() === '') return 0;
+        const val = parseFloat(pctInput.value);
+        return isNaN(val) ? 0 : val;
+    }
+
+    function getCriteriaName(colIndex) {
+        const header = document.querySelector(`.criteria-header[data-col-index='${colIndex}']`);
+        const nameSpan = header ? header.querySelector('.criteria-name') : null;
+        return nameSpan ? nameSpan.textContent.trim() : `C${colIndex}`;
+    }
+
+    function mostrarModalSinPorcentajes(colIndex, isTotalZero) {
+        if (isPercentageModalOpen) return;
+        isPercentageModalOpen = true;
+
+        const criteriaName = getCriteriaName(colIndex);
+        const pctInput = document.getElementById(`C${colIndex}-percentage`);
+        const mensaje = isTotalZero
+            ? 'Debes asignar los porcentajes a los criterios de evaluación antes de capturar calificaciones.'
+            : `El criterio <strong>"${criteriaName}"</strong> no tiene un porcentaje asignado. Asigna un porcentaje mayor a 0% antes de calificar este criterio.`;
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Porcentajes requeridos',
+            html: `<p>${mensaje}</p>`,
+            confirmButtonText: 'Asignar porcentajes',
+            confirmButtonColor: '#6f42c1'
+        }).then(() => {
+            isPercentageModalOpen = false;
+            if (pctInput) {
+                pctInput.focus();
+                pctInput.select();
+            }
+        });
+    }
+
+    document.querySelector('#dataTable tbody').addEventListener('focusin', function(e) {
+        if (!e.target.classList.contains('grade-input')) return;
+        const colIndex = e.target.getAttribute('data-col-index');
+        const totalPct = getTotalPercentage();
+        const colPct = getColumnPercentage(colIndex);
+        if (totalPct <= 0 || colPct <= 0) {
+            e.target.blur();
+            mostrarModalSinPorcentajes(colIndex, totalPct <= 0);
+        }
+    });
+
+    document.querySelector('#dataTable tbody').addEventListener('input', function(e) {
+        if (!e.target.classList.contains('grade-input')) return;
+        const colIndex = e.target.getAttribute('data-col-index');
+        const totalPct = getTotalPercentage();
+        const colPct = getColumnPercentage(colIndex);
+        if (totalPct <= 0 || colPct <= 0) {
+            e.target.value = '';
+            e.target.blur();
+            mostrarModalSinPorcentajes(colIndex, totalPct <= 0);
+        }
+    });
+
+    // =====================================================
     // FUNCIÓN PRINCIPAL: VALIDAR Y GUARDAR
     // Llamada directamente desde onclick del botón Guardar
     // =====================================================
     function validarYGuardar() {
-        // DIAGNÓSTICO: confirmar que la función se ejecuta
-        const allInputs = document.querySelectorAll('.grade-input');
-        console.error('=== validarYGuardar LLAMADA ===')
-        console.error('Total inputs encontrados:', allInputs.length);
-        allInputs.forEach((inp, i) => console.error(`  Input[${i}] value="${inp.value}"`))
-        // FIN DIAGNÓSTICO
         const idSubject = <?php echo $idSubject; ?>;
         const idSchoolYear = currentSchoolYearId;
         const idSchoolQuarter = currentSchoolQuarterId;
 
         if (!idSchoolYear || !idSchoolQuarter) {
             Swal.fire({ icon: 'warning', title: 'Sin período', text: 'No hay año escolar o trimestre configurado.' });
+            return;
+        }
+
+        // VALIDAR QUE SE HAYAN ASIGNADO PORCENTAJES
+        if (getTotalPercentage() <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Porcentajes requeridos',
+                text: 'Debes asignar los porcentajes a los criterios de evaluación antes de guardar las calificaciones.',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#6f42c1'
+            });
+            return;
+        }
+
+        const criteriosSinPorcentaje = new Set();
+        document.querySelectorAll('.grade-input').forEach(input => {
+            if (input.value.trim() !== '') {
+                const colIndex = input.getAttribute('data-col-index');
+                if (getColumnPercentage(colIndex) <= 0) {
+                    criteriosSinPorcentaje.add(getCriteriaName(colIndex));
+                }
+            }
+        });
+        if (criteriosSinPorcentaje.size > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Criterios sin porcentaje',
+                html: `<p>Los siguientes criterios tienen calificaciones pero no tienen un porcentaje mayor a 0%:</p>
+                       <p><strong>${Array.from(criteriosSinPorcentaje).join(', ')}</strong></p>
+                       <p>Asigna un porcentaje antes de guardar.</p>`,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#6f42c1'
+            });
             return;
         }
 
@@ -877,9 +988,10 @@ endforeach; ?>
                 }
                 return fetch('saveGrades.php', {
                     method: 'POST',
-                headers: {
-
-                        'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content, 'Content-Type': 'application/json' },
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         idSubject, idSchoolYear, idSchoolQuarter,
                         grades: recolectarCalificaciones()
@@ -918,17 +1030,15 @@ endforeach; ?>
             row.querySelectorAll('.grade-input').forEach(input => {
                 const colIndex = input.getAttribute('data-col-index');
                 const valor = input.value.trim();
-                if (valor !== '') {
-                    const percentageInput = document.getElementById(`C${colIndex}-percentage`);
-                    const percentageValue = percentageInput ? percentageInput.value : '';
-                    const idEvalCriteria = input.getAttribute('data-criteria-id') || null;
-                    if (percentageValue !== '') {
-                        studentGrades.grades[`C${colIndex}`] = {
-                            grade: valor,
-                            idEvalCriteria,
-                            percentage: percentageValue
-                        };
-                    }
+                const percentageInput = document.getElementById(`C${colIndex}-percentage`);
+                const percentageValue = percentageInput && percentageInput.value.trim() !== '' ? parseFloat(percentageInput.value) : 0;
+                const idEvalCriteria = input.getAttribute('data-criteria-id') || null;
+                if (idEvalCriteria) {
+                    studentGrades.grades[`C${colIndex}`] = {
+                        grade: valor,
+                        idEvalCriteria,
+                        percentage: isNaN(percentageValue) ? 0 : percentageValue
+                    };
                 }
             });
             grades.push(studentGrades);
@@ -974,20 +1084,24 @@ endforeach; ?>
     function calcularPromedioFila(row) {
         let sum = 0;
         let sumPercent = 0;
+        let hasAnyGrade = false;
         row.querySelectorAll('.grade-input').forEach(input => {
             const grade = input.value.trim() !== '' ? parseFloat(input.value) : null;
             const colIndex = input.getAttribute('data-col-index');
             const select = document.getElementById(`C${colIndex}-percentage`);
             const percent = select && select.value ? parseFloat(select.value) : 0;
-            if (!isNaN(percent)) {
+            if (!isNaN(percent) && percent > 0) {
                 sumPercent += percent;
-                if (grade !== null && !isNaN(grade)) sum += grade * (percent / 100);
+                if (grade !== null && !isNaN(grade)) {
+                    hasAnyGrade = true;
+                    sum += grade * (percent / 100);
+                }
             }
         });
         const promedioCell = row.querySelector('.promedio-cell');
-        if (sumPercent > 0) {
-            const promedio = (sumPercent === 100) ? sum : (sum / (sumPercent / 100));
-            const promedioRedondeado = Math.ceil(promedio * 10) / 10;
+        if (sumPercent > 0 && hasAnyGrade) {
+            const promedio = (Math.abs(sumPercent - 100) < 0.001) ? sum : (sum / (sumPercent / 100));
+            const promedioRedondeado = Math.ceil(promedio * 10 - 1e-9) / 10;
             promedioCell.textContent = promedioRedondeado.toFixed(1);
             promedioCell.setAttribute('data-calculated-average', promedioRedondeado.toString());
         } else {

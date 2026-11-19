@@ -3,6 +3,7 @@ require_once dirname(__DIR__) . '/enforce_post.php';
 require_once "../conection.php";
 require_once "check_session.php";
 header('Content-Type: application/json');
+$inTransaction = false;
 try {
     $data = json_decode(file_get_contents('php://input'), true);
     if (!isset($data['idSubject'], $data['idSchoolYear'], $data['idSchoolQuarter'], $data['grades'])) {
@@ -13,7 +14,7 @@ try {
         error_log('Error: No se recibieron calificaciones en saveGrades');
         throw new Exception('No se encontraron calificaciones para guardar.');
     }
-    $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY startDate DESC, idSchoolQuarter LIMIT 1");
+    $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter, name FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter DESC LIMIT 1");
     $stmtQuarter->bind_param("i", $data['idSchoolYear']);
     $stmtQuarter->execute();
     $activeQuarter = $stmtQuarter->get_result()->fetch_assoc();
@@ -25,20 +26,34 @@ try {
     }
     $data['idSchoolQuarter'] = (int) $activeQuarter['idSchoolQuarter'];
     $stmtQuarter->close();
-    // Validar que todas las calificaciones estén en el rango 6-10
+
+    // Validar que se hayan asignado porcentajes a los criterios y que las calificaciones estén en el rango 6-10
+    $hasValidPercentage = false;
     foreach ($data['grades'] as $studentGrade) {
         if (isset($studentGrade['grades']) && is_array($studentGrade['grades'])) {
             foreach ($studentGrade['grades'] as $criteriaKey => $gradeData) {
-                if (isset($gradeData['grade']) && $gradeData['grade'] !== '' && $gradeData['grade'] !== null) {
+                $pct = isset($gradeData['percentage']) && is_numeric($gradeData['percentage']) ? floatval($gradeData['percentage']) : 0.0;
+                if ($pct > 0) {
+                    $hasValidPercentage = true;
+                }
+                if (isset($gradeData['grade']) && trim((string) $gradeData['grade']) !== '') {
                     $gradeValue = floatval($gradeData['grade']);
                     if ($gradeValue < 6 || $gradeValue > 10) {
                         throw new Exception('Calificación inválida: ' . $gradeData['grade'] . '. Las calificaciones deben estar entre 6 y 10.');
+                    }
+                    if ($pct <= 0) {
+                        throw new Exception('No se puede guardar una calificación en un criterio sin porcentaje asignado.');
                     }
                 }
             }
         }
     }
+    if (!$hasValidPercentage) {
+        throw new Exception('Debes asignar los porcentajes a los criterios de evaluación antes de guardar calificaciones.');
+    }
+
     $conexion->begin_transaction();
+    $inTransaction = true;
     // Obtener el nombre del trimestre
     $quarter = $activeQuarter['name'];
     // Preparar la consulta para insertar/actualizar calificaciones
@@ -48,71 +63,70 @@ try {
         throw new Exception('Error al procesar las calificaciones. Por favor, intente nuevamente.');
     }
     // Preparar la consulta para insertar/actualizar promedio
-    $stmtAvg = $conexion->prepare("INSERT INTO average (average, idStudent, idSubject, idSchoolYear, idSchoolQuarter) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE average = ?, idSubject = ?, idStudent = ?, idSchoolYear = ?, idSchoolQuarter = ?");
+    $stmtAvg = $conexion->prepare("INSERT INTO average (average, idStudent, idSubject, idSchoolYear, idSchoolQuarter) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE average = ?");
     if ($stmtAvg !== false) {
         foreach ($data['grades'] as $studentGrade) {
-            $idStudent = $studentGrade['idStudent'];
-            $sum = 0;
-            $sumPercent = 0;
-            foreach ($studentGrade['grades'] as $criteriaKey => $gradeData) {
-                if (!isset($gradeData['idEvalCriteria'])) {
-                    continue; // Saltar si no hay ID de criterio
-                }
-                $grade = $gradeData['grade'] === '' ? null : $gradeData['grade'];
-                $idEvalCriteria = $gradeData['idEvalCriteria'];
-                $percentage = isset($gradeData['percentage']) ? $gradeData['percentage'] : 0;
-                $status = 1;
-                // Calculo para promedio ponderado
-                // Si el grado no está establecido (vacío), pero el porcentaje sí, considerar el grado como 0
-                if (is_numeric($percentage)) {
-                    $sumPercent += floatval($percentage);
-                    if (is_numeric($grade)) {
-                        $sum += floatval($grade) * (floatval($percentage) / 100);
-                    } // Si el grado no es numérico, no suma al promedio pero sí cuenta el porcentaje
-                }
-                $stmt->bind_param(
-                    "diiiiisidsi",
-                    $grade,
-                    $idStudent,
-                    $data['idSubject'],
-                    $idEvalCriteria,
-                    $data['idSchoolYear'],
-                    $data['idSchoolQuarter'],
-                    $quarter,
-                    $status,
-                    $grade,
-                    $quarter,
-                    $status
-                );
-                if (!$stmt->execute()) {
-                    throw new Exception('No se pudo guardar una calificación: ' . $stmt->error);
+            $idStudent = intval($studentGrade['idStudent']);
+            $sum = 0.0;
+            $sumPercent = 0.0;
+            $hasAnyGrade = false;
+            if (isset($studentGrade['grades']) && is_array($studentGrade['grades'])) {
+                foreach ($studentGrade['grades'] as $criteriaKey => $gradeData) {
+                    if (empty($gradeData['idEvalCriteria'])) {
+                        continue; // Saltar si no hay ID de criterio
+                    }
+                    $rawGrade = isset($gradeData['grade']) ? trim((string) $gradeData['grade']) : '';
+                    $grade = ($rawGrade === '') ? null : floatval($rawGrade);
+                    $idEvalCriteria = intval($gradeData['idEvalCriteria']);
+                    $percentage = isset($gradeData['percentage']) && is_numeric($gradeData['percentage']) ? floatval($gradeData['percentage']) : 0.0;
+                    $status = 1;
+                    // Cálculo para promedio ponderado (consistente con gradesSubject.php)
+                    if ($percentage > 0) {
+                        $sumPercent += $percentage;
+                        if ($grade !== null) {
+                            $hasAnyGrade = true;
+                            $sum += $grade * ($percentage / 100);
+                        }
+                    }
+                    $stmt->bind_param(
+                        "diiiiisidsi",
+                        $grade,
+                        $idStudent,
+                        $data['idSubject'],
+                        $idEvalCriteria,
+                        $data['idSchoolYear'],
+                        $data['idSchoolQuarter'],
+                        $quarter,
+                        $status,
+                        $grade,
+                        $quarter,
+                        $status
+                    );
+                    if (!$stmt->execute()) {
+                        throw new Exception('No se pudo guardar una calificación: ' . $stmt->error);
+                    }
                 }
             }
-            // Guardar promedio solo si hay porcentajes válidos
-            // Cálculo de promedio - redondeando hacia arriba
-            if ($sumPercent > 0) {
-                if ($sumPercent === 100) {
-                    $average = ceil($sum * 10) / 10; // Si los porcentajes suman 100, redondear hacia arriba a 1 decimal
+            // Guardar promedio solo si hay porcentajes válidos y al menos una calificación capturada
+            if ($sumPercent > 0 && $hasAnyGrade) {
+                if (abs($sumPercent - 100.0) < 0.001) {
+                    $average = ceil($sum * 10 - 1e-9) / 10; // Si los porcentajes suman 100, redondear hacia arriba a 1 decimal
                 }
                 else {
-                    $average = ceil(($sum / ($sumPercent / 100)) * 10) / 10; // Si no, normalizar y redondear hacia arriba
+                    $average = ceil(($sum / ($sumPercent / 100)) * 10 - 1e-9) / 10; // Si no, normalizar y redondear hacia arriba
                 }
             }
             else {
-                $average = 0.0;
+                $average = null;
             }
             $stmtAvg->bind_param(
-                "diiiidiiii",
+                "diiiid",
                 $average, // insert
                 $idStudent, // insert
                 $data['idSubject'], // insert
                 $data['idSchoolYear'], // insert
                 $data['idSchoolQuarter'], // insert
-                $average, // update
-                $data['idSubject'], // update
-                $idStudent, // update
-                $data['idSchoolYear'], // update
-                $data['idSchoolQuarter'] // update
+                $average // update
             );
             if (!$stmtAvg->execute()) {
                 throw new Exception('No se pudo guardar un promedio: ' . $stmtAvg->error);
@@ -125,8 +139,10 @@ try {
     echo json_encode(['success' => true, 'message' => 'Calificaciones guardadas correctamente']);
 }
 catch (Exception $e) {
-    $conexion->rollback();
+    if ($inTransaction) {
+        $conexion->rollback();
+    }
     error_log('Error en saveGrades: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Ocurrió un error al guardar las calificaciones. Por favor, intente nuevamente.']);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-?> 
+?>

@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter LIMIT 1");
+        $stmtQuarter = $conexion->prepare("SELECT idSchoolQuarter FROM schoolQuarter WHERE idSchoolYear = ? AND CURDATE() BETWEEN startDate AND endDate ORDER BY idSchoolQuarter DESC LIMIT 1");
         $stmtQuarter->bind_param("i", $idSchoolYear);
         $stmtQuarter->execute();
         $activeQuarter = $stmtQuarter->get_result()->fetch_assoc();

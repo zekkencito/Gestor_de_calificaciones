@@ -48,7 +48,8 @@ $stmtQuarters->execute();
 $resultQuarters = $stmtQuarters->get_result();
 $quarters = [];
 $currentQuarter = null;
-$currentDate = date('Y-m-d');
+$resHoy = $conexion->query("SELECT CURDATE() AS hoy");
+$currentDate = ($resHoy && ($rowHoy = $resHoy->fetch_assoc())) ? $rowHoy['hoy'] : date('Y-m-d');
 while ($quarter = $resultQuarters->fetch_assoc()) {
     $quarters[] = $quarter;
     // Detectar el trimestre actual basado en la fecha
@@ -301,7 +302,7 @@ if ($teacher_id) {
         }
         
         tbody.innerHTML = `<tr><td colspan="<?php echo (isset($typeTeacher) && $typeTeacher === 'ME') ? 7 : 5; ?>" class="text-center">Cargando...</td></tr>`;
-        fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${currentSchoolYearId}&idSchoolQuarter=${currentSchoolQuarterId}`)
+        fetch(`getStudentsBySubject.php?idSubject=${idSubject}&idSchoolYear=${currentSchoolYearId}&idSchoolQuarter=${currentSchoolQuarterId}`, { cache: 'no-store' })
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.students.length > 0) {
@@ -316,7 +317,7 @@ if ($teacher_id) {
                             <td>${student.lastnamePa}</td>
                             <td>${student.lastnameMa}</td>
                             <td>${student.names}</td>
-                            <td>${student.average !== null && student.average !== undefined ? (Math.ceil(Number(student.average) * 10) / 10).toFixed(1) : '-'}</td>
+                            <td>${student.average !== null && student.average !== undefined ? (Math.ceil(Number(student.average) * 10 - 1e-9) / 10).toFixed(1) : '-'}</td>
                         `;
                         tr.innerHTML = rowHTML;
                         tbody.appendChild(tr);
